@@ -24,7 +24,15 @@ request.interceptors.response.use(
     }
     return data
   },
-  err => { Message.error(err.message || '网络错误'); return Promise.reject(err) }
+  err => {
+    if (err.response && err.response.status === 401) {
+      localStorage.removeItem('token')
+      router.push('/login')
+      return Promise.reject(new Error('登录已过期'))
+    }
+    Message.error(err.message || '网络错误')
+    return Promise.reject(err)
+  }
 )
 
 export default request
