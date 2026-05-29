@@ -21,6 +21,7 @@
 <script>
 import { login } from '../api/auth'
 export default {
+  created() { localStorage.clear() },
   data() {
     return {
       loading: false,
