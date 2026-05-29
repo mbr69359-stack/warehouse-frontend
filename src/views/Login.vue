@@ -10,9 +10,12 @@
           <el-input v-model="form.username" prefix-icon="el-icon-user" @keyup.enter.native="handleLogin" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" prefix-icon="el-icon-lock" @keyup.enter.native="handleLogin" />
+          <el-input v-model="form.password" type="password" prefix-icon="el-icon-lock" show-password @keyup.enter.native="handleLogin" />
         </el-form-item>
-        <el-button type="primary" style="width:100%;margin-top:8px;" :loading="loading" @click="handleLogin">登 录</el-button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <el-checkbox v-model="rememberMe">记住此设备，下次自动登录</el-checkbox>
+        </div>
+        <el-button type="primary" style="width:100%;" :loading="loading" @click="handleLogin">登 录</el-button>
       </el-form>
     </el-card>
   </div>
@@ -21,10 +24,10 @@
 <script>
 import { login } from '../api/auth'
 export default {
-  created() { localStorage.clear() },
   data() {
     return {
       loading: false,
+      rememberMe: false,
       form: { username: '', password: '' },
       rules: {
         username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -39,7 +42,7 @@ export default {
         this.loading = true
         try {
           const res = await login(this.form)
-          this.$store.commit('SET_TOKEN', res.data.token)
+          this.$store.commit('SET_TOKEN', { token: res.data.token, remember: this.rememberMe })
           this.$store.commit('SET_USER', { username: res.data.username, realName: res.data.realName })
           this.$store.commit('SET_ROLES', res.data.roles)
           this.$router.push('/')
