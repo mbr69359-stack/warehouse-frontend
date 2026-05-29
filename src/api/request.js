@@ -2,7 +2,7 @@ import axios from 'axios'
 import { Message } from 'element-ui'
 import router from '../router'
 
-const request = axios.create({ baseURL: '/api', timeout: 15000 })
+const request = axios.create({ baseURL: process.env.VUE_APP_API_BASE || '/api', timeout: 15000 })
 
 request.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
