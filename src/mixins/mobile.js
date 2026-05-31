@@ -1,12 +1,12 @@
 export default {
   data() {
-    return { _ww: window.innerWidth }
+    return { windowWidth: window.innerWidth }
   },
   computed: {
-    isMobile() { return this._ww <= 768 }
+    isMobile() { return this.windowWidth <= 768 }
   },
   mounted() {
-    this.__onResize = () => { this._ww = window.innerWidth }
+    this.__onResize = () => { this.windowWidth = window.innerWidth }
     window.addEventListener('resize', this.__onResize)
   },
   beforeDestroy() {
