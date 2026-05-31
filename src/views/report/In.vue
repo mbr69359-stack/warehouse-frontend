@@ -1,5 +1,11 @@
 <template>
-  <el-card>
+  <div>
+  <div v-if="isMobile" class="m-page m-empty" style="padding-top:60px;">
+    <span class="material-symbols-outlined" style="font-size:56px;color:#c4c5d5;">bar_chart</span>
+    <p style="font-size:16px;font-weight:600;color:#444653;margin:12px 0 4px;">入库报表</p>
+    <p style="font-size:13px;color:#757684;">功能建设中，请在电脑端查看</p>
+  </div>
+  <el-card v-else>
     <div slot="header" style="display:flex;gap:12px;align-items:center;">
       <span>入库报表</span>
       <el-date-picker v-model="dateRange" type="daterange" range-separator="至"
@@ -13,17 +19,20 @@
       <el-table-column label="入库金额"><template slot-scope="{row}">¥{{ Number(row.amount||0).toFixed(2) }}</template></el-table-column>
     </el-table>
   </el-card>
+  </div>
 </template>
 
 <script>
 import * as echarts from 'echarts'
 import { getInReport } from '../../api/report'
+import mobileMixin from '../../mixins/mobile'
 export default {
+  mixins: [mobileMixin],
   data() {
     const end = new Date(); const start = new Date(); start.setDate(start.getDate() - 6)
     return { chart: null, tableData: [], dateRange: [start.toISOString().slice(0,10), end.toISOString().slice(0,10)] }
   },
-  mounted() { this.chart = echarts.init(this.$refs.chart); this.loadData() },
+  mounted() { if (!this.isMobile) { this.chart = echarts.init(this.$refs.chart); this.loadData() } },
   beforeDestroy() { this.chart && this.chart.dispose() },
   methods: {
     async loadData() {

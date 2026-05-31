@@ -51,8 +51,8 @@
       <section class="m-section">
         <div class="m-section-header">
           <span class="m-section-title">今日概览</span>
-          <span class="m-section-link" @click="$router.push('/report/in')">查看报表</span>
         </div>
+        <!-- 2×2 统计网格 -->
         <div class="m-stat-grid">
           <div class="m-stat-card" @click="$router.push('/in-orders')">
             <div class="m-stat-label">待入库</div>
@@ -64,42 +64,53 @@
           </div>
           <div class="m-stat-card" @click="$router.push('/inventory/check')">
             <div class="m-stat-label">待盘点</div>
-            <div class="m-stat-value">06</div>
+            <div class="m-stat-value">{{ cards[3].value }}</div>
           </div>
-          <div class="m-stat-card alert" @click="$router.push('/inventory/alerts')">
-            <div class="m-stat-label">库存预警</div>
-            <div class="m-stat-value danger">{{ cards[2].value }}</div>
+          <div class="m-stat-card" @click="$router.push('/inventory')">
+            <div class="m-stat-label">库存种类</div>
+            <div class="m-stat-value">{{ cards[3].value }}</div>
           </div>
+        </div>
+        <!-- 库存预警 全宽长方形 -->
+        <div v-if="cards[2].value > 0" class="m-alert-banner" @click="$router.push('/inventory/alerts')">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="material-symbols-outlined" style="font-size:22px;">warning</span>
+            <div>
+              <div style="font-size:12px;opacity:.85;">库存预警</div>
+              <div style="font-size:22px;font-weight:700;line-height:1.1;">{{ cards[2].value }} <span style="font-size:13px;font-weight:400;">件商品低于预警值</span></div>
+            </div>
+          </div>
+          <span class="material-symbols-outlined" style="font-size:20px;opacity:.7;">chevron_right</span>
         </div>
       </section>
 
-      <!-- 快捷功能 -->
+      <!-- 快捷功能 2×2 -->
       <section class="m-section">
         <div class="m-section-title" style="margin-bottom:12px;">快捷功能</div>
-        <div class="m-quick-grid">
-          <button class="m-quick-btn" @click="$router.push('/in-orders/create')">
-            <div class="m-quick-icon primary">
-              <span class="material-symbols-outlined">qr_code_scanner</span>
+        <div class="m-quick-grid2">
+          <button class="m-quick-btn2" @click="$router.push('/in-orders/create')">
+            <div class="m-quick-icon2 primary">
+              <span class="material-symbols-outlined">input</span>
             </div>
-            <span>扫码收货</span>
+            <span class="m-quick-label">新建入库</span>
           </button>
-          <button class="m-quick-btn" @click="$router.push('/out-orders/create')">
-            <div class="m-quick-icon">
-              <span class="material-symbols-outlined">move_down</span>
+          <button class="m-quick-btn2" @click="$router.push('/out-orders/create')">
+            <div class="m-quick-icon2">
+              <span class="material-symbols-outlined">output</span>
             </div>
-            <span>新建出库</span>
+            <span class="m-quick-label">新建出库</span>
           </button>
-          <button class="m-quick-btn" @click="$router.push('/inventory')">
-            <div class="m-quick-icon">
-              <span class="material-symbols-outlined">inventory</span>
+          <button class="m-quick-btn2" @click="$router.push('/inventory')">
+            <div class="m-quick-icon2">
+              <span class="material-symbols-outlined">inventory_2</span>
             </div>
-            <span>库存查询</span>
+            <span class="m-quick-label">库存查询</span>
           </button>
-          <button class="m-quick-btn" @click="$router.push('/inventory/check')">
-            <div class="m-quick-icon">
+          <button class="m-quick-btn2" @click="$router.push('/inventory/check')">
+            <div class="m-quick-icon2">
               <span class="material-symbols-outlined">rule</span>
             </div>
-            <span>库存盘点</span>
+            <span class="m-quick-label">库存盘点</span>
           </button>
         </div>
       </section>
@@ -184,3 +195,51 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.m-alert-banner {
+  margin-top: 10px;
+  background: #ffdad6;
+  border: 1px solid rgba(186,26,26,.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #ba1a1a;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.m-alert-banner:active { opacity: .8; }
+
+.m-quick-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.m-quick-btn2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #c4c5d5;
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s, transform .1s;
+}
+.m-quick-btn2:active { background: #e6eeff; transform: scale(.97); }
+.m-quick-icon2 {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: #e6eeff;
+  display: flex; align-items: center; justify-content: center;
+  color: #00288e; flex-shrink: 0;
+}
+.m-quick-icon2 .material-symbols-outlined { font-size: 24px; }
+.m-quick-icon2.primary { background: #00288e; color: #fff; }
+.m-quick-label {
+  font-size: 14px; font-weight: 600; color: #121c2a;
+}
+</style>

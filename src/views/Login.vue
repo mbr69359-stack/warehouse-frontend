@@ -181,7 +181,7 @@ export default {
   height: 48px; width: 100%;
   padding: 0 44px 0 14px;
   border: 1px solid #757684; border-radius: 4px;
-  font-size: 15px; color: #121c2a; background: #fff;
+  font-size: 16px; color: #121c2a; background: #fff;
   outline: none; box-sizing: border-box;
   transition: border-color .2s, box-shadow .2s;
 }

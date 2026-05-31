@@ -1,5 +1,11 @@
 <template>
   <div>
+  <div v-if="isMobile" class="m-page m-empty" style="padding-top:60px;">
+    <span class="material-symbols-outlined" style="font-size:56px;color:#c4c5d5;">inventory_2</span>
+    <p style="font-size:16px;font-weight:600;color:#444653;margin:12px 0 4px;">库存报表</p>
+    <p style="font-size:13px;color:#757684;">功能建设中，请在电脑端查看</p>
+  </div>
+  <div v-else>
     <el-row :gutter="20" style="margin-bottom:20px;">
       <el-col :span="8"><el-card shadow="hover" style="text-align:center;">
         <div style="font-size:36px;font-weight:bold;color:#409EFF;">{{ summary.totalSkus||0 }}</div>
@@ -39,6 +45,7 @@
       </el-table>
     </el-card>
   </div>
+  </div>
 </template>
 
 <script>
@@ -46,7 +53,9 @@ import { getInventory } from '../../api/inventory'
 import { getInventorySummary } from '../../api/report'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
+import mobileMixin from '../../mixins/mobile'
 export default {
+  mixins: [mobileMixin],
   data() {
     return {
       summary: {}, list: [], loading: false,
