@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>手机端适配方案预览</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; }
+
+  /* 顶部标题 */
+  .page-title {
+    text-align: center;
+    padding: 24px 16px 16px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+  }
+  .page-subtitle {
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+
+  /* 方案选择 tab */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    padding: 0 16px;
+  }
+  .tab-btn {
+    padding: 8px 20px;
+    border: 2px solid #ddd;
+    background: #fff;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+    transition: all .2s;
+  }
+  .tab-btn.active {
+    border-color: #409EFF;
+    background: #409EFF;
+    color: #fff;
+  }
+
+  /* 预览容器 */
+  .preview-section { display: none; }
+  .preview-section.active { display: block; }
+
+  .phones-row {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+    padding: 0 24px 40px;
+  }
+
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .phone-label {
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
+  }
+
+  /* 手机外壳 */
+  .phone {
+    width: 320px;
+    height: 600px;
+    background: #1a1a1a;
+    border-radius: 40px;
+    padding: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    position: relative;
+  }
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    z-index: 10;
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    background: #f0f2f5;
+    border-radius: 30px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ========== 方案一：汉堡菜单 ========== */
+
+  /* 状态栏 */
+  .statusbar {
+    height: 28px;
+    background: #304156;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    font-size: 11px;
+    color: #fff;
+  }
+
+  /* Header */
+  .app-header {
+    height: 50px;
+    background: #304156;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 12px;
+  }
+  .hamburger {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+  }
+  .hamburger span {
+    display: block;
+    height: 2px;
+    background: #fff;
+    border-radius: 1px;
+    transition: all .3s;
+  }
+  .app-header-title {
+    color: #fff;
+    font-size: 15px;
+    font-weight: bold;
+    flex: 1;
+  }
+  .app-header-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #409EFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 12px;
+  }
+
+  /* 抽屉 */
+  .drawer-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 100;
+    display: flex;
+  }
+  .drawer {
+    width: 220px;
+    height: 100%;
+    background: #304156;
+    display: flex;
+    flex-direction: column;
+  }
+  .drawer-header {
+    height: 78px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid #3a4a5c;
+    gap: 10px;
+  }
+  .drawer-logo-icon {
+    width: 36px;
+    height: 36px;
+    background: #409EFF;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .drawer-logo-text {
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+  }
+  .drawer-menu-item {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 10px;
+    color: #bfcbd9;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .drawer-menu-item.active {
+    background: rgba(64,158,255,.15);
+    color: #409EFF;
+  }
+  .drawer-menu-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .drawer-submenu-title {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 10px;
+    color: #bfcbd9;
+    font-size: 13px;
+  }
+  .drawer-submenu-children { background: rgba(0,0,0,.15); }
+  .drawer-submenu-children .drawer-menu-item { padding-left: 42px; }
+
+  /* 内容区 */
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+  }
+
+  /* 卡片 */
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .card-title { font-size: 13px; color: #888; margin-bottom: 6px; }
+  .card-value { font-size: 24px; font-weight: bold; color: #333; }
+  .card-value.blue { color: #409EFF; }
+  .card-value.green { color: #67C23A; }
+  .card-value.orange { color: #E6A23C; }
+  .card-value.red { color: #F56C6C; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .breadcrumb {
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .breadcrumb .sep { color: #ccc; }
+  .breadcrumb .current { color: #409EFF; }
+
+  /* ========== 方案二：底部导航 ========== */
+  .bottom-nav {
+    height: 56px;
+    background: #fff;
+    border-top: 1px solid #e8e8e8;
+    display: flex;
+    align-items: center;
+  }
+  .bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 6px 0;
+  }
+  .bottom-nav-item .nav-icon { font-size: 20px; color: #aaa; }
+  .bottom-nav-item .nav-label { font-size: 10px; color: #aaa; }
+  .bottom-nav-item.active .nav-icon { color: #409EFF; }
+  .bottom-nav-item.active .nav-label { color: #409EFF; }
+
+  .b2-header {
+    height: 50px;
+    background: #fff;
+    border-bottom: 1px solid #e8e8e8;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+  }
+
+  /* 方案三：卡片首页 */
+  .app-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 4px;
+  }
+  .app-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    cursor: pointer;
+  }
+  .app-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+  .app-card-icon.blue { background: #ecf5ff; }
+  .app-card-icon.green { background: #f0f9eb; }
+  .app-card-icon.orange { background: #fdf6ec; }
+  .app-card-icon.red { background: #fef0f0; }
+  .app-card-icon.purple { background: #f5f0ff; }
+  .app-card-icon.teal { background: #e8f8f5; }
+  .app-card-label { font-size: 13px; color: #333; font-weight: 500; }
+
+  .welcome-banner {
+    background: linear-gradient(135deg, #409EFF, #66b1ff);
+    color: #fff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .welcome-banner h3 { font-size: 15px; margin-bottom: 4px; }
+  .welcome-banner p { font-size: 12px; opacity: .85; }
+
+  /* 描述区 */
+  .desc-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 0 24px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  .desc-box h3 { font-size: 14px; color: #409EFF; margin-bottom: 8px; }
+  .desc-box ul { padding-left: 16px; }
+  .desc-box li { font-size: 13px; color: #555; line-height: 1.8; }
+  .pro { color: #67C23A; }
+  .con { color: #F56C6C; }
+
+  /* 选择按钮 */
+  .choose-btn {
+    display: block;
+    width: calc(100% - 48px);
+    margin: 0 auto 32px;
+    padding: 12px;
+    background: #409EFF;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    cursor: pointer;
+    text-align: center;
+  }
+  .choose-btn:hover { background: #3a8ee6; }
+</style>
+</head>
+<body>
+
+<div class="page-title">手机端适配方案预览</div>
+<div class="page-subtitle">点击下方按钮切换方案，选好后告诉 Claude</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab(1)">方案一：汉堡菜单</button>
+  <button class="tab-btn" onclick="showTab(2)">方案二：底部导航栏</button>
+  <button class="tab-btn" onclick="showTab(3)">方案三：卡片首页</button>
+</div>
+
+<!-- ===== 方案一 ===== -->
+<div class="preview-section active" id="tab1">
+  <div class="phones-row">
+
+    <!-- 正常状态 -->
+    <div class="phone-wrap">
+      <div class="phone-label">收起状态</div>
+      <div class="phone">
+        <div class="phone-screen" style="display:flex;flex-direction:column;">
+          <div class="statusbar">
+            <span>9:41</span><span>📶 🔋</span>
+          </div>
+          <div class="app-header">
+            <div class="hamburger"><span></span><span></span><span></span></div>
+            <div class="app-header-title">仓库管理系统</div>
+            <div class="app-header-avatar">管</div>
+          </div>
+          <div class="main-content">
+            <div class="breadcrumb">
+              <span class="current">首页</span>
+            </div>
+            <div class="stats-grid">
+              <div class="card">
+                <div class="card-title">今日入库</div>
+                <div class="card-value blue">12</div>
+              </div>
+              <div class="card">
+                <div class="card-title">今日出库</div>
+                <div class="card-value green">8</div>
+              </div>
+              <div class="card">
+                <div class="card-title">库存预警</div>
+                <div class="card-value orange">3</div>
+              </div>
+              <div class="card">
+                <div class="card-title">商品种类</div>
+                <div class="card-value">156</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">最近入库单</div>
+              <div style="font-size:13px;color:#333;padding-top:4px;">
+                <div style="padding:8px 0;border-bottom:1px solid #f5f5f5;display:flex;justify-content:space-between;">
+                  <span>RK-20260601-001</span><span style="color:#67C23A;">已完成</span>
+                </div>
+                <div style="padding:8px 0;display:flex;justify-content:space-between;">
+                  <span>RK-20260601-002</span><span style="color:#E6A23C;">处理中</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 抽屉展开 -->
+    <div class="phone-wrap">
+      <div class="phone-label">点击 ☰ 展开菜单</div>
+      <div class="phone">
+        <div class="phone-screen" style="display:flex;flex-direction:column;">
+          <div class="statusbar">
+            <span>9:41</span><span>📶 🔋</span>
+          </div>
+          <div class="app-header">
+            <div class="hamburger"><span></span><span></span><span></span></div>
+            <div class="app-header-title">仓库管理系统</div>
+            <div class="app-header-avatar">管</div>
+          </div>
+          <!-- 抽屉遮罩 -->
+          <div class="drawer-overlay">
+            <div class="drawer">
+              <div class="drawer-header">
+                <div class="drawer-logo-icon">🏪</div>
+                <div class="drawer-logo-text">仓库管理系统</div>
+              </div>
+              <div class="drawer-menu-item active">
+                <span class="icon">🏠</span>首页
+              </div>
+              <div class="drawer-submenu-title">
+                <span class="icon">📦</span>商品管理
+              </div>
+              <div class="drawer-submenu-children">
+                <div class="drawer-menu-item"><span class="icon"></span>商品列表</div>
+                <div class="drawer-menu-item"><span class="icon"></span>商品分类</div>
+              </div>
+              <div class="drawer-menu-item">
+                <span class="icon">🏭</span>仓库管理
+              </div>
+              <div class="drawer-menu-item">
+                <span class="icon">🤝</span>供应商
+              </div>
+              <div class="drawer-menu-item">
+                <span class="icon">📥</span>入库管理
+              </div>
+              <div class="drawer-menu-item">
+                <span class="icon">📤</span>出库管理
+              </div>
+              <div class="drawer-menu-item">
+                <span class="icon">📋</span>库存管理
+              </div>
+              <div class="drawer-menu-item">
+                <span class="icon">📊</span>报表统计
+              </div>
+              <div class="drawer-menu-item">
+                <span class="icon">⚙️</span>系统设置
+              </div>
+            </div>
+            <div style="flex:1;" onclick=""></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="desc-box">
+    <h3>方案一：汉堡菜单（折叠抽屉）</h3>
+    <ul>
+      <li class="pro">✅ 改动最小，桌面端完全不影响</li>
+      <li class="pro">✅ 开发工作量最少，1-2天完成</li>
+      <li class="pro">✅ 所有菜单项都能展示，无需精简导航</li>
+      <li class="con">❌ 需要先点开菜单再操作，多一步</li>
+      <li class="con">❌ 移动端原生体验稍弱</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== 方案二 ===== -->
+<div class="preview-section" id="tab2">
+  <div class="phones-row">
+
+    <!-- 首页 -->
+    <div class="phone-wrap">
+      <div class="phone-label">首页</div>
+      <div class="phone">
+        <div class="phone-screen" style="display:flex;flex-direction:column;">
+          <div class="statusbar">
+            <span>9:41</span><span>📶 🔋</span>
+          </div>
+          <div class="b2-header">首页</div>
+          <div class="main-content" style="flex:1;">
+            <div class="stats-grid">
+              <div class="card">
+                <div class="card-title">今日入库</div>
+                <div class="card-value blue">12</div>
+              </div>
+              <div class="card">
+                <div class="card-title">今日出库</div>
+                <div class="card-value green">8</div>
+              </div>
+              <div class="card">
+                <div class="card-title">库存预警</div>
+                <div class="card-value orange">3</div>
+              </div>
+              <div class="card">
+                <div class="card-title">商品种类</div>
+                <div class="card-value">156</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">最近入库单</div>
+              <div style="font-size:13px;color:#333;padding-top:4px;">
+                <div style="padding:8px 0;border-bottom:1px solid #f5f5f5;display:flex;justify-content:space-between;">
+                  <span>RK-20260601-001</span><span style="color:#67C23A;">已完成</span>
+                </div>
+                <div style="padding:8px 0;display:flex;justify-content:space-between;">
+                  <span>RK-20260601-002</span><span style="color:#E6A23C;">处理中</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bottom-nav">
+            <div class="bottom-nav-item active">
+              <div class="nav-icon">🏠</div>
+              <div class="nav-label">首页</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">📦</div>
+              <div class="nav-label">库存</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">📋</div>
+              <div class="nav-label">出入库</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">📊</div>
+              <div class="nav-label">报表</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">👤</div>
+              <div class="nav-label">我的</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 库存页 -->
+    <div class="phone-wrap">
+      <div class="phone-label">库存页</div>
+      <div class="phone">
+        <div class="phone-screen" style="display:flex;flex-direction:column;">
+          <div class="statusbar">
+            <span>9:41</span><span>📶 🔋</span>
+          </div>
+          <div class="b2-header">库存管理</div>
+          <div class="main-content" style="flex:1;">
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+              <div style="flex:1;background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13px;color:#aaa;">🔍 搜索商品</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+              <span style="background:#409EFF;color:#fff;border-radius:4px;padding:4px 10px;font-size:12px;">全部</span>
+              <span style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:4px 10px;font-size:12px;color:#666;">预警</span>
+              <span style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:4px 10px;font-size:12px;color:#666;">盘点</span>
+            </div>
+            <div class="card" style="margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-size:14px;font-weight:500;color:#333;">苹果 iPhone 15</div>
+                  <div style="font-size:12px;color:#aaa;margin-top:2px;">仓库A · SKU-001</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:18px;font-weight:bold;color:#409EFF;">128</div>
+                  <div style="font-size:11px;color:#aaa;">件</div>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-size:14px;font-weight:500;color:#333;">华为 Mate 60</div>
+                  <div style="font-size:12px;color:#aaa;margin-top:2px;">仓库B · SKU-002</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:18px;font-weight:bold;color:#F56C6C;">5</div>
+                  <div style="font-size:11px;color:#F56C6C;">⚠ 预警</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bottom-nav">
+            <div class="bottom-nav-item">
+              <div class="nav-icon">🏠</div>
+              <div class="nav-label">首页</div>
+            </div>
+            <div class="bottom-nav-item active">
+              <div class="nav-icon">📦</div>
+              <div class="nav-label">库存</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">📋</div>
+              <div class="nav-label">出入库</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">📊</div>
+              <div class="nav-label">报表</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">👤</div>
+              <div class="nav-label">我的</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="desc-box">
+    <h3>方案二：底部导航栏</h3>
+    <ul>
+      <li class="pro">✅ 移动端原生体验，类似微信/淘宝</li>
+      <li class="pro">✅ 常用功能一键直达，操作效率高</li>
+      <li class="pro">✅ 桌面端保持原有侧边栏不变</li>
+      <li class="con">❌ 底部只能放 4-5 项，次级功能需折叠</li>
+      <li class="con">❌ 开发量中等，3-4 天完成</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===== 方案三 ===== -->
+<div class="preview-section" id="tab3">
+  <div class="phones-row">
+
+    <!-- 卡片首页 -->
+    <div class="phone-wrap">
+      <div class="phone-label">卡片首页</div>
+      <div class="phone">
+        <div class="phone-screen" style="display:flex;flex-direction:column;">
+          <div class="statusbar">
+            <span>9:41</span><span>📶 🔋</span>
+          </div>
+          <div class="b2-header" style="background:#409EFF;color:#fff;border-bottom:none;">
+            仓库管理系统
+            <span style="margin-left:auto;font-size:13px;opacity:.8;">管理员</span>
+          </div>
+          <div class="main-content" style="flex:1;">
+            <div class="welcome-banner">
+              <h3>👋 你好，管理员</h3>
+              <p>今日入库 12 单 · 出库 8 单 · 预警 3 条</p>
+            </div>
+            <div class="app-grid">
+              <div class="app-card">
+                <div class="app-card-icon blue">📥</div>
+                <div class="app-card-label">入库管理</div>
+              </div>
+              <div class="app-card">
+                <div class="app-card-icon green">📤</div>
+                <div class="app-card-label">出库管理</div>
+              </div>
+              <div class="app-card">
+                <div class="app-card-icon orange">📋</div>
+                <div class="app-card-label">库存查询</div>
+              </div>
+              <div class="app-card">
+                <div class="app-card-icon red">⚠️</div>
+                <div class="app-card-label">库存预警</div>
+              </div>
+              <div class="app-card">
+                <div class="app-card-icon teal">🔄</div>
+                <div class="app-card-label">库存盘点</div>
+              </div>
+              <div class="app-card">
+                <div class="app-card-icon purple">📊</div>
+                <div class="app-card-label">报表统计</div>
+              </div>
+            </div>
+          </div>
+          <div class="bottom-nav">
+            <div class="bottom-nav-item active">
+              <div class="nav-icon">🏠</div>
+              <div class="nav-label">首页</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">📦</div>
+              <div class="nav-label">库存</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">📊</div>
+              <div class="nav-label">报表</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">👤</div>
+              <div class="nav-label">我的</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 功能页 -->
+    <div class="phone-wrap">
+      <div class="phone-label">入库列表页</div>
+      <div class="phone">
+        <div class="phone-screen" style="display:flex;flex-direction:column;">
+          <div class="statusbar">
+            <span>9:41</span><span>📶 🔋</span>
+          </div>
+          <div class="b2-header" style="background:#409EFF;color:#fff;border-bottom:none;">
+            <span style="cursor:pointer;margin-right:8px;">←</span> 入库管理
+            <span style="margin-left:auto;color:#fff;font-size:20px;line-height:1;cursor:pointer;">＋</span>
+          </div>
+          <div class="main-content" style="flex:1;">
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+              <div style="flex:1;background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:8px 12px;font-size:13px;color:#aaa;">🔍 搜索入库单</div>
+            </div>
+            <div class="card" style="margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:13px;font-weight:500;color:#333;">RK-20260601-001</span>
+                <span style="font-size:12px;color:#fff;background:#67C23A;border-radius:4px;padding:2px 8px;">已完成</span>
+              </div>
+              <div style="font-size:12px;color:#888;">供应商：华为科技 · 5种商品</div>
+              <div style="font-size:12px;color:#aaa;margin-top:4px;">2026-06-01 09:30</div>
+            </div>
+            <div class="card" style="margin-bottom:8px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:13px;font-weight:500;color:#333;">RK-20260601-002</span>
+                <span style="font-size:12px;color:#fff;background:#E6A23C;border-radius:4px;padding:2px 8px;">处理中</span>
+              </div>
+              <div style="font-size:12px;color:#888;">供应商：苹果公司 · 3种商品</div>
+              <div style="font-size:12px;color:#aaa;margin-top:4px;">2026-06-01 10:15</div>
+            </div>
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:13px;font-weight:500;color:#333;">RK-20260531-009</span>
+                <span style="font-size:12px;color:#fff;background:#67C23A;border-radius:4px;padding:2px 8px;">已完成</span>
+              </div>
+              <div style="font-size:12px;color:#888;">供应商：小米集团 · 8种商品</div>
+              <div style="font-size:12px;color:#aaa;margin-top:4px;">2026-05-31 16:42</div>
+            </div>
+          </div>
+          <div class="bottom-nav">
+            <div class="bottom-nav-item active">
+              <div class="nav-icon">🏠</div>
+              <div class="nav-label">首页</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">📦</div>
+              <div class="nav-label">库存</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">📊</div>
+              <div class="nav-label">报表</div>
+            </div>
+            <div class="bottom-nav-item">
+              <div class="nav-icon">👤</div>
+              <div class="nav-label">我的</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="desc-box">
+    <h3>方案三：卡片首页 + 底部导航（推荐）</h3>
+    <ul>
+      <li class="pro">✅ 移动端体验最佳，视觉最现代</li>
+      <li class="pro">✅ 功能入口清晰，一眼看全所有模块</li>
+      <li class="pro">✅ 欢迎横幅展示今日概览，实用</li>
+      <li class="con">❌ 改动最大，需要重构首页</li>
+      <li class="con">❌ 开发量最多，约 5-7 天</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+function showTab(n) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===n-1));
+  document.querySelectorAll('.preview-section').forEach((s,i) => s.classList.toggle('active', i===n-1));
+}
+</script>
+</body>
+</html>

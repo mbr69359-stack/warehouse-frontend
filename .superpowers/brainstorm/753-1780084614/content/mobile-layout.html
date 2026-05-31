@@ -1,0 +1,161 @@
+<h2>手机端布局方案</h2>
+<p class="subtitle">选一个你觉得最顺手的风格</p>
+
+<div class="cards">
+
+  <!-- 方案A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f5f7fa;padding:16px;display:flex;justify-content:center;">
+      <div style="width:160px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.1);font-size:11px;">
+        <!-- 顶部导航 -->
+        <div style="background:#409EFF;color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:13px;font-weight:bold;">☰</div>
+          <div style="font-size:12px;font-weight:bold;">仓库管理系统</div>
+          <div style="font-size:11px;">👤</div>
+        </div>
+        <!-- 内容区 -->
+        <div style="padding:10px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+            <div style="background:#ecf5ff;border-radius:6px;padding:8px;text-align:center;">
+              <div style="font-size:14px;font-weight:bold;color:#409EFF;">0</div>
+              <div style="font-size:9px;color:#666;">入库单</div>
+            </div>
+            <div style="background:#f0f9eb;border-radius:6px;padding:8px;text-align:center;">
+              <div style="font-size:14px;font-weight:bold;color:#67C23A;">0</div>
+              <div style="font-size:9px;color:#666;">出库单</div>
+            </div>
+            <div style="background:#fdf6ec;border-radius:6px;padding:8px;text-align:center;">
+              <div style="font-size:14px;font-weight:bold;color:#E6A23C;">0</div>
+              <div style="font-size:9px;color:#666;">库存预警</div>
+            </div>
+            <div style="background:#fef0f0;border-radius:6px;padding:8px;text-align:center;">
+              <div style="font-size:14px;font-weight:bold;color:#F56C6C;">0</div>
+              <div style="font-size:9px;color:#666;">库存种类</div>
+            </div>
+          </div>
+          <div style="font-size:9px;color:#999;text-align:center;">← 左滑打开侧边栏菜单</div>
+        </div>
+        <!-- 抽屉示意 -->
+        <div style="margin:0 10px 10px;background:#f5f7fa;border-radius:6px;padding:6px;">
+          <div style="font-size:9px;color:#409EFF;font-weight:bold;margin-bottom:4px;">☰ 菜单</div>
+          <div style="font-size:9px;color:#606266;line-height:1.8;">📊 仪表盘<br>📦 商品管理<br>🏭 入库管理<br>🚚 出库管理</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · 汉堡菜单</h3>
+      <p>顶部导航栏 + 左滑抽屉菜单。结构清晰，适合功能多的管理后台。</p>
+    </div>
+  </div>
+
+  <!-- 方案B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f5f7fa;padding:16px;display:flex;justify-content:center;">
+      <div style="width:160px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.1);font-size:11px;">
+        <!-- 顶部 -->
+        <div style="background:#409EFF;color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:12px;font-weight:bold;">仓库管理系统</div>
+          <div style="font-size:11px;">👤</div>
+        </div>
+        <!-- 内容区 -->
+        <div style="padding:10px;min-height:120px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div style="background:#ecf5ff;border-radius:6px;padding:8px;text-align:center;">
+              <div style="font-size:14px;font-weight:bold;color:#409EFF;">0</div>
+              <div style="font-size:9px;color:#666;">入库单</div>
+            </div>
+            <div style="background:#f0f9eb;border-radius:6px;padding:8px;text-align:center;">
+              <div style="font-size:14px;font-weight:bold;color:#67C23A;">0</div>
+              <div style="font-size:9px;color:#666;">出库单</div>
+            </div>
+          </div>
+          <div style="font-size:9px;color:#999;text-align:center;margin-top:8px;">内容区</div>
+        </div>
+        <!-- 底部 Tab -->
+        <div style="display:flex;border-top:1px solid #eee;background:#fff;">
+          <div style="flex:1;padding:6px 2px;text-align:center;border-right:1px solid #eee;">
+            <div style="font-size:14px;">🏠</div>
+            <div style="font-size:8px;color:#409EFF;font-weight:bold;">首页</div>
+          </div>
+          <div style="flex:1;padding:6px 2px;text-align:center;border-right:1px solid #eee;">
+            <div style="font-size:14px;">📦</div>
+            <div style="font-size:8px;color:#999;">入库</div>
+          </div>
+          <div style="flex:1;padding:6px 2px;text-align:center;border-right:1px solid #eee;">
+            <div style="font-size:14px;">🚚</div>
+            <div style="font-size:8px;color:#999;">出库</div>
+          </div>
+          <div style="flex:1;padding:6px 2px;text-align:center;">
+            <div style="font-size:14px;">⋯</div>
+            <div style="font-size:8px;color:#999;">更多</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · 底部导航栏</h3>
+      <p>常用4个功能放底部，其余放"更多"。拇指操作方便，App感强。</p>
+    </div>
+  </div>
+
+  <!-- 方案C -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f5f7fa;padding:16px;display:flex;justify-content:center;">
+      <div style="width:160px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.1);font-size:11px;">
+        <!-- 顶部 -->
+        <div style="background:#409EFF;color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:13px;">☰</div>
+          <div style="font-size:12px;font-weight:bold;">仓库管理系统</div>
+          <div style="font-size:11px;">👤</div>
+        </div>
+        <!-- 快捷功能格 -->
+        <div style="padding:8px;background:#f5f7fa;">
+          <div style="font-size:9px;color:#666;margin-bottom:4px;">快捷操作</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">
+            <div style="background:#fff;border-radius:6px;padding:5px;text-align:center;">
+              <div style="font-size:13px;">📥</div>
+              <div style="font-size:8px;color:#333;">入库</div>
+            </div>
+            <div style="background:#fff;border-radius:6px;padding:5px;text-align:center;">
+              <div style="font-size:13px;">📤</div>
+              <div style="font-size:8px;color:#333;">出库</div>
+            </div>
+            <div style="background:#fff;border-radius:6px;padding:5px;text-align:center;">
+              <div style="font-size:13px;">🔍</div>
+              <div style="font-size:8px;color:#333;">查库存</div>
+            </div>
+          </div>
+        </div>
+        <!-- 内容 -->
+        <div style="padding:6px 8px 8px;">
+          <div style="font-size:9px;color:#666;margin-bottom:4px;">最近动态</div>
+          <div style="background:#f5f7fa;border-radius:4px;padding:5px;font-size:9px;color:#999;">暂无数据</div>
+        </div>
+        <!-- 底部Tab -->
+        <div style="display:flex;border-top:1px solid #eee;background:#fff;">
+          <div style="flex:1;padding:5px 2px;text-align:center;border-right:1px solid #eee;">
+            <div style="font-size:12px;">🏠</div>
+            <div style="font-size:8px;color:#409EFF;font-weight:bold;">首页</div>
+          </div>
+          <div style="flex:1;padding:5px 2px;text-align:center;border-right:1px solid #eee;">
+            <div style="font-size:12px;">📋</div>
+            <div style="font-size:8px;color:#999;">订单</div>
+          </div>
+          <div style="flex:1;padding:5px 2px;text-align:center;border-right:1px solid #eee;">
+            <div style="font-size:12px;">📦</div>
+            <div style="font-size:8px;color:#999;">库存</div>
+          </div>
+          <div style="flex:1;padding:5px 2px;text-align:center;">
+            <div style="font-size:12px;">⋯</div>
+            <div style="font-size:8px;color:#999;">更多</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C · 首页 + 底部导航</h3>
+      <p>首页放快捷入口和最近动态，底部固定主导航。最接近原生App体验。</p>
+    </div>
+  </div>
+
+</div>
