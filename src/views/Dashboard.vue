@@ -121,40 +121,53 @@
           <span class="m-section-title">最新任务</span>
           <span class="m-section-link" @click="$router.push('/in-orders')">查看全部</span>
         </div>
-        <div class="m-task-list">
-          <div class="m-task-card" @click="$router.push('/in-orders')">
-            <div class="m-task-icon" style="background:#e6eeff;">
-              <span class="material-symbols-outlined" style="color:#00288e;">input</span>
+        <div class="db-task-list">
+
+          <div class="db-task-item" @click="$router.push('/in-orders')">
+            <div class="db-task-bar" style="background:#00288e;"></div>
+            <div class="db-task-body">
+              <div class="db-task-top">
+                <span class="db-task-badge" style="background:#e6eeff;color:#00288e;">入库</span>
+                <span class="db-task-title">入库任务</span>
+              </div>
+              <div class="db-task-desc">点击查看待处理入库单</div>
             </div>
-            <div class="m-task-content">
-              <div class="m-task-title">入库任务</div>
-              <div class="m-task-meta">共 {{ cards[0].value }} 条待处理</div>
+            <div class="db-task-right">
+              <div class="db-task-count">{{ cards[0].value }}</div>
+              <span class="material-symbols-outlined" style="color:#c4c5d5;font-size:20px;">chevron_right</span>
             </div>
-            <span class="m-task-badge pending">待确认</span>
-            <span class="material-symbols-outlined" style="color:#c4c5d5;font-size:18px;">chevron_right</span>
           </div>
-          <div class="m-task-card" @click="$router.push('/out-orders')">
-            <div class="m-task-icon" style="background:#fff3e0;">
-              <span class="material-symbols-outlined" style="color:#855300;">output</span>
+
+          <div class="db-task-item" @click="$router.push('/out-orders')">
+            <div class="db-task-bar" style="background:#855300;"></div>
+            <div class="db-task-body">
+              <div class="db-task-top">
+                <span class="db-task-badge" style="background:#ffddb8;color:#653e00;">出库</span>
+                <span class="db-task-title">出库任务</span>
+              </div>
+              <div class="db-task-desc">点击查看待处理出库单</div>
             </div>
-            <div class="m-task-content">
-              <div class="m-task-title">出库任务</div>
-              <div class="m-task-meta">共 {{ cards[1].value }} 条待处理</div>
+            <div class="db-task-right">
+              <div class="db-task-count">{{ cards[1].value }}</div>
+              <span class="material-symbols-outlined" style="color:#c4c5d5;font-size:20px;">chevron_right</span>
             </div>
-            <span class="m-task-badge progress">进行中</span>
-            <span class="material-symbols-outlined" style="color:#c4c5d5;font-size:18px;">chevron_right</span>
           </div>
-          <div v-if="cards[2].value > 0" class="m-task-card" @click="$router.push('/inventory/alerts')">
-            <div class="m-task-icon" style="background:#ffdad6;">
-              <span class="material-symbols-outlined" style="color:#ba1a1a;">warning</span>
+
+          <div class="db-task-item" @click="$router.push('/inventory')">
+            <div class="db-task-bar" style="background:#3755c3;"></div>
+            <div class="db-task-body">
+              <div class="db-task-top">
+                <span class="db-task-badge" style="background:#dde1ff;color:#173bab;">库存</span>
+                <span class="db-task-title">库存种类</span>
+              </div>
+              <div class="db-task-desc">点击查看全部库存</div>
             </div>
-            <div class="m-task-content">
-              <div class="m-task-title">库存预警</div>
-              <div class="m-task-meta">{{ cards[2].value }} 件商品低于预警值</div>
+            <div class="db-task-right">
+              <div class="db-task-count">{{ cards[3].value }}</div>
+              <span class="material-symbols-outlined" style="color:#c4c5d5;font-size:20px;">chevron_right</span>
             </div>
-            <span class="m-task-badge" style="background:#ffdad6;color:#93000a;">预警</span>
-            <span class="material-symbols-outlined" style="color:#c4c5d5;font-size:18px;">chevron_right</span>
           </div>
+
         </div>
       </section>
 
@@ -241,5 +254,69 @@ export default {
 .m-quick-icon2.primary { background: #00288e; color: #fff; }
 .m-quick-label {
   font-size: 14px; font-weight: 600; color: #121c2a;
+}
+
+/* 最新任务卡片 */
+.db-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.db-task-item {
+  background: #fff;
+  border: 1px solid #c4c5d5;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: box-shadow .15s, transform .1s;
+}
+.db-task-item:active { transform: scale(.98); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.db-task-bar {
+  width: 5px;
+  flex-shrink: 0;
+}
+.db-task-body {
+  flex: 1;
+  padding: 14px 12px;
+  min-width: 0;
+}
+.db-task-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.db-task-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.db-task-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #121c2a;
+}
+.db-task-desc {
+  font-size: 12px;
+  color: #757684;
+}
+.db-task-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 14px 14px 8px;
+  gap: 2px;
+}
+.db-task-count {
+  font-size: 22px;
+  font-weight: 700;
+  color: #00288e;
+  line-height: 1;
 }
 </style>
