@@ -1,6 +1,12 @@
 <template>
   <div style="width:100%;display:flex;align-items:center;justify-content:space-between;">
-    <i class="el-icon-s-fold" style="font-size:20px;cursor:pointer;color:#606266;" @click="$emit('toggle')"></i>
+    <i
+      v-if="!isMobile"
+      class="el-icon-s-fold"
+      style="font-size:20px;cursor:pointer;color:#606266;"
+      @click="$emit('toggle')"
+    ></i>
+    <span v-if="isMobile" style="font-size:15px;font-weight:bold;color:#333;">仓库管理系统</span>
     <el-dropdown @command="handleCommand">
       <span style="cursor:pointer;color:#606266;">
         <i class="el-icon-user-solid"></i> {{ username }}
@@ -17,6 +23,9 @@
 import { mapGetters } from 'vuex'
 import { logout } from '../../api/auth'
 export default {
+  props: {
+    isMobile: { type: Boolean, default: false }
+  },
   computed: { ...mapGetters(['username']) },
   methods: {
     async handleCommand(cmd) {
