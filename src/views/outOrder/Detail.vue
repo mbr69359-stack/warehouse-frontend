@@ -14,22 +14,48 @@
       <el-descriptions-item label="确认时间">{{ order.confirmTime || '—' }}</el-descriptions-item>
       <el-descriptions-item label="备注" :span="2">{{ order.remark || '—' }}</el-descriptions-item>
     </el-descriptions>
+
     <el-table :data="items" border stripe>
       <el-table-column prop="productId" label="商品ID" width="100" />
-      <el-table-column prop="qty" label="数量" width="100" />
+      <el-table-column prop="qty" label="计划数量" width="110" />
+      <el-table-column prop="actualQty" label="实际数量" width="110" />
       <el-table-column label="单价" width="100"><template slot-scope="{row}">¥{{ row.price }}</template></el-table-column>
-      <el-table-column label="小计"><template slot-scope="{row}">¥{{ (row.qty * row.price).toFixed(2) }}</template></el-table-column>
+      <el-table-column label="小计"><template slot-scope="{row}">¥{{ ((row.actualQty || row.qty) * row.price).toFixed(2) }}</template></el-table-column>
     </el-table>
+
     <div style="margin-top:16px;" v-if="order.status==='DRAFT'">
-      <el-button type="danger" @click="handleConfirm">确认出库</el-button>
+      <el-button type="danger" @click="openConfirmDialog">确认出库</el-button>
     </div>
+
+    <!-- 确认出库弹窗 -->
+    <el-dialog title="填写实际出库数量" :visible.sync="dialogVisible" width="560px" :close-on-click-modal="false">
+      <el-table :data="confirmItems" border>
+        <el-table-column prop="productId" label="商品ID" width="100" />
+        <el-table-column prop="planQty" label="计划数量" width="110" />
+        <el-table-column label="实际出库数量">
+          <template slot-scope="{row}">
+            <el-input-number v-model="row.actualQty" :min="0" size="small" style="width:140px;" />
+          </template>
+        </el-table-column>
+      </el-table>
+      <div slot="footer">
+        <el-button @click="dialogVisible=false">取消</el-button>
+        <el-button type="danger" :loading="confirming" @click="submitConfirm">确认实际数量</el-button>
+      </div>
+    </el-dialog>
   </el-card>
 </template>
 
 <script>
 import { getOutOrders, confirmOutOrder, getOutOrderItems } from '../../api/outOrder'
 export default {
-  data() { return { order: {}, items: [], loading: false } },
+  data() {
+    return {
+      order: {}, items: [], loading: false,
+      dialogVisible: false, confirming: false,
+      confirmItems: []
+    }
+  },
   created() { this.loadData() },
   methods: {
     async loadData() {
@@ -42,10 +68,24 @@ export default {
       this.order = (listRes.data.records || []).find(o => String(o.id) === String(id)) || {}
       this.items = itemRes.data || []
     },
-    async handleConfirm() {
-      await this.$confirm('确认出库后库存将扣减，是否继续？', '提示', { type: 'warning' })
-      await confirmOutOrder(this.$route.params.id)
-      this.$message.success('出库确认成功'); this.loadData()
+    openConfirmDialog() {
+      this.confirmItems = this.items.map(i => ({
+        id: i.id, productId: i.productId,
+        planQty: i.qty, actualQty: i.qty || 0
+      }))
+      this.dialogVisible = true
+    },
+    async submitConfirm() {
+      this.confirming = true
+      try {
+        const payload = this.confirmItems.map(i => ({ itemId: i.id, actualQty: i.actualQty || 0 }))
+        await confirmOutOrder(this.$route.params.id, payload)
+        this.$message.success('出库确认成功')
+        this.dialogVisible = false
+        this.loadData()
+      } finally {
+        this.confirming = false
+      }
     }
   }
 }
