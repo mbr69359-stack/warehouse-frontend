@@ -24,7 +24,7 @@
         <el-table-column label="操作" width="260">
           <template slot-scope="{row}">
             <el-button size="mini" @click="$router.push('/in-orders/'+row.id)">详情</el-button>
-            <el-button size="mini" type="success" v-if="row.status==='DRAFT'" @click="openConfirmDialog(row.id)">确认入库</el-button>
+            <el-button size="mini" type="success" v-if="row.status==='DRAFT'" @click="openConfirmDialog(row.id)">确认实际数量</el-button>
             <el-button size="mini" type="danger" @click="handleDelete(row.id, row.status)">删除</el-button>
           </template>
         </el-table-column>
@@ -78,7 +78,7 @@
               <button v-if="row.status==='DRAFT'" class="m-action-btn primary"
                 @click.stop="openConfirmDialog(row.id)">
                 <span class="material-symbols-outlined" style="font-size:15px;">play_arrow</span>
-                确认入库
+                确认实际数量
               </button>
               <button v-else class="m-action-btn outline"
                 @click.stop="$router.push('/in-orders/'+row.id)">
