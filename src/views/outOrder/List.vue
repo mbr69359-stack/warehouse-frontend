@@ -21,10 +21,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" />
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" width="260">
           <template slot-scope="{row}">
             <el-button size="mini" @click="$router.push('/out-orders/'+row.id)">详情</el-button>
             <el-button size="mini" type="danger" v-if="row.status==='DRAFT'" @click="handleConfirm(row.id)">确认出库</el-button>
+            <el-button size="mini" type="danger" @click="handleDelete(row.id, row.status)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -95,16 +96,22 @@
           </div>
           <div class="m-order-footer">
             <span class="m-order-time">{{ row.createTime }}</span>
-            <button v-if="row.status==='DRAFT'" class="m-action-btn danger"
-              @click.stop="handleConfirm(row.id)">
-              <span class="material-symbols-outlined" style="font-size:15px;">output</span>
-              确认出库
-            </button>
-            <button v-else class="m-action-btn outline"
-              @click.stop="$router.push('/out-orders/'+row.id)">
-              <span class="material-symbols-outlined" style="font-size:15px;">visibility</span>
-              查看详情
-            </button>
+            <div style="display:flex;gap:6px;">
+              <button v-if="row.status==='DRAFT'" class="m-action-btn danger"
+                @click.stop="handleConfirm(row.id)">
+                <span class="material-symbols-outlined" style="font-size:15px;">output</span>
+                确认出库
+              </button>
+              <button v-else class="m-action-btn outline"
+                @click.stop="$router.push('/out-orders/'+row.id)">
+                <span class="material-symbols-outlined" style="font-size:15px;">visibility</span>
+                查看详情
+              </button>
+              <button class="m-action-btn danger" @click.stop="handleDelete(row.id, row.status)">
+                <span class="material-symbols-outlined" style="font-size:15px;">delete</span>
+                删除
+              </button>
+            </div>
           </div>
         </div>
 
@@ -135,7 +142,7 @@
 </template>
 
 <script>
-import { getOutOrders, confirmOutOrder } from '../../api/outOrder'
+import { getOutOrders, confirmOutOrder, deleteOutOrder } from '../../api/outOrder'
 import mobileMixin from '../../mixins/mobile'
 export default {
   mixins: [mobileMixin],
@@ -176,6 +183,15 @@ export default {
       await this.$confirm('确认出库后库存将扣减，是否继续？', '提示', { type: 'warning' })
       await confirmOutOrder(id)
       this.$message.success('出库确认成功')
+      this.loadData()
+    },
+    async handleDelete(id, status) {
+      const msg = status === 'CONFIRMED'
+        ? '删除已确认出库单将回补对应库存，是否继续？'
+        : '确认删除该草稿出库单？'
+      await this.$confirm(msg, '警告', { type: 'warning' })
+      await deleteOutOrder(id)
+      this.$message.success('删除成功')
       this.loadData()
     }
   }
