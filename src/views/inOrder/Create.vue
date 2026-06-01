@@ -33,9 +33,6 @@
       <el-table-column label="计划数量" width="120">
         <template slot-scope="{row}"><el-input-number v-model="row.planQty" :min="0" size="small" style="width:100%;" /></template>
       </el-table-column>
-      <el-table-column label="实际数量" width="120">
-        <template slot-scope="{row}"><el-input-number v-model="row.actualQty" :min="0" size="small" style="width:100%;" /></template>
-      </el-table-column>
       <el-table-column label="单价" width="130">
         <template slot-scope="{row}"><el-input-number v-model="row.price" :min="0" :precision="2" size="small" style="width:100%;" /></template>
       </el-table-column>
@@ -69,7 +66,7 @@ export default {
     getProducts({ current: 1, size: 200 }).then(r => { this.products = r.data.records })
   },
   methods: {
-    addItem() { this.form.items.push({ productId: null, planQty: 0, actualQty: 0, price: 0 }) },
+    addItem() { this.form.items.push({ productId: null, planQty: 0, price: 0 }) },
     handleSave() {
       this.$refs.form.validate(async valid => {
         if (!valid) return

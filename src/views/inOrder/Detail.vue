@@ -14,15 +14,28 @@
       <el-descriptions-item label="确认时间">{{ order.confirmTime || '—' }}</el-descriptions-item>
       <el-descriptions-item label="备注" :span="2">{{ order.remark || '—' }}</el-descriptions-item>
     </el-descriptions>
+
     <el-table :data="items" border stripe>
       <el-table-column prop="productId" label="商品ID" width="100" />
       <el-table-column prop="planQty" label="计划数量" width="110" />
-      <el-table-column prop="actualQty" label="实际数量" width="110" />
+      <el-table-column label="实际数量" width="150">
+        <template slot-scope="{row}">
+          <el-input-number
+            v-if="order.status==='DRAFT'"
+            v-model="row.actualQty"
+            :min="0"
+            size="small"
+            style="width:120px;"
+          />
+          <span v-else>{{ row.actualQty }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="单价" width="100"><template slot-scope="{row}">¥{{ row.price }}</template></el-table-column>
       <el-table-column label="小计"><template slot-scope="{row}">¥{{ (row.actualQty * row.price).toFixed(2) }}</template></el-table-column>
     </el-table>
+
     <div style="margin-top:16px;" v-if="order.status==='DRAFT'">
-      <el-button type="success" @click="handleConfirm">确认入库</el-button>
+      <el-button type="success" :loading="confirming" @click="handleConfirm">确认入库</el-button>
     </div>
   </el-card>
 </template>
@@ -30,7 +43,7 @@
 <script>
 import { getInOrders, confirmInOrder, getInOrderItems } from '../../api/inOrder'
 export default {
-  data() { return { order: {}, items: [], loading: false } },
+  data() { return { order: {}, items: [], loading: false, confirming: false } },
   created() { this.loadData() },
   methods: {
     async loadData() {
@@ -41,12 +54,19 @@ export default {
         getInOrderItems(id)
       ]).finally(() => { this.loading = false })
       this.order = (listRes.data.records || []).find(o => String(o.id) === String(id)) || {}
-      this.items = itemRes.data || []
+      this.items = (itemRes.data || []).map(i => ({ ...i, actualQty: i.actualQty || 0 }))
     },
     async handleConfirm() {
       await this.$confirm('确认入库后库存将增加，是否继续？', '提示', { type: 'warning' })
-      await confirmInOrder(this.$route.params.id)
-      this.$message.success('入库确认成功'); this.loadData()
+      this.confirming = true
+      try {
+        const payload = this.items.map(i => ({ itemId: i.id, actualQty: i.actualQty || 0 }))
+        await confirmInOrder(this.$route.params.id, payload)
+        this.$message.success('入库确认成功')
+        this.loadData()
+      } finally {
+        this.confirming = false
+      }
     }
   }
 }
