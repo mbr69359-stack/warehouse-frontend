@@ -24,7 +24,7 @@
         <el-table-column label="操作" width="260">
           <template slot-scope="{row}">
             <el-button size="mini" @click="$router.push('/in-orders/'+row.id)">详情</el-button>
-            <el-button size="mini" type="success" v-if="row.status==='DRAFT'" @click="handleConfirm(row.id)">确认入库</el-button>
+            <el-button size="mini" type="success" v-if="row.status==='DRAFT'" @click="openConfirmDialog(row.id)">确认入库</el-button>
             <el-button size="mini" type="danger" @click="handleDelete(row.id, row.status)">删除</el-button>
           </template>
         </el-table-column>
@@ -76,7 +76,7 @@
             <span class="m-order-time">{{ row.createTime }}</span>
             <div style="display:flex;gap:6px;">
               <button v-if="row.status==='DRAFT'" class="m-action-btn primary"
-                @click.stop="handleConfirm(row.id)">
+                @click.stop="openConfirmDialog(row.id)">
                 <span class="material-symbols-outlined" style="font-size:15px;">play_arrow</span>
                 确认入库
               </button>
@@ -116,11 +116,30 @@
       </button>
     </div>
 
+    <!-- 确认入库弹窗 -->
+    <el-dialog title="填写实际入库数量" :visible.sync="dialogVisible" width="560px" :close-on-click-modal="false">
+      <div v-loading="dialogLoading">
+        <el-table :data="confirmItems" border>
+          <el-table-column prop="productId" label="商品ID" width="100" />
+          <el-table-column prop="planQty" label="计划数量" width="110" />
+          <el-table-column label="实际入库数量">
+            <template slot-scope="{row}">
+              <el-input-number v-model="row.actualQty" :min="0" size="small" style="width:140px;" />
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div slot="footer">
+        <el-button @click="dialogVisible=false">取消</el-button>
+        <el-button type="success" :loading="confirming" @click="submitConfirm">确认实际数量</el-button>
+      </div>
+    </el-dialog>
+
   </div>
 </template>
 
 <script>
-import { getInOrders, confirmInOrder, deleteInOrder } from '../../api/inOrder'
+import { getInOrders, confirmInOrder, deleteInOrder, getInOrderItems } from '../../api/inOrder'
 import mobileMixin from '../../mixins/mobile'
 export default {
   mixins: [mobileMixin],
@@ -133,7 +152,9 @@ export default {
         { label: '全部',   value: null },
         { label: '待收货', value: 'DRAFT' },
         { label: '已确认', value: 'CONFIRMED' }
-      ]
+      ],
+      dialogVisible: false, dialogLoading: false, confirming: false,
+      currentOrderId: null, confirmItems: []
     }
   },
   computed: {
@@ -154,11 +175,31 @@ export default {
     switchTab(val) { this.query.status = val; this.query.current = 1; this.loadData() },
     prevPage() { this.query.current--; this.loadData() },
     nextPage() { this.query.current++; this.loadData() },
-    async handleConfirm(id) {
-      await this.$confirm('确认入库后库存将增加，是否继续？', '提示', { type: 'warning' })
-      await confirmInOrder(id)
-      this.$message.success('入库确认成功')
-      this.loadData()
+    async openConfirmDialog(id) {
+      this.currentOrderId = id
+      this.dialogVisible = true
+      this.dialogLoading = true
+      try {
+        const r = await getInOrderItems(id)
+        this.confirmItems = (r.data || []).map(i => ({
+          id: i.id, productId: i.productId,
+          planQty: i.planQty, actualQty: i.planQty || 0
+        }))
+      } finally {
+        this.dialogLoading = false
+      }
+    },
+    async submitConfirm() {
+      this.confirming = true
+      try {
+        const payload = this.confirmItems.map(i => ({ itemId: i.id, actualQty: i.actualQty || 0 }))
+        await confirmInOrder(this.currentOrderId, payload)
+        this.$message.success('入库确认成功')
+        this.dialogVisible = false
+        this.loadData()
+      } finally {
+        this.confirming = false
+      }
     },
     async handleDelete(id, status) {
       const msg = status === 'CONFIRMED'
