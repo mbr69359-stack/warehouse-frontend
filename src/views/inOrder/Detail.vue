@@ -41,7 +41,7 @@
       </el-table>
       <div slot="footer">
         <el-button @click="dialogVisible=false">取消</el-button>
-        <el-button type="success" :loading="confirming" @click="submitConfirm">确认入库</el-button>
+        <el-button type="success" :loading="confirming" @click="submitConfirm">确认实际数量</el-button>
       </div>
     </el-dialog>
   </el-card>
