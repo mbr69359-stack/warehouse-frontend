@@ -4,11 +4,55 @@
     <!-- ── 桌面端 ── -->
     <template v-if="!isMobile">
       <el-row :gutter="20" style="margin-bottom:20px;">
-        <el-col :span="6" v-for="c in cards" :key="c.label">
-          <el-card shadow="hover" style="text-align:center;cursor:pointer;" @click.native="$router.push(c.route)">
-            <i :class="c.icon" :style="{fontSize:'36px',color:c.color}"></i>
-            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ c.value }}</div>
-            <div style="color:#909399;">{{ c.label }}</div>
+        <!-- 库存总数（可展开图表） -->
+        <el-col :span="6">
+          <el-card shadow="hover" :class="['dash-card', activeChart === 'total' ? 'dash-card--active' : '']"
+            style="text-align:center;cursor:pointer;" @click.native="toggleChart('total')">
+            <i class="el-icon-s-data" style="fontSize:36px;color:#409EFF"></i>
+            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ statsData.totalQty }}</div>
+            <div style="color:#909399;">库存总数</div>
+          </el-card>
+        </el-col>
+        <!-- 最大仓库（可展开图表） -->
+        <el-col :span="6">
+          <el-card shadow="hover" :class="['dash-card', activeChart === 'max' ? 'dash-card--active' : '']"
+            style="text-align:center;cursor:pointer;" @click.native="toggleChart('max')">
+            <i class="el-icon-office-building" style="fontSize:36px;color:#67C23A"></i>
+            <div style="font-size:18px;font-weight:bold;margin:8px 0;">
+              {{ statsData.maxWarehouseName || '-' }}
+              <span v-if="statsData.maxWarehouseQty" style="font-size:13px;color:#606266;font-weight:normal;">
+                {{ statsData.maxWarehouseQty }}件
+              </span>
+            </div>
+            <div style="color:#909399;">最大仓库</div>
+          </el-card>
+        </el-col>
+        <!-- 库存预警 -->
+        <el-col :span="6">
+          <el-card shadow="hover" class="dash-card" style="text-align:center;cursor:pointer;"
+            @click.native="$router.push('/inventory/alerts')">
+            <i class="el-icon-warning" style="fontSize:36px;color:#E6A23C"></i>
+            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ cards[2].value }}</div>
+            <div style="color:#909399;">库存预警</div>
+          </el-card>
+        </el-col>
+        <!-- 库存种类 -->
+        <el-col :span="6">
+          <el-card shadow="hover" class="dash-card" style="text-align:center;cursor:pointer;"
+            @click.native="$router.push('/inventory')">
+            <i class="el-icon-s-grid" style="fontSize:36px;color:#F56C6C"></i>
+            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ cards[3].value }}</div>
+            <div style="color:#909399;">库存种类</div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 展开图表区 -->
+      <el-row v-if="activeChart" style="margin-bottom:20px;">
+        <el-col :span="24">
+          <el-card>
+            <inventory-bar-chart :chart-data="chartData"
+              :title="activeChart === 'total' ? '全部库存分布' : statsData.maxWarehouseName + ' 库存分布'" />
           </el-card>
         </el-col>
       </el-row>
@@ -176,15 +220,20 @@
 </template>
 
 <script>
-import { getAlerts, getInventory } from '../api/inventory'
+import { getAlerts, getInventory, getInventoryStats, getInventoryChart } from '../api/inventory'
 import { getInOrders } from '../api/inOrder'
 import { getOutOrders } from '../api/outOrder'
 import mobileMixin from '../mixins/mobile'
+import InventoryBarChart from '../components/InventoryBarChart.vue'
 export default {
+  components: { InventoryBarChart },
   mixins: [mobileMixin],
   data() {
     return {
       alerts: [],
+      statsData: { totalQty: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseId: null },
+      activeChart: null,
+      chartData: [],
       cards: [
         { label: '入库单总数', value: 0, icon: 'el-icon-download', color: '#409EFF', route: '/in-orders' },
         { label: '出库单总数', value: 0, icon: 'el-icon-upload2',  color: '#67C23A', route: '/out-orders' },
@@ -194,22 +243,47 @@ export default {
     }
   },
   async created() {
-    const [alertRes, inRes, outRes, invRes] = await Promise.all([
+    const [alertRes, inRes, outRes, invRes, statsRes] = await Promise.all([
       getAlerts().catch(() => ({ data: [] })),
       getInOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
       getOutOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
-      getInventory({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } }))
+      getInventory({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
+      getInventoryStats().catch(() => ({ data: {} }))
     ])
-    this.alerts        = alertRes.data || []
+    this.alerts         = alertRes.data || []
     this.cards[0].value = inRes.data.total  || 0
     this.cards[1].value = outRes.data.total || 0
     this.cards[2].value = this.alerts.length
     this.cards[3].value = invRes.data.total || 0
+    const s = statsRes.data || {}
+    this.statsData = {
+      totalQty:         s.totalQty         || 0,
+      maxWarehouseName: s.maxWarehouseName  || '',
+      maxWarehouseQty:  s.maxWarehouseQty   || 0,
+      maxWarehouseId:   s.maxWarehouseId    || null
+    }
+  },
+  methods: {
+    async toggleChart(type) {
+      if (this.activeChart === type) {
+        this.activeChart = null
+        return
+      }
+      this.activeChart = type
+      const params = type === 'max'
+        ? { type: 'warehouse', warehouseId: this.statsData.maxWarehouseId }
+        : { type: 'all' }
+      const res = await getInventoryChart(params).catch(() => ({ data: [] }))
+      this.chartData = res.data || []
+    }
   }
 }
 </script>
 
 <style scoped>
+.dash-card { transition: box-shadow .2s, border-color .2s; }
+.dash-card--active { border: 1px solid #409EFF !important; box-shadow: 0 0 0 2px rgba(64,158,255,.2) !important; }
+
 .m-alert-banner {
   margin-top: 10px;
   background: #ffdad6;

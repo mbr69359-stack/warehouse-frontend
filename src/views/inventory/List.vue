@@ -3,13 +3,40 @@
 
     <!-- ── 桌面端 ── -->
     <el-card v-if="!isMobile">
-      <div style="margin-bottom:16px;display:flex;gap:12px;">
-        <el-select v-model="query.warehouseId" placeholder="全部仓库" clearable style="width:150px;" @change="onFilter">
-          <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
-        </el-select>
-        <el-button type="primary" icon="el-icon-search" @click="onFilter">搜索</el-button>
+      <div style="margin-bottom:16px;display:flex;gap:12px;align-items:center;">
+        <template v-if="viewMode === 'list'">
+          <el-select v-model="query.warehouseId" placeholder="全部仓库" clearable style="width:150px;" @change="onFilter">
+            <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
+          </el-select>
+          <el-button type="primary" icon="el-icon-search" @click="onFilter">搜索</el-button>
+        </template>
+        <div style="margin-left:auto;">
+          <el-button-group>
+            <el-button :type="viewMode==='list'?'primary':''" icon="el-icon-menu" @click="switchViewMode('list')">列表</el-button>
+            <el-button :type="viewMode==='chart'?'primary':''" icon="el-icon-data-analysis" @click="switchViewMode('chart')">图表</el-button>
+          </el-button-group>
+        </div>
       </div>
-      <el-table :data="list" v-loading="loading" border stripe>
+
+      <!-- 图表视图 -->
+      <div v-if="viewMode === 'chart'">
+        <el-tabs v-model="chartTab">
+          <el-tab-pane label="全部库存" name="all" />
+          <el-tab-pane label="按仓库查看" name="warehouse" />
+        </el-tabs>
+        <div v-loading="chartLoading">
+          <inventory-bar-chart
+            :chart-data="chartData"
+            :title="chartTab === 'all' ? '全部商品库存' : ''"
+            :warehouses="warehouses"
+            :show-warehouse-select="chartTab === 'warehouse'"
+            height="380px"
+            @warehouse-change="onWarehouseChange" />
+        </div>
+      </div>
+
+      <!-- 列表视图 -->
+      <el-table v-if="viewMode === 'list'" :data="list" v-loading="loading" border stripe>
         <el-table-column label="仓库" min-width="120">
           <template slot-scope="{row}">{{ warehouseMap[row.warehouseId] || row.warehouseId }}</template>
         </el-table-column>
@@ -29,7 +56,7 @@
           <template slot-scope="{row}"><el-button size="mini" @click="setAlert(row)">设置预警值</el-button></template>
         </el-table-column>
       </el-table>
-      <el-pagination style="margin-top:16px;text-align:right;" background layout="total, prev, pager, next"
+      <el-pagination v-if="viewMode === 'list'" style="margin-top:16px;text-align:right;" background layout="total, prev, pager, next"
         :total="total" :current-page="query.current" @current-change="p=>{query.current=p;loadData()}" />
       <el-dialog title="设置预警值" :visible.sync="alertDialog" width="360px">
         <el-form label-width="90px">
@@ -156,11 +183,13 @@
 </template>
 
 <script>
-import { getInventory, setAlertQty } from '../../api/inventory'
+import { getInventory, setAlertQty, getInventoryChart } from '../../api/inventory'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 import mobileMixin from '../../mixins/mobile'
+import InventoryBarChart from '../../components/InventoryBarChart.vue'
 export default {
+  components: { InventoryBarChart },
   mixins: [mobileMixin],
   data() {
     return {
@@ -170,7 +199,12 @@ export default {
       query: { current: 1, size: 10, warehouseId: null },
       mobileSearch: '',
       filterChip: null,
-      expandedKey: null
+      expandedKey: null,
+      viewMode: 'list',
+      chartTab: 'all',
+      chartWarehouseId: null,
+      chartData: [],
+      chartLoading: false
     }
   },
   computed: {
@@ -199,6 +233,10 @@ export default {
       this.productMap = Object.fromEntries(items.map(p => [p.id, p.name]))
     })
   },
+  watch: {
+    chartTab(val) { if (this.viewMode === 'chart') this.loadChartData() },
+    chartWarehouseId() { if (this.viewMode === 'chart' && this.chartTab === 'warehouse') this.loadChartData() }
+  },
   methods: {
     async loadData() {
       this.loading = true
@@ -206,6 +244,20 @@ export default {
       this.list  = r.data.records
       this.total = r.data.total
     },
+    async switchViewMode(mode) {
+      this.viewMode = mode
+      if (mode === 'chart') this.loadChartData()
+    },
+    async loadChartData() {
+      this.chartLoading = true
+      const params = this.chartTab === 'warehouse' && this.chartWarehouseId
+        ? { type: 'warehouse', warehouseId: this.chartWarehouseId }
+        : { type: 'all' }
+      const r = await getInventoryChart(params).catch(() => ({ data: [] }))
+      this.chartData = r.data || []
+      this.chartLoading = false
+    },
+    onWarehouseChange(val) { this.chartWarehouseId = val },
     onFilter() { this.query.current = 1; this.loadData() },
     prevPage()  { this.query.current--; this.loadData() },
     nextPage()  { this.query.current++; this.loadData() },
