@@ -86,7 +86,8 @@ export default {
           label: { show: true, formatter: p => p.value, fontWeight: 700 },
           animationType: 'scale',
           animationEasing: 'elasticOut',
-          animationDuration: 700
+          animationDuration: 800,
+          animationDelay: idx => idx * 60
         }]
       } : {
         title: this.title ? { text: this.title, left: 'center', textStyle: { fontSize: 14 } } : undefined,
@@ -109,7 +110,8 @@ export default {
           label: { show: true, formatter: p => p.value, fontWeight: 700 },
           animationType: 'scale',
           animationEasing: 'elasticOut',
-          animationDuration: 700
+          animationDuration: 800,
+          animationDelay: idx => idx * 60
         }]
       }
       this.chart.setOption(option, true)

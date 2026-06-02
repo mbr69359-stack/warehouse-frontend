@@ -44,7 +44,7 @@ export default {
         xAxis: { type: 'category', data: this.tableData.map(d => d.date) },
         yAxis: [{ type: 'value', name: '单数' }, { type: 'value', name: '金额(¥)' }],
         series: [
-          { name: '出库单数', type: 'bar', data: this.tableData.map(d => d.count), itemStyle: { color: '#E6A23C' } },
+          { name: '出库单数', type: 'bar', data: this.tableData.map(d => d.count), itemStyle: { color: '#E6A23C', barBorderRadius: [4, 4, 0, 0] }, animationType: 'scale', animationEasing: 'elasticOut', animationDuration: 800, animationDelay: idx => idx * 60 },
           { name: '出库金额', type: 'line', yAxisIndex: 1, data: this.tableData.map(d => Number(d.amount||0).toFixed(2)), itemStyle: { color: '#F56C6C' } }
         ]
       })
