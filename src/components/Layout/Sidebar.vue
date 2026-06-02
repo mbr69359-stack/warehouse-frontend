@@ -53,3 +53,7 @@ export default {
   computed: { ...mapGetters(['isAdmin']) }
 }
 </script>
+
+<style>
+.el-aside::-webkit-scrollbar { display: none; }
+</style>
