@@ -1,0 +1,137 @@
+<h2>首页卡片 + 柱状图布局方案</h2>
+<p class="subtitle">选择柱状图在首页的显示位置</p>
+
+<div class="cards">
+
+  <!-- Option A -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f0f4ff;border-radius:8px;padding:12px;font-size:11px;">
+        <!-- 4 stat cards -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+          <div style="background:#fff;border:1px solid #dde1ff;border-radius:6px;padding:8px;text-align:center;">
+            <div style="font-size:9px;color:#757684;">库存总数</div>
+            <div style="font-size:16px;font-weight:700;color:#00288e;">1,280</div>
+          </div>
+          <div style="background:#fff;border:1px solid #dde1ff;border-radius:6px;padding:8px;text-align:center;">
+            <div style="font-size:9px;color:#757684;">最大仓库</div>
+            <div style="font-size:16px;font-weight:700;color:#3755c3;">820</div>
+          </div>
+          <div style="background:#fff;border:1px solid #ffe3d8;border-radius:6px;padding:8px;text-align:center;">
+            <div style="font-size:9px;color:#757684;">库存预警</div>
+            <div style="font-size:16px;font-weight:700;color:#ba1a1a;">3</div>
+          </div>
+          <div style="background:#fff;border:1px solid #dde1ff;border-radius:6px;padding:8px;text-align:center;">
+            <div style="font-size:9px;color:#757684;">库存种类</div>
+            <div style="font-size:16px;font-weight:700;color:#3755c3;">24</div>
+          </div>
+        </div>
+        <!-- 2 bar charts below -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="background:#fff;border:1px solid #e0e0e0;border-radius:6px;padding:8px;">
+            <div style="font-size:9px;font-weight:600;color:#121c2a;margin-bottom:6px;">📊 库存总数 — 各商品数量</div>
+            <div style="display:flex;align-items:flex-end;gap:4px;height:50px;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+                <div style="background:#3755c3;width:100%;height:45px;border-radius:3px 3px 0 0;"></div>
+                <div style="font-size:7px;color:#757684;">A</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+                <div style="background:#3755c3;width:100%;height:30px;border-radius:3px 3px 0 0;"></div>
+                <div style="font-size:7px;color:#757684;">B</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+                <div style="background:#3755c3;width:100%;height:20px;border-radius:3px 3px 0 0;"></div>
+                <div style="font-size:7px;color:#757684;">C</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+                <div style="background:#3755c3;width:100%;height:38px;border-radius:3px 3px 0 0;"></div>
+                <div style="font-size:7px;color:#757684;">D</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+                <div style="background:#3755c3;width:100%;height:15px;border-radius:3px 3px 0 0;"></div>
+                <div style="font-size:7px;color:#757684;">E</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #e0e0e0;border-radius:6px;padding:8px;">
+            <div style="font-size:9px;font-weight:600;color:#121c2a;margin-bottom:6px;">📊 最大仓库 (仓库A) — 各商品数量</div>
+            <div style="display:flex;align-items:flex-end;gap:4px;height:50px;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+                <div style="background:#00288e;width:100%;height:45px;border-radius:3px 3px 0 0;"></div>
+                <div style="font-size:7px;color:#757684;">A</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+                <div style="background:#00288e;width:100%;height:28px;border-radius:3px 3px 0 0;"></div>
+                <div style="font-size:7px;color:#757684;">B</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+                <div style="background:#00288e;width:100%;height:18px;border-radius:3px 3px 0 0;"></div>
+                <div style="font-size:7px;color:#757684;">C</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+                <div style="background:#00288e;width:100%;height:35px;border-radius:3px 3px 0 0;"></div>
+                <div style="font-size:7px;color:#757684;">D</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;">
+                <div style="background:#00288e;width:100%;height:12px;border-radius:3px 3px 0 0;"></div>
+                <div style="font-size:7px;color:#757684;">E</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 常驻显示</h3>
+      <p>4个统计卡片 + 下方两个柱状图，进入首页直接可见，一览无余</p>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f0f4ff;border-radius:8px;padding:12px;font-size:11px;">
+        <!-- 4 stat cards, first two are clickable -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+          <div style="background:#fff;border:2px solid #3755c3;border-radius:6px;padding:8px;text-align:center;cursor:pointer;position:relative;">
+            <div style="font-size:9px;color:#757684;">库存总数</div>
+            <div style="font-size:16px;font-weight:700;color:#00288e;">1,280</div>
+            <div style="font-size:7px;color:#3755c3;margin-top:2px;">点击查看图表 ↓</div>
+          </div>
+          <div style="background:#fff;border:2px solid #3755c3;border-radius:6px;padding:8px;text-align:center;cursor:pointer;">
+            <div style="font-size:9px;color:#757684;">最大仓库</div>
+            <div style="font-size:16px;font-weight:700;color:#3755c3;">820</div>
+            <div style="font-size:7px;color:#3755c3;margin-top:2px;">点击查看图表 ↓</div>
+          </div>
+          <div style="background:#fff;border:1px solid #ffe3d8;border-radius:6px;padding:8px;text-align:center;">
+            <div style="font-size:9px;color:#757684;">库存预警</div>
+            <div style="font-size:16px;font-weight:700;color:#ba1a1a;">3</div>
+          </div>
+          <div style="background:#fff;border:1px solid #dde1ff;border-radius:6px;padding:8px;text-align:center;">
+            <div style="font-size:9px;color:#757684;">库存种类</div>
+            <div style="font-size:16px;font-weight:700;color:#3755c3;">24</div>
+          </div>
+        </div>
+        <!-- Expanded chart below first card -->
+        <div style="background:#fff;border:1px solid #dde1ff;border-radius:6px;padding:8px;margin-bottom:6px;">
+          <div style="font-size:9px;font-weight:600;color:#121c2a;margin-bottom:6px;">📊 库存总数 — 各商品数量（点击卡片展开）</div>
+          <div style="display:flex;align-items:flex-end;gap:4px;height:50px;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;"><div style="background:#3755c3;width:100%;height:45px;border-radius:3px 3px 0 0;"></div><div style="font-size:7px;color:#757684;">A</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;"><div style="background:#3755c3;width:100%;height:30px;border-radius:3px 3px 0 0;"></div><div style="font-size:7px;color:#757684;">B</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;"><div style="background:#3755c3;width:100%;height:20px;border-radius:3px 3px 0 0;"></div><div style="font-size:7px;color:#757684;">C</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;"><div style="background:#3755c3;width:100%;height:38px;border-radius:3px 3px 0 0;"></div><div style="font-size:7px;color:#757684;">D</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;"><div style="background:#3755c3;width:100%;height:15px;border-radius:3px 3px 0 0;"></div><div style="font-size:7px;color:#757684;">E</div></div>
+          </div>
+        </div>
+        <div style="font-size:8px;color:#757684;text-align:center;">点击另一张卡片可切换显示不同图表</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — 点击展开</h3>
+      <p>卡片显示数字，点击"库存总数"或"最大仓库"卡片后，下方展开对应柱状图</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">💡 推荐方案 A — 常驻图表信息量更丰富，首页一屏即可掌握全局库存情况</p>

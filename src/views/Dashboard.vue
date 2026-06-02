@@ -13,18 +13,12 @@
             <div style="color:#909399;">库存总数</div>
           </el-card>
         </el-col>
-        <!-- 最大仓库（可展开图表） -->
+        <!-- 主仓库 -->
         <el-col :span="6">
-          <el-card shadow="hover" :class="['dash-card', activeChart === 'max' ? 'dash-card--active' : '']"
-            style="text-align:center;cursor:pointer;" @click.native="toggleChart('max')">
+          <el-card shadow="hover" class="dash-card" style="text-align:center;">
             <i class="el-icon-office-building" style="fontSize:36px;color:#67C23A"></i>
-            <div style="font-size:18px;font-weight:bold;margin:8px 0;">
-              {{ statsData.maxWarehouseName || '-' }}
-              <span v-if="statsData.maxWarehouseQty" style="font-size:13px;color:#606266;font-weight:normal;">
-                {{ statsData.maxWarehouseQty }}件
-              </span>
-            </div>
-            <div style="color:#909399;">最大仓库</div>
+            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ statsData.maxWarehouseQty }}</div>
+            <div style="color:#909399;">{{ statsData.maxWarehouseName || '主仓库' }}</div>
           </el-card>
         </el-col>
         <!-- 库存预警 -->
@@ -69,12 +63,8 @@
               <span>库存预警</span>
               <el-link type="primary" @click="$router.push('/inventory/alerts')">查看全部</el-link>
             </div>
-            <el-table :data="alerts.slice(0,5)" size="small">
-              <el-table-column prop="productId" label="商品ID" width="80" />
-              <el-table-column prop="warehouseId" label="仓库ID" width="80" />
-              <el-table-column prop="qty" label="当前库存" />
-              <el-table-column prop="alertQty" label="预警值" />
-            </el-table>
+            <inventory-bar-chart v-if="alertChartData.length" :chart-data="alertChartData" title="" height="260px" />
+            <el-empty v-else description="当前没有库存预警" :image-size="60" />
           </el-card>
         </el-col>
       </el-row>
@@ -221,6 +211,7 @@
 import { getAlerts, getInventory, getInventoryStats, getInventoryChart } from '../api/inventory'
 import { getInOrders } from '../api/inOrder'
 import { getOutOrders } from '../api/outOrder'
+import { getProducts } from '../api/product'
 import mobileMixin from '../mixins/mobile'
 import InventoryBarChart from '../components/InventoryBarChart.vue'
 export default {
@@ -233,6 +224,7 @@ export default {
       activeChart: null,
       chartData: [],
       chartLoading: false,
+      productMap: {},
       cards: [
         { label: '入库单总数', value: 0, icon: 'el-icon-download', color: '#409EFF', route: '/in-orders' },
         { label: '出库单总数', value: 0, icon: 'el-icon-upload2',  color: '#67C23A', route: '/out-orders' },
@@ -242,13 +234,16 @@ export default {
     }
   },
   async created() {
-    const [alertRes, inRes, outRes, invRes, statsRes] = await Promise.all([
+    const [alertRes, inRes, outRes, invRes, statsRes, prodRes] = await Promise.all([
       getAlerts().catch(() => ({ data: [] })),
       getInOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
       getOutOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
       getInventory({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
-      getInventoryStats().catch(() => ({ data: {} }))
+      getInventoryStats().catch(() => ({ data: {} })),
+      getProducts({ size: 1000 }).catch(() => ({ data: {} }))
     ])
+    const prodItems = prodRes.data.records || prodRes.data || []
+    this.productMap = Object.fromEntries(prodItems.map(p => [p.id, p.name]))
     this.alerts         = alertRes.data || []
     this.cards[0].value = inRes.data.total  || 0
     this.cards[1].value = outRes.data.total || 0
@@ -260,6 +255,16 @@ export default {
       maxWarehouseName: s.maxWarehouseName  || '',
       maxWarehouseQty:  s.maxWarehouseQty   || 0,
       maxWarehouseId:   s.maxWarehouseId    || null
+    }
+  },
+  computed: {
+    alertChartData() {
+      return this.alerts.map(row => ({
+        productName: this.productMap[row.productId] || `商品#${row.productId}`,
+        qty: row.qty,
+        alertQty: row.alertQty,
+        isLow: true
+      }))
     }
   },
   methods: {
@@ -287,9 +292,9 @@ export default {
 .dash-card { transition: box-shadow .2s, border-color .2s; }
 .dash-card--active { border: 1px solid #409EFF !important; box-shadow: 0 0 0 2px rgba(64,158,255,.2) !important; }
 
-.chart-slide-enter-active { transition: opacity .25s ease, transform .25s ease; }
-.chart-slide-leave-active { transition: opacity .18s ease; }
-.chart-slide-enter { opacity: 0; transform: translateY(-6px); }
+.chart-slide-enter-active { transition: opacity .6s ease, transform .6s ease; }
+.chart-slide-leave-active { transition: opacity .4s ease; }
+.chart-slide-enter { opacity: 0; transform: translateY(-10px); }
 .chart-slide-leave-to { opacity: 0; }
 
 .m-alert-banner {

@@ -1,0 +1,206 @@
+<h2>完整设计方案预览</h2>
+<p class="subtitle">首页改造 + 库存查询图表视图，点击确认设计</p>
+
+<style>
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #00288e;
+  margin: 20px 0 10px;
+  padding-left: 8px;
+  border-left: 3px solid #00288e;
+}
+.mock-page {
+  background: #f5f7ff;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 11px;
+  border: 1px solid #dde1ff;
+}
+.stat-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #e8eaff;
+  cursor: pointer;
+}
+.stat-card.active {
+  border: 2px solid #3755c3;
+}
+.stat-label { font-size: 9px; color: #757684; }
+.stat-val { font-size: 17px; font-weight: 800; color: #00288e; margin: 2px 0; }
+.stat-hint { font-size: 8px; color: #3755c3; }
+.chart-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #dde1ff;
+  margin-top: 8px;
+}
+.chart-title { font-size: 10px; font-weight: 600; color: #121c2a; margin-bottom: 8px; }
+.bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 60px;
+}
+.bar-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1;
+}
+.bar { width: 100%; border-radius: 4px 4px 0 0; }
+.bar-label { font-size: 7px; color: #757684; }
+
+/* Inventory page */
+.view-toggle {
+  display: inline-flex;
+  background: #e6eeff;
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+.toggle-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: #757684;
+}
+.toggle-btn.active {
+  background: #fff;
+  color: #00288e;
+  box-shadow: 0 1px 4px rgba(0,40,142,.12);
+}
+.tab-bar {
+  display: flex;
+  background: #e6eeff;
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+.tab {
+  flex: 1; text-align: center; padding: 4px; border-radius: 6px;
+  font-size: 9px; font-weight: 600; cursor: pointer; background: transparent; color: #757684;
+}
+.tab.active { background: #fff; color: #00288e; box-shadow: 0 1px 4px rgba(0,40,142,.12); }
+.warehouse-select {
+  background: #f5f7ff; border: 1px solid #dde1ff; border-radius: 6px;
+  padding: 3px 8px; font-size: 9px; color: #00288e; margin-bottom: 8px; display: inline-block;
+}
+.anim-arrow { font-size: 8px; color: #3755c3; margin-left: 4px; }
+</style>
+
+<!-- ===== SECTION 1: Homepage ===== -->
+<div class="section-title">① 首页改造</div>
+<div class="mock-page">
+  <!-- 4 stat cards -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+    <div class="stat-card active">
+      <div class="stat-label">库存总数</div>
+      <div class="stat-val">1,280</div>
+      <div class="stat-hint">点击展开图表 ▼</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">最大仓库 (北仓)</div>
+      <div class="stat-val" style="color:#3755c3;">820</div>
+      <div class="stat-hint">点击展开图表 ▼</div>
+    </div>
+    <div class="stat-card" style="border-color:#ffe3d8;">
+      <div class="stat-label">库存预警</div>
+      <div class="stat-val" style="color:#ba1a1a;">3</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">库存种类</div>
+      <div class="stat-val" style="color:#3755c3;">24</div>
+    </div>
+  </div>
+
+  <!-- Expanded chart (库存总数 active) -->
+  <div class="chart-box">
+    <div class="chart-title">📊 库存总数 — 各商品总量（所有仓库合计）</div>
+    <div class="bars">
+      <div class="bar-wrap"><div class="bar" style="background:#3755c3;height:55px;"></div><div class="bar-label">手机</div></div>
+      <div class="bar-wrap"><div class="bar" style="background:#3755c3;height:38px;"></div><div class="bar-label">平板</div></div>
+      <div class="bar-wrap"><div class="bar" style="background:#3755c3;height:28px;"></div><div class="bar-label">耳机</div></div>
+      <div class="bar-wrap"><div class="bar" style="background:#3755c3;height:45px;"></div><div class="bar-label">充电器</div></div>
+      <div class="bar-wrap"><div class="bar" style="background:#3755c3;height:18px;"></div><div class="bar-label">鼠标</div></div>
+      <div class="bar-wrap"><div class="bar" style="background:#3755c3;height:33px;"></div><div class="bar-label">键盘</div></div>
+    </div>
+    <div style="font-size:8px;color:#757684;margin-top:6px;">📌 点击"最大仓库"卡片可切换为该仓库的图表</div>
+  </div>
+</div>
+
+<!-- ===== SECTION 2: Inventory List ===== -->
+<div class="section-title">② 库存查询 — 图表/列表切换</div>
+<div class="mock-page">
+
+  <!-- Top toolbar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div class="view-toggle">
+      <button class="toggle-btn">☰ 列表</button>
+      <button class="toggle-btn active">📊 图表</button>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <div style="background:#fff;border:1px solid #dde1ff;border-radius:6px;padding:3px 8px;font-size:9px;color:#757684;">全部仓库 ▼</div>
+      <div style="background:#00288e;border-radius:6px;padding:3px 8px;font-size:9px;color:#fff;">搜索</div>
+    </div>
+  </div>
+
+  <!-- Chart tabs: 全部 / 按仓库 -->
+  <div class="tab-bar">
+    <div class="tab">全部库存</div>
+    <div class="tab active">按仓库查看</div>
+  </div>
+
+  <!-- Warehouse selector (shown in 按仓库 tab) -->
+  <div style="margin-bottom:8px;">
+    <span style="font-size:9px;color:#757684;margin-right:6px;">选择仓库:</span>
+    <span class="warehouse-select">北仓 ▼</span>
+    <span style="font-size:8px;color:#3755c3;margin-left:6px;">← 切换仓库时柱状图平滑动画 🎬</span>
+  </div>
+
+  <!-- Bar chart -->
+  <div class="chart-box" style="margin-top:0;">
+    <div class="chart-title">📊 北仓 — 各商品库存数量</div>
+    <div class="bars">
+      <div class="bar-wrap"><div class="bar" style="background:#00288e;height:50px;"></div><div class="bar-label">手机</div></div>
+      <div class="bar-wrap"><div class="bar" style="background:#00288e;height:32px;"></div><div class="bar-label">平板</div></div>
+      <div class="bar-wrap"><div class="bar" style="background:#e53935;height:12px;"></div><div class="bar-label" style="color:#e53935;">耳机⚠</div></div>
+      <div class="bar-wrap"><div class="bar" style="background:#00288e;height:42px;"></div><div class="bar-label">充电器</div></div>
+      <div class="bar-wrap"><div class="bar" style="background:#00288e;height:20px;"></div><div class="bar-label">鼠标</div></div>
+      <div class="bar-wrap"><div class="bar" style="background:#00288e;height:30px;"></div><div class="bar-label">键盘</div></div>
+    </div>
+    <div style="font-size:8px;color:#757684;margin-top:6px;">
+      🔴 低库存商品标红 &nbsp;|&nbsp; 切换仓库时柱条从底部渐高弹出（ECharts 内置动画）
+    </div>
+  </div>
+
+  <!-- Note about list view -->
+  <div style="font-size:8px;color:#909399;margin-top:8px;padding:6px;background:#f5f7ff;border-radius:6px;">
+    点击工具栏"☰ 列表"可切回原有的表格/卡片视图
+  </div>
+</div>
+
+<div style="margin-top:20px;">
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content">
+        <h3>设计方案确认</h3>
+        <p>首页：点击卡片展开图表 / 库存查询：列表⇄图表切换，图表内再分"全部"和"按仓库"两标签，切换仓库有丝滑动画</p>
+      </div>
+    </div>
+    <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+      <div class="letter">✎</div>
+      <div class="content">
+        <h3>需要调整</h3>
+        <p>在终端告诉我哪里需要修改</p>
+      </div>
+    </div>
+  </div>
+</div>

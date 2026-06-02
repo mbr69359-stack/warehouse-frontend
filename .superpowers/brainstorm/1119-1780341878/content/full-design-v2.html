@@ -1,0 +1,209 @@
+<h2>完整设计方案 v2 — 柱上标注数量</h2>
+<p class="subtitle">每个柱状图柱条顶部显示具体数量</p>
+
+<style>
+.section-title {
+  font-size: 13px; font-weight: 700; color: #00288e;
+  margin: 20px 0 10px; padding-left: 8px; border-left: 3px solid #00288e;
+}
+.mock-page {
+  background: #f5f7ff; border-radius: 10px; padding: 14px;
+  font-size: 11px; border: 1px solid #dde1ff;
+}
+.stat-card {
+  background: #fff; border-radius: 8px; padding: 10px;
+  text-align: center; border: 1px solid #e8eaff; cursor: pointer;
+}
+.stat-card.active { border: 2px solid #3755c3; }
+.stat-label { font-size: 9px; color: #757684; }
+.stat-val { font-size: 17px; font-weight: 800; color: #00288e; margin: 2px 0; }
+.stat-hint { font-size: 8px; color: #3755c3; }
+.chart-box {
+  background: #fff; border-radius: 8px; padding: 12px;
+  border: 1px solid #dde1ff; margin-top: 8px;
+}
+.chart-title { font-size: 10px; font-weight: 600; color: #121c2a; margin-bottom: 10px; }
+
+/* Bar chart with quantity labels */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 90px; /* taller to fit qty label above bar */
+  padding-top: 20px; /* space for qty labels */
+}
+.bar-col {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 2px; flex: 1;
+  position: relative;
+}
+.bar-qty {
+  position: absolute;
+  top: -18px;
+  font-size: 8px; font-weight: 700; color: #121c2a;
+  white-space: nowrap;
+}
+.bar { width: 100%; border-radius: 3px 3px 0 0; }
+.bar-name { font-size: 7px; color: #757684; margin-top: 2px; text-align: center; }
+
+.view-toggle {
+  display: inline-flex; background: #e6eeff;
+  border-radius: 8px; padding: 2px; gap: 2px;
+}
+.toggle-btn {
+  padding: 4px 10px; border-radius: 6px; font-size: 9px; font-weight: 600;
+  border: none; cursor: pointer; background: transparent; color: #757684;
+}
+.toggle-btn.active { background: #fff; color: #00288e; box-shadow: 0 1px 4px rgba(0,40,142,.12); }
+.tab-bar { display: flex; background: #e6eeff; border-radius: 8px; padding: 2px; gap: 2px; margin-bottom: 8px; }
+.tab { flex: 1; text-align: center; padding: 4px; border-radius: 6px; font-size: 9px; font-weight: 600; cursor: pointer; background: transparent; color: #757684; }
+.tab.active { background: #fff; color: #00288e; box-shadow: 0 1px 4px rgba(0,40,142,.12); }
+</style>
+
+<!-- SECTION 1: Homepage -->
+<div class="section-title">① 首页 — 点击卡片展开图表（含数量标注）</div>
+<div class="mock-page">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">
+    <div class="stat-card active">
+      <div class="stat-label">库存总数</div>
+      <div class="stat-val">1,280</div>
+      <div class="stat-hint">点击展开图表 ▼</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">最大仓库 (北仓)</div>
+      <div class="stat-val" style="color:#3755c3;">820</div>
+      <div class="stat-hint">点击展开图表 ▼</div>
+    </div>
+    <div class="stat-card" style="border-color:#ffe3d8;">
+      <div class="stat-label">库存预警</div>
+      <div class="stat-val" style="color:#ba1a1a;">3</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">库存种类</div>
+      <div class="stat-val" style="color:#3755c3;">24</div>
+    </div>
+  </div>
+
+  <!-- Expanded: 库存总数 chart with qty on top -->
+  <div class="chart-box">
+    <div class="chart-title">📊 库存总数 — 各商品总量（所有仓库合计）</div>
+    <div class="bar-chart">
+      <div class="bar-col">
+        <span class="bar-qty">420</span>
+        <div class="bar" style="background:#3755c3;height:70px;"></div>
+        <div class="bar-name">手机</div>
+      </div>
+      <div class="bar-col">
+        <span class="bar-qty">280</span>
+        <div class="bar" style="background:#3755c3;height:47px;"></div>
+        <div class="bar-name">平板</div>
+      </div>
+      <div class="bar-col">
+        <span class="bar-qty">195</span>
+        <div class="bar" style="background:#3755c3;height:33px;"></div>
+        <div class="bar-name">耳机</div>
+      </div>
+      <div class="bar-col">
+        <span class="bar-qty">340</span>
+        <div class="bar" style="background:#3755c3;height:57px;"></div>
+        <div class="bar-name">充电器</div>
+      </div>
+      <div class="bar-col">
+        <span class="bar-qty">45</span>
+        <div class="bar" style="background:#3755c3;height:8px;"></div>
+        <div class="bar-name">鼠标</div>
+      </div>
+      <div class="bar-col">
+        <span class="bar-qty">220</span>
+        <div class="bar" style="background:#3755c3;height:37px;"></div>
+        <div class="bar-name" style="color:#757684;">键盘</div>
+      </div>
+    </div>
+    <div style="font-size:8px;color:#909399;margin-top:4px;">点击"最大仓库"卡片可切换图表</div>
+  </div>
+</div>
+
+<!-- SECTION 2: Inventory List Chart View -->
+<div class="section-title">② 库存查询 — 图表视图（含数量标注 + 切换动画）</div>
+<div class="mock-page">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div class="view-toggle">
+      <button class="toggle-btn">☰ 列表</button>
+      <button class="toggle-btn active">📊 图表</button>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <div style="background:#fff;border:1px solid #dde1ff;border-radius:6px;padding:3px 8px;font-size:9px;color:#757684;">全部仓库 ▼</div>
+      <div style="background:#00288e;border-radius:6px;padding:3px 8px;font-size:9px;color:#fff;">搜索</div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab">全部库存</div>
+    <div class="tab active">按仓库查看</div>
+  </div>
+
+  <div style="margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+    <span style="font-size:9px;color:#757684;">仓库:</span>
+    <span style="background:#fff;border:1px solid #dde1ff;border-radius:6px;padding:3px 10px;font-size:9px;color:#00288e;font-weight:600;">北仓 ▼</span>
+    <span style="font-size:8px;color:#3755c3;">切换时柱条弹起动画 🎬</span>
+  </div>
+
+  <div class="chart-box" style="margin-top:0;">
+    <div class="chart-title">📊 北仓 — 各商品库存数量</div>
+    <div class="bar-chart">
+      <div class="bar-col">
+        <span class="bar-qty">320</span>
+        <div class="bar" style="background:#00288e;height:62px;"></div>
+        <div class="bar-name">手机</div>
+      </div>
+      <div class="bar-col">
+        <span class="bar-qty">180</span>
+        <div class="bar" style="background:#00288e;height:35px;"></div>
+        <div class="bar-name">平板</div>
+      </div>
+      <div class="bar-col">
+        <span class="bar-qty" style="color:#e53935;">18</span>
+        <div class="bar" style="background:#e53935;height:4px;"></div>
+        <div class="bar-name" style="color:#e53935;">耳机⚠</div>
+      </div>
+      <div class="bar-col">
+        <span class="bar-qty">210</span>
+        <div class="bar" style="background:#00288e;height:41px;"></div>
+        <div class="bar-name">充电器</div>
+      </div>
+      <div class="bar-col">
+        <span class="bar-qty">92</span>
+        <div class="bar" style="background:#00288e;height:18px;"></div>
+        <div class="bar-name">鼠标</div>
+      </div>
+      <div class="bar-col">
+        <span class="bar-qty">150</span>
+        <div class="bar" style="background:#00288e;height:29px;"></div>
+        <div class="bar-name">键盘</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px;font-size:8px;">
+      <span style="display:flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;background:#00288e;border-radius:2px;display:inline-block;"></span>正常</span>
+      <span style="display:flex;align-items:center;gap:3px;"><span style="width:8px;height:8px;background:#e53935;border-radius:2px;display:inline-block;"></span>低于预警值（红色 + 数量标红）</span>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:20px;">
+  <div class="options">
+    <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content">
+        <h3>确认这个设计，开始实现</h3>
+        <p>柱条顶部显示数量、低库存标红、切换动画</p>
+      </div>
+    </div>
+    <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+      <div class="letter">✎</div>
+      <div class="content">
+        <h3>需要调整</h3>
+        <p>在终端告诉我修改意见</p>
+      </div>
+    </div>
+  </div>
+</div>

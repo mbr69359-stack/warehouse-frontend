@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', 'PingFang SC', sans-serif; }
+body { background: #f0f4ff; padding: 24px; color: #121c2a; }
+h2 { font-size: 20px; font-weight: 900; color: #00288e; margin-bottom: 4px; }
+.subtitle { font-size: 13px; color: #757684; margin-bottom: 20px; }
+.section-title { font-size: 13px; font-weight: 800; color: #00288e; margin: 24px 0 10px; padding-left: 10px; border-left: 4px solid #3755c3; }
+.mock-page { background: #fff; border-radius: 16px; padding: 16px; box-shadow: 0 2px 12px rgba(0,40,142,.08); border: 1px solid #dde1ff; }
+.stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 12px; }
+.stat-card { background: #f5f7ff; border-radius: 12px; padding: 12px; text-align: center; border: 1.5px solid #e8eaff; cursor: pointer; }
+.stat-card.active { border-color: #3755c3; background: #eef0ff; }
+.stat-label { font-size: 10px; font-weight: 700; color: #757684; }
+.stat-val { font-size: 20px; font-weight: 900; color: #00288e; margin: 4px 0 2px; }
+.stat-hint { font-size: 9px; font-weight: 700; color: #3755c3; }
+.chart-box { background: #f8f9ff; border-radius: 14px; padding: 14px; border: 1px solid #dde1ff; margin-top: 10px; }
+.chart-title { font-size: 11px; font-weight: 800; color: #121c2a; margin-bottom: 14px; }
+.bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 110px; }
+.bar-col { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+.bar { width: 100%; border-radius: 8px 8px 0 0; display: flex; align-items: center; justify-content: center; }
+.bar-qty { font-size: 11px; font-weight: 900; color: #2a2d4a; writing-mode: horizontal-tb; line-height: 1; }
+.bar-name { font-size: 9px; font-weight: 700; color: #757684; text-align: center; }
+.bar-name.warn { color: #e53935; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.view-toggle { display: inline-flex; background: #e6eeff; border-radius: 10px; padding: 3px; gap: 2px; }
+.toggle-btn { padding: 5px 14px; border-radius: 8px; font-size: 10px; font-weight: 800; border: none; cursor: pointer; background: transparent; color: #757684; font-family: inherit; }
+.toggle-btn.active { background: #fff; color: #00288e; box-shadow: 0 2px 6px rgba(0,40,142,.15); }
+.tab-bar { display: flex; background: #e6eeff; border-radius: 10px; padding: 3px; gap: 2px; margin-bottom: 10px; }
+.tab { flex: 1; text-align: center; padding: 5px; border-radius: 8px; font-size: 10px; font-weight: 800; cursor: pointer; background: transparent; color: #757684; font-family: inherit; border: none; }
+.tab.active { background: #fff; color: #00288e; box-shadow: 0 2px 6px rgba(0,40,142,.15); }
+.wh-select { background: #fff; border: 1.5px solid #3755c3; border-radius: 10px; padding: 4px 12px; font-size: 10px; font-weight: 800; color: #00288e; display: inline-block; cursor: pointer; }
+.options { display: flex; gap: 12px; margin-top: 24px; }
+.option { flex: 1; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; border: 2px solid #dde1ff; background: #fff; cursor: pointer; transition: all .2s; }
+.option:hover { border-color: #3755c3; background: #f0f4ff; }
+.option.selected { border-color: #3755c3; background: #eef0ff; }
+.letter { font-size: 22px; font-weight: 900; color: #3755c3; width: 36px; text-align: center; }
+.option h3 { font-size: 13px; font-weight: 800; color: #121c2a; margin-bottom: 3px; }
+.option p { font-size: 11px; color: #757684; }
+</style>
+<script>function toggleSelect(el){document.querySelectorAll('.option').forEach(o=>o.classList.remove('selected'));el.classList.add('selected');}</script>
+</head>
+<body>
+
+<h2>完整设计方案 v6</h2>
+<p class="subtitle">横排数字 · 统一深色字体 · 多彩柱条</p>
+
+<div class="section-title">① 首页 — 点击卡片展开柱状图</div>
+<div class="mock-page">
+  <div class="stat-grid">
+    <div class="stat-card active">
+      <div class="stat-label">库存总数</div>
+      <div class="stat-val">1,280</div>
+      <div class="stat-hint">▼ 展开图表</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">最大仓库（北仓）</div>
+      <div class="stat-val" style="color:#3755c3;">820</div>
+      <div class="stat-hint">▼ 展开图表</div>
+    </div>
+    <div class="stat-card" style="border-color:#ffe3d8;background:#fff8f6;">
+      <div class="stat-label">库存预警</div>
+      <div class="stat-val" style="color:#e53935;">3</div>
+      <div class="stat-hint" style="color:#e53935;">件低于预警值</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">库存种类</div>
+      <div class="stat-val" style="color:#3755c3;">24</div>
+      <div class="stat-hint" style="color:#909399;">种 SKU</div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-title">📊 库存总数 — 各商品（所有仓库合计）</div>
+    <div class="bar-chart">
+      <div class="bar-col">
+        <div class="bar" style="background:#dde3ff;height:80px;"><span class="bar-qty">420</span></div>
+        <div class="bar-name">手机</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar" style="background:#c8f5ec;height:55px;"><span class="bar-qty">280</span></div>
+        <div class="bar-name">平板</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar" style="background:#ffe0d6;height:38px;"><span class="bar-qty">195</span></div>
+        <div class="bar-name">耳机</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar" style="background:#f0d9f8;height:65px;"><span class="bar-qty">340</span></div>
+        <div class="bar-name">充电器</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar" style="background:#ffd6d6;height:18px;"><span class="bar-qty" style="font-size:9px;">45</span></div>
+        <div class="bar-name warn">鼠标 ⚠</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar" style="background:#ffe8c2;height:44px;"><span class="bar-qty">220</span></div>
+        <div class="bar-name">键盘</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">② 库存查询 — 图表视图</div>
+<div class="mock-page">
+  <div class="toolbar">
+    <div class="view-toggle">
+      <button class="toggle-btn">☰ 列表</button>
+      <button class="toggle-btn active">📊 图表</button>
+    </div>
+    <div class="wh-select">全部仓库 ▼</div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab">全部库存</button>
+    <button class="tab active">按仓库查看</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+    <span style="font-size:10px;font-weight:700;color:#757684;">仓库：</span>
+    <div class="wh-select">北仓 ▼</div>
+    <span style="font-size:9px;font-weight:700;color:#3755c3;">切换时柱条弹起动画 🎬</span>
+  </div>
+  <div class="chart-box" style="margin-top:0;">
+    <div class="chart-title">📊 北仓 — 各商品库存数量</div>
+    <div class="bar-chart">
+      <div class="bar-col">
+        <div class="bar" style="background:#dde3ff;height:68px;"><span class="bar-qty">320</span></div>
+        <div class="bar-name">手机</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar" style="background:#c8f5ec;height:40px;"><span class="bar-qty">180</span></div>
+        <div class="bar-name">平板</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar" style="background:#ffd6d6;height:10px;"><span class="bar-qty" style="font-size:8px;">18</span></div>
+        <div class="bar-name warn">耳机 ⚠</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar" style="background:#f0d9f8;height:46px;"><span class="bar-qty">210</span></div>
+        <div class="bar-name">充电器</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar" style="background:#ffe8c2;height:22px;"><span class="bar-qty" style="font-size:10px;">92</span></div>
+        <div class="bar-name">鼠标</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar" style="background:#ffe0d6;height:32px;"><span class="bar-qty">150</span></div>
+        <div class="bar-name">键盘</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>确认设计，开始实现</h3>
+      <p>多彩柱条 · 统一深色横排数字 · 低库存标红 · 丝滑动画</p>
+    </div>
+  </div>
+  <div class="option" data-choice="adjust" onclick="toggleSelect(this)">
+    <div class="letter">✎</div>
+    <div class="content">
+      <h3>需要调整</h3>
+      <p>在终端告诉我修改意见</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
