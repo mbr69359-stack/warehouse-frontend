@@ -4,7 +4,7 @@
     <el-aside
       v-if="!isMobile"
       :width="collapsed ? '64px' : '220px'"
-      style="background:#304156;transition:width .3s;overflow:hidden;"
+      style="background:#304156;transition:width .3s;overflow-x:hidden;overflow-y:auto;"
     >
       <div class="logo" @click="$router.push('/dashboard')">
         <i class="el-icon-s-grid" style="color:#409EFF;font-size:22px;"></i>

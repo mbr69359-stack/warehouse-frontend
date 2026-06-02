@@ -1,6 +1,6 @@
 <template>
   <el-menu :default-active="$route.path" background-color="#304156" text-color="#bfcbd9"
-    active-text-color="#409EFF" :collapse="collapsed" router>
+    active-text-color="#409EFF" :collapse="collapsed" router style="border-right:none;">
     <el-menu-item index="/dashboard"><i class="el-icon-s-home"></i><span slot="title">首页</span></el-menu-item>
 
     <el-submenu index="product">
