@@ -13,9 +13,10 @@
             <div style="color:#909399;">库存总数</div>
           </el-card>
         </el-col>
-        <!-- 主仓库 -->
+        <!-- 主仓库（可展开图表） -->
         <el-col :span="6">
-          <el-card shadow="hover" class="dash-card" style="text-align:center;">
+          <el-card shadow="hover" :class="['dash-card', activeChart === 'max' ? 'dash-card--active' : '']"
+            style="text-align:center;cursor:pointer;" @click.native="toggleChart('max')">
             <i class="el-icon-office-building" style="fontSize:36px;color:#67C23A"></i>
             <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ statsData.maxWarehouseQty }}</div>
             <div style="color:#909399;">{{ statsData.maxWarehouseName || '主仓库' }}</div>
