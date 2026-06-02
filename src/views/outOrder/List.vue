@@ -25,7 +25,6 @@
           <template slot-scope="{row}">
             <el-button size="mini" @click="$router.push('/out-orders/'+row.id)">详情</el-button>
             <el-button size="mini" type="danger" v-if="row.status==='DRAFT'" @click="openConfirmDialog(row.id)">确认实际数量</el-button>
-            <el-button size="mini" type="danger" @click="handleDelete(row.id, row.status)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -106,10 +105,6 @@
                 @click.stop="$router.push('/out-orders/'+row.id)">
                 <span class="material-symbols-outlined" style="font-size:15px;">visibility</span>
                 查看详情
-              </button>
-              <button class="m-action-btn danger" @click.stop="handleDelete(row.id, row.status)">
-                <span class="material-symbols-outlined" style="font-size:15px;">delete</span>
-                删除
               </button>
             </div>
           </div>
