@@ -7,11 +7,24 @@
       </el-select>
       <el-button type="primary" icon="el-icon-search" @click="onFilter">搜索</el-button>
       <el-button icon="el-icon-refresh" @click="reset">重置</el-button>
+      <div style="margin-left:auto;">
+        <el-button-group>
+          <el-button :type="viewMode==='list'?'primary':''" icon="el-icon-menu" @click="viewMode='list'">列表</el-button>
+          <el-button :type="viewMode==='chart'?'primary':''" icon="el-icon-data-analysis" @click="viewMode='chart'">图表</el-button>
+        </el-button-group>
+      </div>
     </div>
 
     <el-alert v-if="!loading && list.length === 0" title="当前没有库存预警" type="success" show-icon :closable="false" style="margin-bottom:16px;" />
 
-    <el-table :data="list" v-loading="loading" border stripe>
+    <!-- 图表视图 -->
+    <div v-if="viewMode === 'chart'" v-loading="loading">
+      <inventory-bar-chart v-if="alertChartData.length" :chart-data="alertChartData" title="库存预警商品" height="360px" />
+      <el-empty v-else-if="!loading" description="当前没有库存预警" />
+    </div>
+
+    <!-- 列表视图 -->
+    <el-table v-if="viewMode === 'list'" :data="list" v-loading="loading" border stripe>
       <el-table-column label="仓库" min-width="120">
         <template slot-scope="{row}">{{ warehouseMap[row.warehouseId] || row.warehouseId }}</template>
       </el-table-column>
@@ -38,6 +51,7 @@
     </el-table>
 
     <el-pagination
+      v-if="viewMode === 'list'"
       style="margin-top:16px;text-align:right;"
       background
       layout="total, prev, pager, next, sizes"
@@ -55,8 +69,10 @@
 import { getAlerts } from '../../api/inventory'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
+import InventoryBarChart from '../../components/InventoryBarChart.vue'
 
 export default {
+  components: { InventoryBarChart },
   data() {
     return {
       list: [],
@@ -65,7 +81,19 @@ export default {
       warehouses: [],
       warehouseMap: {},
       productMap: {},
-      query: { current: 1, size: 10, warehouseId: null }
+      query: { current: 1, size: 10, warehouseId: null },
+      viewMode: 'list'
+    }
+  },
+  computed: {
+    alertChartData() {
+      return this.list.map(row => ({
+        productId: row.productId,
+        productName: this.productMap[row.productId] || `商品#${row.productId}`,
+        qty: row.qty,
+        alertQty: row.alertQty,
+        isLow: true
+      }))
     }
   },
   created() {

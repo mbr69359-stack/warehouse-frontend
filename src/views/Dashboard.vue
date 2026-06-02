@@ -47,15 +47,13 @@
         </el-col>
       </el-row>
 
-      <!-- 展开图表区 -->
-      <el-row v-if="activeChart" style="margin-bottom:20px;">
-        <el-col :span="24">
-          <el-card>
-            <inventory-bar-chart :chart-data="chartData"
-              :title="activeChart === 'total' ? '全部库存分布' : statsData.maxWarehouseName + ' 库存分布'" />
-          </el-card>
-        </el-col>
-      </el-row>
+      <!-- 展开图表区（带过渡动画） -->
+      <transition name="chart-slide" mode="out-in">
+        <el-card v-if="activeChart" :key="activeChart" style="margin-bottom:20px;" v-loading="chartLoading">
+          <inventory-bar-chart :chart-data="chartData"
+            :title="activeChart === 'total' ? '全部库存分布' : statsData.maxWarehouseName + ' 库存分布'" />
+        </el-card>
+      </transition>
       <el-row :gutter="20">
         <el-col :span="12">
           <el-card>
@@ -234,6 +232,7 @@ export default {
       statsData: { totalQty: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseId: null },
       activeChart: null,
       chartData: [],
+      chartLoading: false,
       cards: [
         { label: '入库单总数', value: 0, icon: 'el-icon-download', color: '#409EFF', route: '/in-orders' },
         { label: '出库单总数', value: 0, icon: 'el-icon-upload2',  color: '#67C23A', route: '/out-orders' },
@@ -267,14 +266,18 @@ export default {
     async toggleChart(type) {
       if (this.activeChart === type) {
         this.activeChart = null
+        this.chartData = []
         return
       }
       this.activeChart = type
+      this.chartData = []
+      this.chartLoading = true
       const params = type === 'max'
         ? { type: 'warehouse', warehouseId: this.statsData.maxWarehouseId }
         : { type: 'all' }
       const res = await getInventoryChart(params).catch(() => ({ data: [] }))
       this.chartData = res.data || []
+      this.chartLoading = false
     }
   }
 }
@@ -283,6 +286,11 @@ export default {
 <style scoped>
 .dash-card { transition: box-shadow .2s, border-color .2s; }
 .dash-card--active { border: 1px solid #409EFF !important; box-shadow: 0 0 0 2px rgba(64,158,255,.2) !important; }
+
+.chart-slide-enter-active { transition: opacity .25s ease, transform .25s ease; }
+.chart-slide-leave-active { transition: opacity .18s ease; }
+.chart-slide-enter { opacity: 0; transform: translateY(-6px); }
+.chart-slide-leave-to { opacity: 0; }
 
 .m-alert-banner {
   margin-top: 10px;
