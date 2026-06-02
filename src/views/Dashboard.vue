@@ -64,7 +64,7 @@
               <span>库存预警</span>
               <el-link type="primary" @click="$router.push('/inventory/alerts')">查看全部</el-link>
             </div>
-            <inventory-bar-chart v-if="alertChartData.length" :chart-data="alertChartData" title="" height="260px" />
+            <inventory-bar-chart v-if="alertChartData.length" :chart-data="alertChartData" title="" :height="Math.max(200, alertChartData.length * 40) + 'px'" :horizontal="true" />
             <el-empty v-else description="当前没有库存预警" :image-size="60" />
           </el-card>
         </el-col>

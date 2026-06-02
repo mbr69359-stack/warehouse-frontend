@@ -24,7 +24,8 @@ export default {
     title: { type: String, default: '' },
     warehouses: { type: Array, default: () => [] },
     showWarehouseSelect: { type: Boolean, default: false },
-    height: { type: String, default: '320px' }
+    height: { type: String, default: '320px' },
+    horizontal: { type: Boolean, default: false }
   },
   emits: ['warehouse-change'],
   data() {
@@ -49,20 +50,45 @@ export default {
       if (!this.chart || !this.chartData.length) return
       const data = this.chartData
       const maxQty = Math.max(...data.map(d => d.qty || 0))
-      const names = data.map(d => d.isLow ? `{low|⚠} ${d.productName}` : d.productName)
+      const names = data.map(d => d.isLow ? `⚠ ${d.productName}` : d.productName)
       const values = data.map((d, i) => ({
         value: d.qty,
         itemStyle: {
           color: d.isLow ? LOW_COLOR : PALETTE[i % PALETTE.length],
-          barBorderRadius: [6, 6, 0, 0]
+          barBorderRadius: this.horizontal ? [0, 6, 6, 0] : [6, 6, 0, 0]
         },
         label: {
-          position: maxQty > 0 && d.qty / maxQty < 0.1 ? 'top' : 'inside',
+          position: this.horizontal
+            ? (maxQty > 0 && d.qty / maxQty < 0.1 ? 'right' : 'inside')
+            : (maxQty > 0 && d.qty / maxQty < 0.1 ? 'top' : 'inside'),
           color: LABEL_COLOR
         }
       }))
 
-      const option = {
+      const option = this.horizontal ? {
+        title: this.title ? { text: this.title, left: 'center', textStyle: { fontSize: 14 } } : undefined,
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        grid: { left: '2%', right: '8%', top: '4%', bottom: '4%', containLabel: true },
+        xAxis: { type: 'value', name: '数量' },
+        yAxis: {
+          type: 'category',
+          data: names,
+          axisLabel: {
+            interval: 0,
+            fontSize: 12,
+            color: v => v.startsWith('⚠') ? '#f56c6c' : '#2a2d4a',
+            formatter: v => v.length > 10 ? v.slice(0, 10) + '…' : v
+          }
+        },
+        series: [{
+          type: 'bar',
+          data: values,
+          label: { show: true, formatter: p => p.value, fontWeight: 700 },
+          animationType: 'scale',
+          animationEasing: 'elasticOut',
+          animationDuration: 700
+        }]
+      } : {
         title: this.title ? { text: this.title, left: 'center', textStyle: { fontSize: 14 } } : undefined,
         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
         grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
