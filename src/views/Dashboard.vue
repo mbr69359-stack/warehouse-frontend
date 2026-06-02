@@ -235,13 +235,14 @@ export default {
     }
   },
   async created() {
-    const [alertRes, inRes, outRes, invRes, statsRes, prodRes] = await Promise.all([
+    const [alertRes, inRes, outRes, invRes, statsRes, prodRes, chartRes] = await Promise.all([
       getAlerts().catch(() => ({ data: [] })),
       getInOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
       getOutOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
       getInventory({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
       getInventoryStats().catch(() => ({ data: {} })),
-      getProducts({ size: 1000 }).catch(() => ({ data: {} }))
+      getProducts({ size: 1000 }).catch(() => ({ data: {} })),
+      getInventoryChart({ type: 'all' }).catch(() => ({ data: [] }))
     ])
     const prodItems = prodRes.data.records || prodRes.data || []
     this.productMap = Object.fromEntries(prodItems.map(p => [p.id, p.name]))
@@ -257,6 +258,10 @@ export default {
       maxWarehouseQty:  s.maxWarehouseQty   || 0,
       maxWarehouseId:   s.maxWarehouseId    || null
     }
+    this.chartData = chartRes.data || []
+  },
+  mounted() {
+    this.$nextTick(() => { this.activeChart = 'total' })
   },
   computed: {
     alertChartData() {
@@ -270,11 +275,7 @@ export default {
   },
   methods: {
     async toggleChart(type) {
-      if (this.activeChart === type) {
-        this.activeChart = null
-        this.chartData = []
-        return
-      }
+      if (this.activeChart === type) return
       this.activeChart = type
       this.chartData = []
       this.chartLoading = true
