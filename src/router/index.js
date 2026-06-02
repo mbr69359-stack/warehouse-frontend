@@ -29,7 +29,9 @@ const routes = [
       { path: 'report/out', component: () => import('../views/report/Out.vue') },
       { path: 'report/inventory', component: () => import('../views/report/Inventory.vue') },
       { path: 'sys/users', component: () => import('../views/sys/Users.vue'), meta: { adminOnly: true } },
-      { path: 'sys/roles', component: () => import('../views/sys/Roles.vue'), meta: { adminOnly: true } }
+      { path: 'sys/roles', component: () => import('../views/sys/Roles.vue'), meta: { adminOnly: true } },
+      { path: 'quick-entry', component: () => import('../views/offline/QuickEntry.vue') },
+      { path: 'sync/pending', component: () => import('../views/sync/PendingLogs.vue') }
     ]
   },
   { path: '*', redirect: '/dashboard' }

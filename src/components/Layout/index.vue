@@ -61,6 +61,14 @@
               </div>
             </div>
             <div class="mine-divider"></div>
+            <button class="mine-logout-btn" style="color:#409EFF;" @click="goQuickEntry">
+              <span class="material-symbols-outlined">bolt</span>
+              快速出入库
+            </button>
+            <button class="mine-logout-btn" style="color:#E6A23C;" @click="goPendingLogs">
+              <span class="material-symbols-outlined">sync</span>
+              待同步记录
+            </button>
             <button class="mine-logout-btn" @click="doLogout">
               <span class="material-symbols-outlined">logout</span>
               退出登录
@@ -77,6 +85,7 @@ import Sidebar from './Sidebar.vue'
 import Header from './Header.vue'
 import { mapGetters } from 'vuex'
 import { logout } from '../../api/auth'
+import { setupNetworkListeners, refreshPendingCount, refreshCache } from '../../utils/sync'
 
 export default {
   components: { Sidebar, Header },
@@ -110,6 +119,9 @@ export default {
   },
   mounted() {
     window.addEventListener('resize', this.onResize)
+    setupNetworkListeners()
+    refreshPendingCount()
+    if (navigator.onLine) refreshCache().catch(() => {})
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.onResize)
@@ -133,6 +145,14 @@ export default {
       if (this.$route.path !== target) {
         this.$router.push(target)
       }
+    },
+    goQuickEntry() {
+      this.showMineSheet = false
+      this.$router.push('/quick-entry')
+    },
+    goPendingLogs() {
+      this.showMineSheet = false
+      this.$router.push('/sync/pending')
     },
     async doLogout() {
       this.showMineSheet = false
