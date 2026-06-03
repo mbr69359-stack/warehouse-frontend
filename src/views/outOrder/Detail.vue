@@ -20,7 +20,7 @@
       <el-table-column prop="qty" label="计划数量" width="110" />
       <el-table-column prop="actualQty" label="实际数量" width="110" />
       <el-table-column label="单价" width="100"><template slot-scope="{row}">¥{{ row.price }}</template></el-table-column>
-      <el-table-column label="小计"><template slot-scope="{row}">¥{{ ((row.actualQty || row.qty) * row.price).toFixed(2) }}</template></el-table-column>
+      <el-table-column label="小计"><template slot-scope="{row}">¥{{ ((order.status === 'CONFIRMED' ? row.actualQty : row.qty) * row.price * 100 / 100).toFixed(2) }}</template></el-table-column>
     </el-table>
 
     <div style="margin-top:16px;" v-if="order.status==='DRAFT'">

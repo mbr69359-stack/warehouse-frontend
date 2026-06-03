@@ -70,6 +70,15 @@ export default {
     handleSave() {
       this.$refs.form.validate(async valid => {
         if (!valid) return
+        if (this.form.items.length === 0) {
+          this.$message.warning('请至少添加一条入库明细')
+          return
+        }
+        const emptyItem = this.form.items.find(i => !i.productId)
+        if (emptyItem) {
+          this.$message.warning('存在未选择商品的明细行，请补充或删除')
+          return
+        }
         this.saving = true
         try { await createInOrder(this.form); this.$message.success('入库单创建成功'); this.$router.push('/in-orders') }
         finally { this.saving = false }
