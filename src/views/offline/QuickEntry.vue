@@ -33,6 +33,10 @@
 
       <el-form-item label="数量" prop="qty">
         <el-input-number v-model="form.qty" :min="1" style="width:180px;" />
+        <span v-if="form.type === 'OUT' && currentStock !== null"
+          :style="{ marginLeft: '12px', fontSize: '13px', color: form.qty > currentStock ? '#F56C6C' : '#909399' }">
+          当前库存：{{ currentStock }}
+        </span>
       </el-form-item>
 
       <el-form-item label="备注">
@@ -56,12 +60,16 @@ import { batchSync } from '../../api/syncApi'
 import { getProducts } from '../../api/product'
 import { getWarehouses } from '../../api/warehouse'
 
+const LS_WAREHOUSE = 'qe_last_warehouseId'
+const LS_PRODUCT = 'qe_last_productId'
+
 export default {
   data() {
     return {
       saving: false,
       warehouses: [],
       products: [],
+      inventory: [],
       form: { type: 'IN', warehouseId: null, productId: null, qty: 1, remark: '' },
       rules: {
         type: [{ required: true }],
@@ -72,7 +80,14 @@ export default {
     }
   },
   computed: {
-    online() { return networkState.online }
+    online() { return networkState.online },
+    currentStock() {
+      if (!this.form.warehouseId || !this.form.productId) return null
+      const record = this.inventory.find(
+        r => r.warehouseId === this.form.warehouseId && r.productId === this.form.productId
+      )
+      return record ? record.qty : null
+    }
   },
   async created() {
     if (this.online) {
@@ -91,11 +106,48 @@ export default {
       this.products = p || []
       this.warehouses = w || []
     }
+    this.inventory = (await getCache('inventory')) || []
+    this.restoreLastSelection()
   },
   methods: {
+    restoreLastSelection() {
+      const wId = localStorage.getItem(LS_WAREHOUSE)
+      const pId = localStorage.getItem(LS_PRODUCT)
+      if (wId) {
+        const w = this.warehouses.find(w => String(w.id) === wId)
+        if (w) this.form.warehouseId = w.id
+      }
+      if (pId) {
+        const p = this.products.find(p => String(p.id) === pId)
+        if (p) this.form.productId = p.id
+      }
+    },
+    saveLastSelection() {
+      if (this.form.warehouseId != null) localStorage.setItem(LS_WAREHOUSE, String(this.form.warehouseId))
+      if (this.form.productId != null) localStorage.setItem(LS_PRODUCT, String(this.form.productId))
+    },
+    async checkStock() {
+      if (this.form.type !== 'OUT') return true
+      const stock = this.currentStock
+      if (stock !== null && this.form.qty > stock) {
+        return this.$confirm(
+          `当前库存仅剩 ${stock}，出库 ${this.form.qty} 将导致负库存，是否继续？`,
+          '库存不足',
+          { type: 'warning', confirmButtonText: '仍然提交', cancelButtonText: '取消' }
+        ).then(() => true).catch(() => false)
+      }
+      return true
+    },
+    resetFormAfterSubmit() {
+      const { type, warehouseId, productId } = this.form
+      this.form = { type, warehouseId, productId, qty: 1, remark: '' }
+      this.$nextTick(() => this.$refs.form.clearValidate())
+    },
     handleSubmit() {
       this.$refs.form.validate(async valid => {
         if (!valid) return
+        const proceed = await this.checkStock()
+        if (!proceed) return
         this.saving = true
         try {
           const entry = {
@@ -110,7 +162,8 @@ export default {
             const result = res.data[0]
             if (result.success) {
               this.$message.success('提交成功')
-              this.$router.back()
+              this.saveLastSelection()
+              this.resetFormAfterSubmit()
             } else {
               this.$message.error(result.rejectReason || '提交失败')
             }
@@ -118,7 +171,8 @@ export default {
             await addPendingLog(entry)
             networkState.pendingCount++
             this.$message.success('已暂存，联网后自动同步')
-            this.$router.back()
+            this.saveLastSelection()
+            this.resetFormAfterSubmit()
           }
         } finally {
           this.saving = false

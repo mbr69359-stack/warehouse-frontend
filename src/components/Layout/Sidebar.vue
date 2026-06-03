@@ -38,6 +38,12 @@
       <el-menu-item index="/report/inventory">库存报表</el-menu-item>
     </el-submenu>
 
+    <el-submenu index="offline">
+      <template slot="title"><i class="el-icon-mobile-phone"></i><span>离线操作</span></template>
+      <el-menu-item index="/quick-entry">快速出入库</el-menu-item>
+      <el-menu-item index="/sync/pending">待同步记录</el-menu-item>
+    </el-submenu>
+
     <el-submenu index="sys" v-if="isAdmin">
       <template slot="title"><i class="el-icon-setting"></i><span>系统设置</span></template>
       <el-menu-item index="/sys/users">用户管理</el-menu-item>
