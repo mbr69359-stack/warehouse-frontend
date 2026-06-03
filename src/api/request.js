@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { Message } from 'element-ui'
 import router from '../router'
+import store from '../store'
 
 function getToken() {
   return localStorage.getItem('token') || sessionStorage.getItem('token') || ''
@@ -18,7 +19,7 @@ request.interceptors.response.use(
   res => {
     const data = res.data
     if (data.code === 401) {
-      localStorage.removeItem('token')
+      store.commit('LOGOUT')
       router.push('/login')
       return Promise.reject(new Error('登录已过期'))
     }
@@ -30,7 +31,7 @@ request.interceptors.response.use(
   },
   err => {
     if (err.response && err.response.status === 401) {
-      localStorage.removeItem('token')
+      store.commit('LOGOUT')
       router.push('/login')
       return Promise.reject(new Error('登录已过期'))
     }
