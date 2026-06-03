@@ -94,6 +94,7 @@ export default {
       collapsed: false,
       windowWidth: window.innerWidth,
       showMineSheet: false,
+      _cleanupNetwork: null,
       navTabs: [
         { key: 'dashboard', label: '工作台', icon: 'dashboard',   routes: ['/dashboard'] },
         { key: 'inorder',   label: '入库',   icon: 'input',       routes: ['/in-orders'] },
@@ -120,12 +121,13 @@ export default {
   },
   mounted() {
     window.addEventListener('resize', this.onResize)
-    setupNetworkListeners()
+    this._cleanupNetwork = setupNetworkListeners()
     refreshPendingCount()
     if (navigator.onLine) refreshCache().catch(() => {})
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.onResize)
+    if (this._cleanupNetwork) this._cleanupNetwork()
   },
   methods: {
     onResize() {

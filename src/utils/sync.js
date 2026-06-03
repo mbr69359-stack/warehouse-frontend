@@ -56,7 +56,7 @@ export async function refreshCache() {
 }
 
 export function setupNetworkListeners() {
-  window.addEventListener('online', async () => {
+  const onOnline = async () => {
     networkState.online = true
     try {
       const { synced, rejected } = await syncPendingLogs()
@@ -70,8 +70,12 @@ export function setupNetworkListeners() {
     } catch (e) {
       console.error('Sync failed', e)
     }
-  })
-  window.addEventListener('offline', () => {
-    networkState.online = false
-  })
+  }
+  const onOffline = () => { networkState.online = false }
+  window.addEventListener('online', onOnline)
+  window.addEventListener('offline', onOffline)
+  return () => {
+    window.removeEventListener('online', onOnline)
+    window.removeEventListener('offline', onOffline)
+  }
 }

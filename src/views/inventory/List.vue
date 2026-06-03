@@ -243,7 +243,9 @@ export default {
     },
     async switchViewMode(mode) {
       this.viewMode = mode
+      this.query.current = 1
       if (mode === 'chart') this.loadChartData()
+      else this.loadData()
     },
     async loadChartData() {
       this.chartLoading = true

@@ -74,7 +74,6 @@
       <footer class="ml-footer">
         <div class="ml-badges">
           <span class="ml-badge"><span class="material-symbols-outlined" style="font-size:14px;">verified_user</span> 安全连接</span>
-          <span class="ml-badge"><span class="material-symbols-outlined" style="font-size:14px;">qr_code_scanner</span> 扫码登录</span>
         </div>
         <div class="ml-status">
           <span class="ml-dot"></span>
