@@ -97,6 +97,7 @@ export default {
       navTabs: [
         { key: 'dashboard', label: '工作台', icon: 'dashboard',   routes: ['/dashboard'] },
         { key: 'inorder',   label: '入库',   icon: 'input',       routes: ['/in-orders'] },
+        { key: 'quick',     label: '快速',   icon: 'bolt',        routes: ['/quick-entry'] },
         { key: 'outorder',  label: '出库',   icon: 'output',      routes: ['/out-orders'] },
         { key: 'inventory', label: '库存',   icon: 'inventory_2', routes: ['/inventory'] },
         { key: 'mine',      label: '我的',   icon: 'person',      routes: [] }
@@ -203,7 +204,7 @@ export default {
   color: #757684;
   background: none;
   border: none;
-  padding: 4px 8px;
+  padding: 4px 4px;
   border-radius: 10px;
   transition: color 0.15s, background 0.15s;
   -webkit-tap-highlight-color: transparent;
