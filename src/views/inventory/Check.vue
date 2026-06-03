@@ -51,8 +51,21 @@ export default {
   methods: {
     async loadInventory(wid) {
       this.loading = true
-      const r = await getInventory({ warehouseId: wid, current: 1, size: 200 }).finally(() => { this.loading = false })
-      this.items = (r.data.records || []).map(inv => ({ productId: inv.productId, systemQty: inv.qty, actualQty: inv.qty }))
+      try {
+        const PAGE_SIZE = 200
+        let current = 1
+        let allRecords = []
+        while (true) {
+          const r = await getInventory({ warehouseId: wid, current, size: PAGE_SIZE })
+          const page = r.data
+          allRecords = allRecords.concat(page.records || [])
+          if (allRecords.length >= page.total || (page.records || []).length < PAGE_SIZE) break
+          current++
+        }
+        this.items = allRecords.map(inv => ({ productId: inv.productId, systemQty: inv.qty, actualQty: inv.qty }))
+      } finally {
+        this.loading = false
+      }
     },
     async handleSubmit() {
       await this.$confirm('提交盘点后库存将按实际数量更新，是否继续？', '提示', { type: 'warning' })
