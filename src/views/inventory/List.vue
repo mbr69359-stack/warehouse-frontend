@@ -228,10 +228,7 @@ export default {
       this.warehouses = r.data || []
       this.warehouseMap = Object.fromEntries(this.warehouses.map(w => [w.id, w.name]))
     })
-    getProducts({ size: 1000 }).then(r => {
-      const items = r.data.records || r.data || []
-      this.productMap = Object.fromEntries(items.map(p => [p.id, p.name]))
-    })
+    this.loadAllProducts()
   },
   watch: {
     chartTab(val) { if (this.viewMode === 'chart') this.loadChartData() },
@@ -258,6 +255,17 @@ export default {
       this.chartLoading = false
     },
     onWarehouseChange(val) { this.chartWarehouseId = val },
+    async loadAllProducts() {
+      let current = 1, all = []
+      while (true) {
+        const r = await getProducts({ current, size: 200 })
+        const items = r.data.records || r.data || []
+        all.push(...items)
+        if (items.length < 200) break
+        current++
+      }
+      this.productMap = Object.fromEntries(all.map(p => [p.id, p.name]))
+    },
     onFilter() { this.query.current = 1; this.loadData() },
     prevPage()  { this.query.current--; this.loadData() },
     nextPage()  { this.query.current++; this.loadData() },
