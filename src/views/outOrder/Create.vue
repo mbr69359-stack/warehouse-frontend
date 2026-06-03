@@ -44,7 +44,7 @@
     <el-table :data="form.items" border>
       <el-table-column label="商品" min-width="260">
         <template slot-scope="{row}">
-          <el-select v-model="row.productId" placeholder="选择商品" filterable style="width:100%;">
+          <el-select v-model="row.productId" placeholder="选择商品" filterable style="width:100%;" @change="onProductChange(row)">
             <el-option
               v-for="p in products"
               :key="p.id"
@@ -55,8 +55,23 @@
           </el-select>
         </template>
       </el-table-column>
-      <el-table-column label="数量" width="120">
-        <template slot-scope="{row}"><el-input-number v-model="row.qty" :min="1" size="small" style="width:100%;" /></template>
+      <el-table-column label="可用库存" width="90" align="center">
+        <template slot-scope="{row}">
+          <span :style="row.productId && row.qty >= (inventoryMap[row.productId] || 0) ? 'color:#f56c6c;font-weight:bold;' : ''">
+            {{ row.productId ? (inventoryMap[row.productId] || 0) : '—' }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="数量" width="130">
+        <template slot-scope="{row}">
+          <el-input-number
+            v-model="row.qty"
+            :min="1"
+            :max="row.productId ? (inventoryMap[row.productId] || 1) : undefined"
+            size="small"
+            style="width:100%;"
+          />
+        </template>
       </el-table-column>
       <el-table-column label="单价" width="130">
         <template slot-scope="{row}"><el-input-number v-model="row.price" :min="0" :precision="2" size="small" style="width:100%;" /></template>
@@ -132,9 +147,29 @@ export default {
       return `${p.name}(${p.skuCode}) — 库存:${stock}件`
     },
     addItem() { this.form.items.push({ productId: null, qty: 1, price: 0 }) },
+    onProductChange(row) {
+      const max = this.inventoryMap[row.productId] || 1
+      if (row.qty > max) row.qty = max
+    },
     handleSave() {
       this.$refs.form.validate(async valid => {
         if (!valid) return
+        if (this.form.items.length === 0) {
+          this.$message.warning('请至少添加一条出库明细')
+          return
+        }
+        const emptyItem = this.form.items.find(i => !i.productId)
+        if (emptyItem) {
+          this.$message.warning('存在未选择商品的明细行，请补充或删除')
+          return
+        }
+        const overItem = this.form.items.find(i => i.qty > (this.inventoryMap[i.productId] || 0))
+        if (overItem) {
+          const prod = this.products.find(p => p.id === overItem.productId)
+          const avail = this.inventoryMap[overItem.productId] || 0
+          this.$message.error(`商品「${prod ? prod.name : overItem.productId}」库存仅剩 ${avail} 件，出库数量不能超过库存`)
+          return
+        }
         this.saving = true
         try {
           await createOutOrder(this.form)
