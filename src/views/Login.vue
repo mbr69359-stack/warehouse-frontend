@@ -119,7 +119,8 @@ export default {
         this.$store.commit('SET_TOKEN', { token: res.data.token, remember: this.rememberMe })
         this.$store.commit('SET_USER', { username: res.data.username, realName: res.data.realName })
         this.$store.commit('SET_ROLES', res.data.roles)
-        this.$router.push('/')
+        const redirect = this.$route.query.redirect || '/'
+        this.$router.push(redirect)
       } catch (e) {
         this.$message.error('用户名或密码错误')
       } finally { this.loading = false }

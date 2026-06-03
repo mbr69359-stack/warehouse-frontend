@@ -15,12 +15,19 @@ request.interceptors.request.use(config => {
   return config
 })
 
+function handleUnauthorized() {
+  store.commit('LOGOUT')
+  const current = router.currentRoute
+  if (current.path !== '/login') {
+    router.push({ path: '/login', query: { redirect: current.fullPath } })
+  }
+}
+
 request.interceptors.response.use(
   res => {
     const data = res.data
     if (data.code === 401) {
-      store.commit('LOGOUT')
-      router.push('/login')
+      handleUnauthorized()
       return Promise.reject(new Error('登录已过期'))
     }
     if (data.code !== 200) {
@@ -31,8 +38,7 @@ request.interceptors.response.use(
   },
   err => {
     if (err.response && err.response.status === 401) {
-      store.commit('LOGOUT')
-      router.push('/login')
+      handleUnauthorized()
       return Promise.reject(new Error('登录已过期'))
     }
     Message.error(err.message || '网络错误')
