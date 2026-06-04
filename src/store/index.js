@@ -3,11 +3,29 @@ import Vuex from 'vuex'
 
 Vue.use(Vuex)
 
-function loadToken() {
-  if (localStorage.getItem('remember_me') === '1') {
-    return localStorage.getItem('token') || ''
+function isTokenExpired(token) {
+  try {
+    const exp = JSON.parse(atob(token.split('.')[1])).exp
+    return exp ? Date.now() >= exp * 1000 : false
+  } catch {
+    return true
   }
-  return sessionStorage.getItem('token') || ''
+}
+
+function loadToken() {
+  let token
+  if (localStorage.getItem('remember_me') === '1') {
+    token = localStorage.getItem('token') || ''
+  } else {
+    token = sessionStorage.getItem('token') || ''
+  }
+  if (token && isTokenExpired(token)) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('remember_me')
+    sessionStorage.removeItem('token')
+    return ''
+  }
+  return token
 }
 
 export default new Vuex.Store({
