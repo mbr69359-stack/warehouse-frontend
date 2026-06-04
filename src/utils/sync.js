@@ -1,10 +1,20 @@
 // src/utils/sync.js
 import Vue from 'vue'
-import { getAllLogs, updateLogStatus, setCache } from './db'
+import { getAllLogs, updateLogStatus, setCache, getCache } from './db'
 import { batchSync } from '../api/syncApi'
 import { getProducts } from '../api/product'
 import { getWarehouses } from '../api/warehouse'
 import { getInventory } from '../api/inventory'
+
+const INV_SYNC_TIME_KEY = 'inv_sync_time'
+
+function mergeInventory(existing, delta) {
+  const map = new Map((existing || []).map(item => [`${item.warehouseId}-${item.productId}`, item]))
+  for (const item of delta) {
+    map.set(`${item.warehouseId}-${item.productId}`, item)
+  }
+  return Array.from(map.values())
+}
 
 export const networkState = Vue.observable({
   online: navigator.onLine,
@@ -43,15 +53,32 @@ export async function syncPendingLogs() {
 }
 
 export async function refreshCache() {
-  const [products, warehouses, inventory] = await Promise.all([
+  const syncTime = await getCache(INV_SYNC_TIME_KEY)
+  const nowIso = new Date().toISOString().slice(0, 19)
+
+  const invParams = { current: 1, size: 10000 }
+  if (syncTime) invParams.updatedAfter = syncTime
+
+  const [products, warehouses, invResp] = await Promise.all([
     getProducts({ current: 1, size: 500 }),
     getWarehouses(),
-    getInventory({ current: 1, size: 10000 })
+    getInventory(invParams)
   ])
+
+  const delta = invResp.data.records || invResp.data
+  let finalInventory
+  if (syncTime) {
+    const cached = await getCache('inventory')
+    finalInventory = mergeInventory(cached, delta)
+  } else {
+    finalInventory = delta
+  }
+
   await Promise.all([
     setCache('products', products.data.records),
     setCache('warehouses', warehouses.data),
-    setCache('inventory', inventory.data.records || inventory.data)
+    setCache('inventory', finalInventory),
+    setCache(INV_SYNC_TIME_KEY, nowIso)
   ])
 }
 
