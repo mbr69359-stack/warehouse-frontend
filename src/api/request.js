@@ -41,7 +41,8 @@ request.interceptors.response.use(
       handleUnauthorized()
       return Promise.reject(new Error('登录已过期'))
     }
-    Message.error(err.message || '网络错误')
+    const msg = (err.response && err.response.data && err.response.data.message) || err.message || '网络错误'
+    Message.error(msg)
     return Promise.reject(err)
   }
 )

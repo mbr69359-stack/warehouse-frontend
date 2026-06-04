@@ -87,8 +87,18 @@ export default {
       })
     },
     async handleDelete(id) {
-      await this.$confirm('确认删除该商品？', '提示', { type: 'warning' })
-      await deleteProduct(id); this.$message.success('删除成功'); this.loadData()
+      try {
+        await this.$confirm('确认删除该商品？', '提示', { type: 'warning' })
+      } catch {
+        return
+      }
+      try {
+        await deleteProduct(id)
+        this.$message.success('删除成功')
+        this.loadData()
+      } catch {
+        // 错误已由 axios 拦截器统一展示
+      }
     }
   }
 }
