@@ -176,6 +176,7 @@ export default {
     prevPage() { this.query.current--; this.loadData() },
     nextPage() { this.query.current++; this.loadData() },
     async openConfirmDialog(id) {
+      this.confirmItems = []
       this.currentOrderId = id
       this.dialogVisible = true
       this.dialogLoading = true

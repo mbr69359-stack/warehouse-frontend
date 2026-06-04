@@ -33,10 +33,18 @@
 
       <el-form-item label="数量" prop="qty">
         <el-input-number v-model="form.qty" :min="1" style="width:180px;" />
-        <span v-if="form.type === 'OUT' && currentStock !== null"
-          :style="{ marginLeft: '12px', fontSize: '13px', color: form.qty > currentStock ? '#F56C6C' : '#909399' }">
+        <span v-if="form.type === 'OUT' && currentStock !== null && !stockExceeded"
+          style="margin-left:12px;font-size:13px;color:#909399;">
           当前库存：{{ currentStock }}
         </span>
+        <el-alert
+          v-if="stockExceeded"
+          :title="`库存不足：当前库存 ${currentStock}，请减少出库数量`"
+          type="error"
+          :closable="false"
+          show-icon
+          style="margin-top:8px;padding:6px 12px;"
+        />
       </el-form-item>
 
       <el-form-item label="备注">
@@ -45,7 +53,7 @@
     </el-form>
 
     <div style="margin-top:20px;">
-      <el-button type="primary" :loading="saving" @click="handleSubmit">
+      <el-button type="primary" :loading="saving" :disabled="stockExceeded" @click="handleSubmit">
         {{ online ? '立即提交' : '暂存（离线）' }}
       </el-button>
       <el-button @click="$router.back()">取消</el-button>
@@ -87,6 +95,9 @@ export default {
         r => r.warehouseId === this.form.warehouseId && r.productId === this.form.productId
       )
       return record ? record.qty : null
+    },
+    stockExceeded() {
+      return this.form.type === 'OUT' && this.currentStock !== null && this.form.qty > this.currentStock
     }
   },
   async created() {
@@ -126,18 +137,6 @@ export default {
       if (this.form.warehouseId != null) localStorage.setItem(LS_WAREHOUSE, String(this.form.warehouseId))
       if (this.form.productId != null) localStorage.setItem(LS_PRODUCT, String(this.form.productId))
     },
-    async checkStock() {
-      if (this.form.type !== 'OUT') return true
-      const stock = this.currentStock
-      if (stock !== null && this.form.qty > stock) {
-        return this.$confirm(
-          `当前库存仅剩 ${stock}，出库 ${this.form.qty} 将导致负库存，是否继续？`,
-          '库存不足',
-          { type: 'warning', confirmButtonText: '仍然提交', cancelButtonText: '取消' }
-        ).then(() => true).catch(() => false)
-      }
-      return true
-    },
     resetFormAfterSubmit() {
       const { type, warehouseId, productId } = this.form
       this.form = { type, warehouseId, productId, qty: 1, remark: '' }
@@ -146,8 +145,6 @@ export default {
     handleSubmit() {
       this.$refs.form.validate(async valid => {
         if (!valid) return
-        const proceed = await this.checkStock()
-        if (!proceed) return
         this.saving = true
         try {
           const entry = {
