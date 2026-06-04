@@ -130,7 +130,7 @@ export default {
       this.form.targetWarehouseId = null
       this.inventoryMap = {}
       if (!warehouseId) return
-      getInventory({ warehouseId, size: 500 }).then(r => {
+      getInventory({ warehouseId, size: 2000 }).then(r => {
         const map = {}
         const records = r.data.records || r.data || []
         records.forEach(item => { map[item.productId] = item.qty })

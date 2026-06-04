@@ -63,7 +63,7 @@ export default {
   created() {
     getWarehouses().then(r => { this.warehouses = r.data })
     getSuppliers({ current: 1, size: 100 }).then(r => { this.suppliers = r.data.records })
-    getProducts({ current: 1, size: 200 }).then(r => { this.products = r.data.records })
+    getProducts({ current: 1, size: 2000 }).then(r => { this.products = r.data.records })
   },
   methods: {
     addItem() { this.form.items.push({ productId: null, planQty: 0, price: 0 }) },
