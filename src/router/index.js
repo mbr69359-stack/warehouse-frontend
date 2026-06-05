@@ -31,6 +31,9 @@ const routes = [
       { path: 'report/inventory', component: () => import('../views/report/Inventory.vue') },
       { path: 'sys/users', component: () => import('../views/sys/Users.vue'), meta: { adminOnly: true } },
       { path: 'sys/roles', component: () => import('../views/sys/Roles.vue'), meta: { adminOnly: true } },
+      { path: 'damage', component: () => import('../views/damage/Index.vue') },
+      { path: 'damage-records', component: () => import('../views/damage/Index.vue') },
+      { path: 'customer-returns', component: () => import('../views/customerReturn/Index.vue') },
       { path: 'quick-entry', component: () => import('../views/offline/QuickEntry.vue') },
       { path: 'sync/pending', component: () => import('../views/sync/PendingLogs.vue') }
     ]

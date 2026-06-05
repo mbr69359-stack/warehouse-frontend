@@ -39,6 +39,12 @@
       <el-menu-item index="/report/inventory">库存报表</el-menu-item>
     </el-submenu>
 
+    <el-submenu index="damage">
+      <template slot="title"><i class="el-icon-warning-outline"></i><span>损坏管理</span></template>
+      <el-menu-item index="/damage-records">损坏登记</el-menu-item>
+      <el-menu-item index="/customer-returns">退换货</el-menu-item>
+    </el-submenu>
+
     <el-submenu index="offline">
       <template slot="title"><i class="el-icon-mobile-phone"></i><span>离线操作</span></template>
       <el-menu-item index="/quick-entry">快速出入库</el-menu-item>

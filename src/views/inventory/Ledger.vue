@@ -12,6 +12,8 @@
         <el-option label="入库撤销" value="inbound_cancel" />
         <el-option label="出库撤销" value="outbound_cancel" />
         <el-option label="调拨撤销" value="transfer_cancel" />
+        <el-option label="损坏出库" value="damage_out" />
+        <el-option label="补发出库" value="replacement_out" />
       </el-select>
       <el-select v-model="query.locationId" placeholder="仓库" clearable style="width:150px;" @change="search">
         <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
@@ -64,7 +66,9 @@ const TYPE_MAP = {
   opening: { label: '期初', color: '' },
   inbound_cancel: { label: '入库撤销', color: 'danger' },
   outbound_cancel: { label: '出库撤销', color: 'warning' },
-  transfer_cancel: { label: '调拨撤销', color: 'info' }
+  transfer_cancel: { label: '调拨撤销', color: 'info' },
+  damage_out: { label: '损坏出库', color: 'warning' },
+  replacement_out: { label: '补发出库', color: 'danger' }
 }
 
 export default {
