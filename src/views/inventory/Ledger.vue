@@ -18,6 +18,7 @@
       </el-select>
       <el-button type="primary" icon="el-icon-search" @click="search">搜索</el-button>
       <el-button icon="el-icon-refresh" @click="reset">重置</el-button>
+      <el-button v-if="isAdmin" type="warning" icon="el-icon-refresh-left" :loading="rebuilding" @click="handleRebuild">重算快照</el-button>
     </div>
     <el-table :data="list" v-loading="loading" border stripe>
       <el-table-column prop="id" label="流水ID" width="80">
@@ -50,7 +51,7 @@
 </template>
 
 <script>
-import { getLedger } from '../../api/ledger'
+import { getLedger, rebuildSnapshot } from '../../api/ledger'
 import { getWarehouses } from '../../api/warehouse'
 
 const TYPE_MAP = {
@@ -66,9 +67,12 @@ const TYPE_MAP = {
 }
 
 export default {
+  computed: {
+    isAdmin() { return this.$store.getters.isAdmin }
+  },
   data() {
     return {
-      list: [], total: 0, loading: false, warehouses: [],
+      list: [], total: 0, loading: false, rebuilding: false, warehouses: [],
       query: { current: 1, size: 20, type: null, locationId: null }
     }
   },
@@ -94,6 +98,17 @@ export default {
     reset() { this.query = { current: 1, size: 20, type: null, locationId: null }; this.loadData() },
     typeLabel(t) { return TYPE_MAP[t] ? TYPE_MAP[t].label : t },
     typeColor(t) { return TYPE_MAP[t] ? TYPE_MAP[t].color : '' },
+    async handleRebuild() {
+      await this.$confirm('将从流水重算所有快照，确认执行？', '提示', { type: 'warning' })
+      this.rebuilding = true
+      try {
+        await rebuildSnapshot()
+        this.$message.success('快照重算完成')
+        this.loadData()
+      } finally {
+        this.rebuilding = false
+      }
+    },
     warehouseName(id) {
       if (!id || id === 0) return '全局'
       const w = this.warehouses.find(w => w.id === id)
