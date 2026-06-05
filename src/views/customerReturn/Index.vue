@@ -6,7 +6,7 @@
     </div>
 
     <el-table :data="list" v-loading="loading" border stripe>
-      <el-table-column prop="returnNo" label="换货单号" width="180" show-overflow-tooltip />
+      <el-table-column prop="exchangeNo" label="换货单号" width="180" show-overflow-tooltip />
       <el-table-column prop="warehouseName" label="仓库名" width="140" />
       <el-table-column label="状态" width="100" align="center">
         <template slot-scope="{row}">

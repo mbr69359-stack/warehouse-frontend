@@ -13,7 +13,7 @@
       <el-table :data="list" v-loading="loading" border stripe>
         <el-table-column prop="orderNo" label="出库单号" width="200" />
         <el-table-column prop="type" label="类型" width="100">
-          <template slot-scope="{row}">{{ row.type==='SALE'?'销售出库':'调拨出库' }}</template>
+          <template slot-scope="{row}">{{ typeLabel(row.type) }}</template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="90">
           <template slot-scope="{row}">
@@ -88,7 +88,7 @@
           <div class="m-order-header">
             <div>
               <div class="m-order-no">{{ row.orderNo }}</div>
-              <div class="m-order-meta">{{ row.type==='SALE'?'销售出库':'调拨出库' }}</div>
+              <div class="m-order-meta">{{ typeLabel(row.type) }}</div>
             </div>
             <span class="m-status-badge" :class="row.status==='CONFIRMED'?'success':'warning'">
               {{ row.status==='CONFIRMED'?'已完成':'待出库' }}
@@ -191,6 +191,10 @@ export default {
   },
   created() { this.loadData() },
   methods: {
+    typeLabel(type) {
+      const map = { SALE: '销售出库', TRANSFER: '调拨出库', DAMAGE_OUT: '损坏出库', REPLACEMENT_OUT: '换货补发' }
+      return map[type] || type
+    },
     async loadData() {
       this.loading = true
       const r = await getOutOrders(this.query).finally(() => { this.loading = false })
