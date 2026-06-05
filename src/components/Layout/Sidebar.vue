@@ -29,6 +29,7 @@
       <el-menu-item index="/inventory">库存查询</el-menu-item>
       <el-menu-item index="/inventory/alerts">库存预警</el-menu-item>
       <el-menu-item index="/inventory/check">库存盘点</el-menu-item>
+      <el-menu-item index="/inventory/ledger">库存流水</el-menu-item>
     </el-submenu>
 
     <el-submenu index="report">
