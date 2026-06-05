@@ -8,19 +8,28 @@
       </el-tag>
     </div>
     <el-descriptions :column="3" border style="margin-bottom:16px;">
-      <el-descriptions-item label="仓库ID">{{ order.warehouseId }}</el-descriptions-item>
-      <el-descriptions-item label="出库类型">{{ order.type==='SALE'?'销售出库':'调拨出库' }}</el-descriptions-item>
+      <el-descriptions-item label="仓库">{{ warehouseName }}</el-descriptions-item>
+      <el-descriptions-item label="出库类型">{{ typeLabel(order.type) }}</el-descriptions-item>
       <el-descriptions-item label="创建时间">{{ order.createTime }}</el-descriptions-item>
       <el-descriptions-item label="确认时间">{{ order.confirmTime || '—' }}</el-descriptions-item>
       <el-descriptions-item label="备注" :span="2">{{ order.remark || '—' }}</el-descriptions-item>
     </el-descriptions>
 
     <el-table :data="items" border stripe>
-      <el-table-column prop="productId" label="商品ID" width="100" />
+      <el-table-column label="商品" min-width="200">
+        <template slot-scope="{row}">
+          {{ row.productName || row.productId }}
+          <span v-if="row.skuCode" style="color:#909399;font-size:12px;"> ({{ row.skuCode }})</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="qty" label="计划数量" width="110" />
       <el-table-column prop="actualQty" label="实际数量" width="110" />
       <el-table-column label="单价" width="100"><template slot-scope="{row}">¥{{ row.price }}</template></el-table-column>
-      <el-table-column label="小计"><template slot-scope="{row}">¥{{ ((order.status === 'CONFIRMED' ? row.actualQty : row.qty) * row.price * 100 / 100).toFixed(2) }}</template></el-table-column>
+      <el-table-column label="小计">
+        <template slot-scope="{row}">
+          ¥{{ subtotal(row) }}
+        </template>
+      </el-table-column>
     </el-table>
 
     <div style="margin-top:16px;" v-if="order.status==='DRAFT'">
@@ -30,7 +39,11 @@
     <!-- 确认出库弹窗 -->
     <el-dialog title="填写实际出库数量" :visible.sync="dialogVisible" width="560px" :close-on-click-modal="false">
       <el-table :data="confirmItems" border>
-        <el-table-column prop="productId" label="商品ID" width="100" />
+        <el-table-column label="商品" min-width="160">
+          <template slot-scope="{row}">
+            {{ row.productName || row.productId }}
+          </template>
+        </el-table-column>
         <el-table-column prop="planQty" label="计划数量" width="110" />
         <el-table-column label="实际出库数量">
           <template slot-scope="{row}">
@@ -47,30 +60,53 @@
 </template>
 
 <script>
-import { getOutOrders, confirmOutOrder, getOutOrderItems } from '../../api/outOrder'
+import { getOutOrder, confirmOutOrder, getOutOrderItems } from '../../api/outOrder'
+import { getWarehouses } from '../../api/warehouse'
 export default {
   data() {
     return {
       order: {}, items: [], loading: false,
+      warehouses: [],
       dialogVisible: false, confirming: false,
       confirmItems: []
     }
   },
+  computed: {
+    warehouseName() {
+      if (!this.order.warehouseId) return '—'
+      const w = this.warehouses.find(w => w.id === this.order.warehouseId)
+      return w ? w.name : this.order.warehouseId
+    }
+  },
   created() { this.loadData() },
   methods: {
+    typeLabel(type) {
+      const map = { SALE: '销售出库', TRANSFER: '调拨出库', DAMAGE_OUT: '损坏出库', REPLACEMENT_OUT: '补发出库' }
+      return map[type] || type || '—'
+    },
+    subtotal(row) {
+      const qty = this.order.status === 'CONFIRMED' ? (row.actualQty || 0) : (row.qty || 0)
+      return (Math.round(qty * Number(row.price || 0) * 100) / 100).toFixed(2)
+    },
     async loadData() {
       this.loading = true
       const id = this.$route.params.id
-      const [listRes, itemRes] = await Promise.all([
-        getOutOrders({ current: 1, size: 200 }),
-        getOutOrderItems(id)
-      ]).finally(() => { this.loading = false })
-      this.order = (listRes.data.records || []).find(o => String(o.id) === String(id)) || {}
-      this.items = itemRes.data || []
+      try {
+        const [orderRes, itemRes, warehouseRes] = await Promise.all([
+          getOutOrder(id),
+          getOutOrderItems(id),
+          getWarehouses()
+        ])
+        this.order = orderRes.data || {}
+        this.items = itemRes.data || []
+        this.warehouses = warehouseRes.data || []
+      } finally {
+        this.loading = false
+      }
     },
     openConfirmDialog() {
       this.confirmItems = this.items.map(i => ({
-        id: i.id, productId: i.productId,
+        id: i.id, productId: i.productId, productName: i.productName,
         planQty: i.qty, actualQty: i.qty || 0
       }))
       this.dialogVisible = true
