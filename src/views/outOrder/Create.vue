@@ -44,7 +44,8 @@
     <el-table :data="form.items" border>
       <el-table-column label="商品" min-width="260">
         <template slot-scope="{row}">
-          <el-select v-model="row.productId" placeholder="选择商品" filterable style="width:100%;" @change="onProductChange(row)">
+          <el-select v-model="row.productId" placeholder="输入名称搜索商品" filterable remote
+            :remote-method="searchProducts" :loading="productLoading" style="width:100%;" @change="onProductChange(row)">
             <el-option
               v-for="p in products"
               :key="p.id"
@@ -99,6 +100,7 @@ export default {
       saving: false,
       warehouses: [],
       products: [],
+      productLoading: false,
       inventoryMap: {},
       form: { warehouseId: null, targetWarehouseId: null, type: 'SALE', remark: '', items: [] },
       baseRules: {
@@ -122,13 +124,24 @@ export default {
   },
   created() {
     getWarehouses().then(r => { this.warehouses = r.data })
-    getProducts({ current: 1, size: 200 }).then(r => { this.products = r.data.records })
   },
   methods: {
+    searchProducts(query) {
+      if (!query) return
+      this.productLoading = true
+      getProducts({ current: 1, size: 20, name: query })
+        .then(r => {
+          const incoming = r.data.records
+          const seen = new Set(this.products.map(p => p.id))
+          this.products = [...this.products, ...incoming.filter(p => !seen.has(p.id))]
+        })
+        .finally(() => { this.productLoading = false })
+    },
     onWarehouseChange(warehouseId) {
       this.form.items = []
       this.form.targetWarehouseId = null
       this.inventoryMap = {}
+      this.products = []
       if (!warehouseId) return
       getInventory({ warehouseId, size: 2000 }).then(r => {
         const map = {}

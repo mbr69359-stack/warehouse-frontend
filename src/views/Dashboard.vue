@@ -95,9 +95,9 @@
             <div class="m-stat-label">待出库</div>
             <div class="m-stat-value">{{ cards[1].value }}</div>
           </div>
-          <div class="m-stat-card" @click="$router.push('/inventory/check')">
-            <div class="m-stat-label">待盘点</div>
-            <div class="m-stat-value">{{ cards[3].value }}</div>
+          <div class="m-stat-card" @click="$router.push('/inventory/alerts')">
+            <div class="m-stat-label">库存预警</div>
+            <div class="m-stat-value">{{ cards[2].value }}</div>
           </div>
           <div class="m-stat-card" @click="$router.push('/inventory')">
             <div class="m-stat-label">库存种类</div>

@@ -25,7 +25,8 @@
     <el-table :data="form.items" border>
       <el-table-column label="商品" min-width="200">
         <template slot-scope="{row}">
-          <el-select v-model="row.productId" placeholder="选择商品" filterable style="width:100%;">
+          <el-select v-model="row.productId" placeholder="输入名称搜索商品" filterable remote
+            :remote-method="searchProducts" :loading="productLoading" style="width:100%;">
             <el-option v-for="p in products" :key="p.id" :label="p.name+'('+p.skuCode+')'" :value="p.id" />
           </el-select>
         </template>
@@ -55,7 +56,7 @@ import { getProducts } from '../../api/product'
 export default {
   data() {
     return {
-      saving: false, warehouses: [], suppliers: [], products: [],
+      saving: false, warehouses: [], suppliers: [], products: [], productLoading: false,
       form: { warehouseId: null, supplierId: null, type: 'PURCHASE', remark: '', items: [] },
       rules: { warehouseId: [{ required: true, message: '请选择仓库' }], type: [{ required: true, message: '请选择类型' }] }
     }
@@ -63,9 +64,19 @@ export default {
   created() {
     getWarehouses().then(r => { this.warehouses = r.data })
     getSuppliers({ current: 1, size: 100 }).then(r => { this.suppliers = r.data.records })
-    getProducts({ current: 1, size: 2000 }).then(r => { this.products = r.data.records })
   },
   methods: {
+    searchProducts(query) {
+      if (!query) return
+      this.productLoading = true
+      getProducts({ current: 1, size: 20, name: query })
+        .then(r => {
+          const incoming = r.data.records
+          const seen = new Set(this.products.map(p => p.id))
+          this.products = [...this.products, ...incoming.filter(p => !seen.has(p.id))]
+        })
+        .finally(() => { this.productLoading = false })
+    },
     addItem() { this.form.items.push({ productId: null, planQty: 0, price: 0 }) },
     handleSave() {
       this.$refs.form.validate(async valid => {

@@ -25,6 +25,7 @@
         <template slot-scope="{row}"><span :title="row.id">{{ row.id.slice(0,8) }}…</span></template>
       </el-table-column>
       <el-table-column prop="productId" label="商品ID" width="90" />
+      <el-table-column prop="productName" label="商品名称" width="160" show-overflow-tooltip />
       <el-table-column label="仓库" width="120">
         <template slot-scope="{row}">{{ warehouseName(row.locationId) }}</template>
       </el-table-column>
