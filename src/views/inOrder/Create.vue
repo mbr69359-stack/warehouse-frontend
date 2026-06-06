@@ -37,10 +37,21 @@
       <el-table-column label="单价" width="130">
         <template slot-scope="{row}"><el-input-number v-model="row.price" :min="0" :precision="2" size="small" style="width:100%;" /></template>
       </el-table-column>
+      <el-table-column label="预计总重量" width="110">
+        <template slot-scope="{row}">
+          <span v-if="productMap[row.productId] && productMap[row.productId].weightPerBox">
+            {{ ((row.planQty || 0) * productMap[row.productId].weightPerBox).toFixed(1) }} kg
+          </span>
+          <span v-else style="color:#c0c4cc;">—</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="70">
         <template slot-scope="{$index}"><el-button type="danger" size="mini" icon="el-icon-delete" circle @click="form.items.splice($index,1)" /></template>
       </el-table-column>
     </el-table>
+    <div v-if="totalWeight > 0" style="margin-top:10px;text-align:right;color:#606266;font-size:13px;">
+      预计入库总重量：<strong>{{ totalWeight }} kg</strong>
+    </div>
     <div style="margin-top:20px;">
       <el-button type="primary" :loading="saving" @click="handleSave">保存草稿</el-button>
       <el-button @click="$router.back()">取消</el-button>
@@ -54,6 +65,17 @@ import { getWarehouses } from '../../api/warehouse'
 import { getSuppliers } from '../../api/supplier'
 import { getProducts } from '../../api/product'
 export default {
+  computed: {
+    productMap() {
+      return Object.fromEntries(this.products.map(p => [p.id, p]))
+    },
+    totalWeight() {
+      return this.form.items.reduce((sum, row) => {
+        const p = this.productMap[row.productId]
+        return p && p.weightPerBox ? sum + (row.planQty || 0) * p.weightPerBox : sum
+      }, 0).toFixed(1)
+    }
+  },
   data() {
     return {
       saving: false, warehouses: [], suppliers: [], products: [], productLoading: false,

@@ -16,6 +16,14 @@
       <el-table-column prop="barcode" label="条码" width="130" show-overflow-tooltip />
       <el-table-column prop="unit" label="单位" width="70" />
       <el-table-column prop="price" label="价格" width="100"><template slot-scope="{row}">¥{{ row.price }}</template></el-table-column>
+      <el-table-column label="箱规" width="140" show-overflow-tooltip>
+        <template slot-scope="{row}">
+          <span v-if="row.weightPerBox || row.qtyPerBox">
+            {{ row.weightPerBox ? row.weightPerBox + 'kg' : '—' }} / {{ row.qtyPerBox ? row.qtyPerBox + '片' : '—' }}
+          </span>
+          <span v-else style="color:#c0c4cc;">未设置</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="status" label="状态" width="80">
         <template slot-scope="{row}"><el-tag :type="row.status===1?'success':'info'">{{ row.status===1?'上架':'下架' }}</el-tag></template>
       </el-table-column>
@@ -43,6 +51,8 @@
         <el-form-item label="条码"><el-input v-model="form.barcode" placeholder="EAN/UPC" /></el-form-item>
         <el-form-item label="单位" prop="unit"><el-input v-model="form.unit" /></el-form-item>
         <el-form-item label="价格" prop="price"><el-input-number v-model="form.price" :precision="2" :min="0" style="width:100%;" /></el-form-item>
+        <el-form-item label="每箱重量(kg)"><el-input-number v-model="form.weightPerBox" :precision="2" :min="0" :placeholder="null" style="width:100%;" /></el-form-item>
+        <el-form-item label="每箱片数"><el-input-number v-model="form.qtyPerBox" :min="0" :precision="0" :placeholder="null" style="width:100%;" /></el-form-item>
         <el-form-item label="状态">
           <el-radio-group v-model="form.status"><el-radio :label="1">上架</el-radio><el-radio :label="0">下架</el-radio></el-radio-group>
         </el-form-item>
@@ -63,7 +73,7 @@ export default {
     return {
       list: [], total: 0, loading: false, saving: false, dialogVisible: false, categories: [],
       query: { current: 1, size: 10, name: '', categoryId: null },
-      form: { id: null, name: '', skuCode: '', categoryId: null, unit: '个', price: 0, spec: '', barcode: '', status: 1 },
+      form: { id: null, name: '', skuCode: '', categoryId: null, unit: '个', price: 0, spec: '', barcode: '', weightPerBox: null, qtyPerBox: null, status: 1 },
       rules: { name: [{ required: true, message: '请输入商品名称' }], skuCode: [{ required: true, message: '请输入SKU' }], unit: [{ required: true, message: '请输入单位' }] }
     }
   },
@@ -75,7 +85,7 @@ export default {
       this.list = res.data.records; this.total = res.data.total
     },
     openForm(row) {
-      this.form = row ? { ...row } : { id: null, name: '', skuCode: '', categoryId: null, unit: '个', price: 0, spec: '', barcode: '', status: 1 }
+      this.form = row ? { ...row } : { id: null, name: '', skuCode: '', categoryId: null, unit: '个', price: 0, spec: '', barcode: '', weightPerBox: null, qtyPerBox: null, status: 1 }
       this.dialogVisible = true
       this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate())
     },
