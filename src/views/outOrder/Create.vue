@@ -82,7 +82,7 @@
         <el-table-column label="数量" width="130">
           <template slot-scope="{row}">
             <el-input-number v-model="row.qty" :min="1"
-              :max="row.productId ? (inventoryMap[row.productId] || 1) : undefined"
+              :max="row.productId ? (inventoryMap[row.productId] || 0) : undefined"
               size="small" style="width:100%;" />
           </template>
         </el-table-column>
@@ -212,7 +212,7 @@ export default {
     },
     addItem() { this.form.items.push({ productId: null, qty: 1, price: 0 }) },
     onProductChange(row) {
-      const max = this.inventoryMap[row.productId] || 1
+      const max = this.inventoryMap[row.productId] || 0
       if (row.qty > max) row.qty = max
     },
     handleSave() {

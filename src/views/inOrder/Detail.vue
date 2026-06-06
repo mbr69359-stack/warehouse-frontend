@@ -9,7 +9,7 @@
     </div>
 
     <el-descriptions :column="3" border style="margin-bottom:16px;">
-      <el-descriptions-item label="仓库ID">{{ order.warehouseId }}</el-descriptions-item>
+      <el-descriptions-item label="仓库">{{ warehouseName }}</el-descriptions-item>
       <el-descriptions-item label="入库类型">{{ order.type==='PURCHASE'?'采购入库':'退货入库' }}</el-descriptions-item>
       <el-descriptions-item label="创建时间">{{ order.createTime }}</el-descriptions-item>
       <el-descriptions-item label="确认时间">{{ order.confirmTime || '—' }}</el-descriptions-item>
@@ -17,11 +17,20 @@
     </el-descriptions>
 
     <el-table :data="items" border stripe>
-      <el-table-column prop="productId" label="商品ID" width="100" />
+      <el-table-column label="商品" min-width="200">
+        <template slot-scope="{row}">
+          {{ row.productName || row.productId }}
+          <span v-if="row.skuCode" style="color:#909399;font-size:12px;"> ({{ row.skuCode }})</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="planQty" label="计划数量" width="110" />
       <el-table-column prop="actualQty" label="实际数量" width="110" />
       <el-table-column label="单价" width="100"><template slot-scope="{row}">¥{{ row.price }}</template></el-table-column>
-      <el-table-column label="小计"><template slot-scope="{row}">¥{{ (row.actualQty * row.price * 100 / 100).toFixed(2) }}</template></el-table-column>
+      <el-table-column label="小计">
+        <template slot-scope="{row}">
+          ¥{{ subtotal(row) }}
+        </template>
+      </el-table-column>
     </el-table>
 
     <div style="margin-top:16px;" v-if="order.status==='DRAFT'">
@@ -31,7 +40,11 @@
     <!-- 确认入库弹窗 -->
     <el-dialog title="填写实际入库数量" :visible.sync="dialogVisible" width="560px" :close-on-click-modal="false">
       <el-table :data="confirmItems" border>
-        <el-table-column prop="productId" label="商品ID" width="100" />
+        <el-table-column label="商品" min-width="160">
+          <template slot-scope="{row}">
+            {{ row.productName || row.productId }}
+          </template>
+        </el-table-column>
         <el-table-column prop="planQty" label="计划数量" width="110" />
         <el-table-column label="实际入库数量">
           <template slot-scope="{row}">
@@ -48,32 +61,51 @@
 </template>
 
 <script>
-import { getInOrders, confirmInOrder, getInOrderItems } from '../../api/inOrder'
+import { getInOrder, confirmInOrder, getInOrderItems } from '../../api/inOrder'
+import { getWarehouses } from '../../api/warehouse'
 export default {
   data() {
     return {
       order: {}, items: [], loading: false,
+      warehouses: [],
       dialogVisible: false, confirming: false,
       confirmItems: []
     }
   },
+  computed: {
+    warehouseName() {
+      if (!this.order.warehouseId) return '—'
+      const w = this.warehouses.find(w => w.id === this.order.warehouseId)
+      return w ? w.name : this.order.warehouseId
+    }
+  },
   created() { this.loadData() },
   methods: {
+    subtotal(row) {
+      const qty = this.order.status === 'CONFIRMED' ? (row.actualQty || 0) : (row.planQty || 0)
+      return (Math.round(qty * Number(row.price || 0) * 100) / 100).toFixed(2)
+    },
     async loadData() {
       this.loading = true
       const id = this.$route.params.id
-      const [listRes, itemRes] = await Promise.all([
-        getInOrders({ current: 1, size: 200 }),
-        getInOrderItems(id)
-      ]).finally(() => { this.loading = false })
-      this.order = (listRes.data.records || []).find(o => String(o.id) === String(id)) || {}
-      this.items = itemRes.data || []
+      try {
+        const [orderRes, itemRes, warehouseRes] = await Promise.all([
+          getInOrder(id),
+          getInOrderItems(id),
+          getWarehouses()
+        ])
+        this.order = orderRes.data || {}
+        this.items = itemRes.data || []
+        this.warehouses = warehouseRes.data || []
+      } finally {
+        this.loading = false
+      }
     },
     openConfirmDialog() {
-      // 默认用计划数量预填，方便修改
       this.confirmItems = this.items.map(i => ({
         id: i.id,
         productId: i.productId,
+        productName: i.productName,
         planQty: i.planQty,
         actualQty: i.planQty || 0
       }))
