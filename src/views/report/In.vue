@@ -11,6 +11,7 @@
       <el-date-picker v-model="dateRange" type="daterange" range-separator="至"
         start-placeholder="开始日期" end-placeholder="结束日期" value-format="yyyy-MM-dd"
         @change="loadData" style="width:260px;" />
+      <el-button icon="el-icon-download" @click="handleExport" :disabled="!tableData.length">导出 Excel</el-button>
     </div>
     <div ref="chart" style="height:360px;"></div>
     <el-table :data="tableData" border stripe style="margin-top:20px;">
@@ -26,6 +27,7 @@
 import * as echarts from 'echarts'
 import { getInReport } from '../../api/report'
 import mobileMixin from '../../mixins/mobile'
+import { exportCSV } from '../../utils/export'
 export default {
   mixins: [mobileMixin],
   data() {
@@ -35,6 +37,14 @@ export default {
   mounted() { if (!this.isMobile) { this.chart = echarts.init(this.$refs.chart); this.loadData() } },
   beforeDestroy() { this.chart && this.chart.dispose() },
   methods: {
+    handleExport() {
+      const filename = `入库报表_${this.dateRange[0]}_${this.dateRange[1]}.csv`
+      exportCSV(
+        ['日期', '入库单数', '入库金额(元)'],
+        this.tableData.map(r => [r.date, r.count, Number(r.amount || 0).toFixed(2)]),
+        filename
+      )
+    },
     async loadData() {
       if (!this.dateRange || !this.dateRange[0]) return
       const res = await getInReport({ startDate: this.dateRange[0], endDate: this.dateRange[1] })
