@@ -29,6 +29,12 @@
         </el-select>
       </el-form-item>
       <el-form-item label="备注"><el-input v-model="form.remark" type="textarea" /></el-form-item>
+      <!-- 客户关联（可选，用于记录销售对象和参考价） -->
+      <el-form-item label="客户">
+        <el-select v-model="form.customerId" placeholder="选择客户（可选）" clearable filterable style="width:100%;">
+          <el-option v-for="c in customers" :key="c.id" :label="c.name" :value="c.id" />
+        </el-select>
+      </el-form-item>
     </el-form>
 
     <!-- 损坏出库：显示可勾选的损坏记录表格 -->
@@ -86,9 +92,11 @@
               size="small" style="width:100%;" />
           </template>
         </el-table-column>
-        <el-table-column label="单价" width="130">
+        <el-table-column label="单价" width="160">
           <template slot-scope="{row}">
             <el-input-number v-model="row.price" :min="0" :precision="2" size="small" style="width:100%;" />
+            <!-- 显示参考上次成交价提示 -->
+            <div v-if="row._lastPriceTip" style="font-size:11px;color:#909399;margin-top:2px;">{{ row._lastPriceTip }}</div>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="70">
@@ -112,11 +120,15 @@ import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 import { getInventory } from '../../api/inventory'
 import { getPendingDamageRecords, getPendingCount } from '../../api/damageRecord'
+import { getCustomers, getLastPrice } from '../../api/customer'
 
 export default {
   data() {
     return {
       saving: false,
+      // 客户列表（用于下拉选择）
+      customers: [],
+      customersLoading: false,
       warehouses: [],
       products: [],
       productLoading: false,
@@ -125,7 +137,7 @@ export default {
       damageRecords: [],
       damageLoading: false,
       selectedDamageIds: [],
-      form: { warehouseId: null, targetWarehouseId: null, type: 'SALE', remark: '', items: [] },
+      form: { warehouseId: null, targetWarehouseId: null, type: 'SALE', remark: '', customerId: null, items: [] },
       baseRules: {
         warehouseId: [{ required: true, message: '请选择仓库' }],
         type: [{ required: true, message: '请选择类型' }]
@@ -147,6 +159,8 @@ export default {
   },
   created() {
     getWarehouses().then(r => { this.warehouses = r.data })
+    // 预加载客户列表（最多200条）
+    getCustomers({ current: 1, size: 200 }).then(r => { this.customers = r.data.records || [] })
   },
   methods: {
     searchProducts(query) {
@@ -210,10 +224,24 @@ export default {
       const stock = this.inventoryMap[p.id] !== undefined ? this.inventoryMap[p.id] : '—'
       return `${p.name}(${p.skuCode}) — 库存:${stock}件`
     },
-    addItem() { this.form.items.push({ productId: null, qty: 1, price: 0 }) },
+    addItem() { this.form.items.push({ productId: null, qty: 1, price: 0, _lastPriceTip: null }) },
     onProductChange(row) {
       const max = this.inventoryMap[row.productId] || 0
       if (row.qty > max) row.qty = max
+      // 选择商品后自动拉取参考价
+      this.fetchLastPrice(row)
+    },
+    // 异步查询该客户对该商品的最近一次成交价，填入参考价提示
+    async fetchLastPrice(row) {
+      if (!this.form.customerId || !row.productId) return
+      const r = await getLastPrice(this.form.customerId, row.productId)
+      const price = r.data
+      if (price != null) {
+        row.price = Number(price)
+        row._lastPriceTip = `参考上次：¥${Number(price).toFixed(2)}`
+      } else {
+        row._lastPriceTip = null
+      }
     },
     handleSave() {
       this.$refs.form.validate(async valid => {
