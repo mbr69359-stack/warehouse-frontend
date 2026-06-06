@@ -38,6 +38,11 @@
       <el-menu-item index="/report/in">入库报表</el-menu-item>
       <el-menu-item index="/report/out">出库报表</el-menu-item>
       <el-menu-item index="/report/inventory">库存报表</el-menu-item>
+      <el-menu-item index="/report/ledger">流水报表</el-menu-item>
+      <el-menu-item index="/report/stock-movement">库存进出报表</el-menu-item>
+      <el-menu-item index="/report/supplier">供应商对账单</el-menu-item>
+      <el-menu-item index="/report/customer">客户对账单</el-menu-item>
+      <el-menu-item index="/report/stocktake">库存盘点表</el-menu-item>
     </el-submenu>
 
     <el-submenu index="damage">
