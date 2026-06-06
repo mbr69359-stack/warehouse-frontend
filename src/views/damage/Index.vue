@@ -111,6 +111,9 @@ export default {
   },
   created() {
     getWarehouses().then(r => { this.warehouses = r.data })
+    if (this.$route.query.warehouseId) {
+      this.query.warehouseId = Number(this.$route.query.warehouseId)
+    }
     this.loadData()
   },
   methods: {

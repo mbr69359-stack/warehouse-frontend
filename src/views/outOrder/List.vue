@@ -3,10 +3,13 @@
 
     <!-- ── 桌面端 ── -->
     <el-card v-if="!isMobile">
-      <div style="margin-bottom:16px;display:flex;gap:12px;">
+      <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
         <el-select v-model="query.status" placeholder="状态" clearable style="width:130px;" @change="loadData">
           <el-option label="草稿" value="DRAFT" /><el-option label="已确认" value="CONFIRMED" />
         </el-select>
+        <el-date-picker v-model="dateRange" type="daterange" range-separator="至"
+          start-placeholder="开始日期" end-placeholder="结束日期" value-format="yyyy-MM-dd"
+          style="width:260px;" @change="onDateRangeChange" />
         <el-button type="primary" icon="el-icon-search" @click="loadData">搜索</el-button>
         <el-button type="success" icon="el-icon-plus" @click="$router.push('/out-orders/create')">新建出库单</el-button>
       </div>
@@ -169,7 +172,8 @@ export default {
     return {
       list: [], total: 0, loading: false,
       mobileSearch: '',
-      query: { current: 1, size: 10, status: null },
+      dateRange: null,
+      query: { current: 1, size: 10, status: null, startDate: null, endDate: null },
       statusTabs: [
         { label: '全部',   value: null },
         { label: '待出库', value: 'DRAFT' },
@@ -200,6 +204,12 @@ export default {
       const r = await getOutOrders(this.query).finally(() => { this.loading = false })
       this.list  = r.data.records
       this.total = r.data.total
+    },
+    onDateRangeChange(val) {
+      this.query.startDate = val ? val[0] : null
+      this.query.endDate = val ? val[1] : null
+      this.query.current = 1
+      this.loadData()
     },
     switchTab(val) { this.query.status = val; this.query.current = 1; this.loadData() },
     prevPage() { this.query.current--; this.loadData() },

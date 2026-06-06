@@ -127,7 +127,7 @@
 
     <!-- 步骤二：确认补发出库弹窗 -->
     <el-dialog title="步骤二：确认补发出库 — 填写实际发货数量" :visible.sync="confirmVisible"
-      width="580px" :close-on-click-modal="false">
+      width="680px" :close-on-click-modal="false">
       <el-table :data="confirmItems" v-loading="confirmLoading" border size="small">
         <el-table-column label="商品" min-width="180">
           <template slot-scope="{row}">
@@ -136,6 +136,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="planQty" label="计划补发" width="90" align="center" />
+        <el-table-column label="当前库存" width="100" align="center">
+          <template slot-scope="{row}">
+            <span :style="row.currentStock !== null && row.currentStock < row.actualQty ? 'color:#F56C6C;font-weight:bold;' : 'color:#67C23A;'">
+              {{ row.currentStock !== null ? row.currentStock : '—' }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column label="实际发货" width="140">
           <template slot-scope="{row}">
             <el-input-number v-model="row.actualQty" :min="0" size="small" style="width:110px;" />
@@ -160,6 +167,7 @@ import {
   confirmCustomerReturn
 } from '../../api/customerReturn'
 import { getOutOrderItems } from '../../api/outOrder'
+import { getInventory } from '../../api/inventory'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 
@@ -319,9 +327,16 @@ export default {
       try {
         const payload = this.inboundItems.map(i => ({ itemId: i.id, actualQty: i.actualQty || 0 }))
         await confirmCustomerReturnInbound(this.currentReturn.id, payload)
-        this.$message.success('退货入库成功，已自动生成损坏记录，请继续确认补发出库')
         this.inboundVisible = false
         this.loadData()
+        const warehouseId = this.currentReturn.warehouseId
+        this.$confirm('退货入库成功，已自动生成损坏记录。', '提示', {
+          type: 'success',
+          confirmButtonText: '查看损坏记录',
+          cancelButtonText: '继续'
+        }).then(() => {
+          this.$router.push({ path: '/damage', query: { warehouseId } })
+        }).catch(() => {})
       } finally {
         this.inbounding = false
       }
@@ -334,14 +349,22 @@ export default {
       this.confirmVisible = true
       this.confirmLoading = true
       try {
-        const r = await getOutOrderItems(row.outOrderId)
-        this.confirmItems = (r.data || []).map(i => ({
+        const [itemsResp, invResp] = await Promise.all([
+          getOutOrderItems(row.outOrderId),
+          getInventory({ warehouseId: row.warehouseId, size: 200 })
+        ])
+        const invMap = {}
+        for (const inv of (invResp.data.records || [])) {
+          invMap[inv.productId] = inv.qty
+        }
+        this.confirmItems = (itemsResp.data || []).map(i => ({
           id: i.id,
           productId: i.productId,
           productName: i.productName,
           skuCode: i.skuCode,
           planQty: i.qty,
-          actualQty: i.qty
+          actualQty: i.qty,
+          currentStock: invMap[i.productId] !== undefined ? invMap[i.productId] : null
         }))
       } catch {
         this.$message.error('加载补发明细失败，请重试')
