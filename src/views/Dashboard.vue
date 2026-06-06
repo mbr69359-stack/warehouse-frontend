@@ -64,10 +64,26 @@
       <!-- 展开图表区（带过渡动画） -->
       <transition name="chart-slide" mode="out-in">
         <el-card v-if="activeChart" :key="activeChart" style="margin-bottom:20px;" v-loading="chartLoading">
-          <inventory-bar-chart :chart-data="chartData"
+          <inventory-bar-chart :chart-data="chartData" :horizontal="true"
             :title="activeChart === 'total' ? '全部库存分布' : statsData.maxWarehouseName + ' 库存分布'" />
         </el-card>
       </transition>
+      <!-- 趋势折线图 + 商品占比环形图 -->
+      <el-row :gutter="20" style="margin-bottom:20px;">
+        <el-col :span="16">
+          <el-card>
+            <div slot="header">本月入库 vs 出库趋势</div>
+            <trend-chart :in-data="trendIn" :out-data="trendOut" />
+          </el-card>
+        </el-col>
+        <el-col :span="8">
+          <el-card>
+            <div slot="header">库存商品占比</div>
+            <donut-chart :chart-data="chartData" />
+          </el-card>
+        </el-col>
+      </el-row>
+
       <el-row :gutter="20">
         <el-col :span="12">
           <el-card>
@@ -247,17 +263,20 @@ import { getAlerts, getInventory, getInventoryStats, getInventoryChart } from '.
 import { getInOrders } from '../api/inOrder'
 import { getOutOrders } from '../api/outOrder'
 import { getProducts } from '../api/product'
-import { getDashboardStats } from '../api/report'
+import { getDashboardStats, getInReport, getOutReport } from '../api/report'
 import mobileMixin from '../mixins/mobile'
 import InventoryBarChart from '../components/InventoryBarChart.vue'
+import TrendChart from '../components/TrendChart.vue'
+import DonutChart from '../components/DonutChart.vue'
 export default {
-  components: { InventoryBarChart },
+  components: { InventoryBarChart, TrendChart, DonutChart },
   mixins: [mobileMixin],
   data() {
     return {
       alerts: [],
       statsData: { totalQty: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseId: null },
       kpi: { todayOutQty: 0, monthSalesAmount: 0 },
+      trendIn: [], trendOut: [],
       activeChart: null,
       chartData: [],
       chartLoading: false,
@@ -271,7 +290,11 @@ export default {
     }
   },
   async created() {
-    const [alertRes, inRes, outRes, invRes, statsRes, prodRes, chartRes, kpiRes] = await Promise.all([
+    const now = new Date()
+    const pad = n => String(n).padStart(2, '0')
+    const startDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`
+    const endDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    const [alertRes, inRes, outRes, invRes, statsRes, prodRes, chartRes, kpiRes, trendInRes, trendOutRes] = await Promise.all([
       getAlerts().catch(() => ({ data: [] })),
       getInOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
       getOutOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
@@ -279,7 +302,9 @@ export default {
       getInventoryStats().catch(() => ({ data: {} })),
       getProducts({ size: 1000 }).catch(() => ({ data: {} })),
       getInventoryChart({ type: 'all' }).catch(() => ({ data: [] })),
-      getDashboardStats().catch(() => ({ data: {} }))
+      getDashboardStats().catch(() => ({ data: {} })),
+      getInReport({ startDate, endDate }).catch(() => ({ data: [] })),
+      getOutReport({ startDate, endDate }).catch(() => ({ data: [] }))
     ])
     const prodItems = prodRes.data.records || prodRes.data || []
     this.productMap = Object.fromEntries(prodItems.map(p => [p.id, p.name]))
@@ -298,6 +323,8 @@ export default {
     this.chartData = chartRes.data || []
     const k = kpiRes.data || {}
     this.kpi = { todayOutQty: k.todayOutQty || 0, monthSalesAmount: k.monthSalesAmount || 0 }
+    this.trendIn  = trendInRes.data  || []
+    this.trendOut = trendOutRes.data || []
   },
   mounted() {
     this.$nextTick(() => { this.activeChart = 'total' })
