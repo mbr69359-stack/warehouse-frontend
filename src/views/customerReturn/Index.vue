@@ -303,6 +303,9 @@ export default {
           planQty: i.planQty,
           actualQty: i.planQty  // 默认填计划数量
         }))
+      } catch {
+        this.$message.error('加载退货明细失败，请重试')
+        this.inboundVisible = false
       } finally {
         this.inboundLoading = false
       }
@@ -340,6 +343,9 @@ export default {
           planQty: i.qty,
           actualQty: i.qty
         }))
+      } catch {
+        this.$message.error('加载补发明细失败，请重试')
+        this.confirmVisible = false
       } finally {
         this.confirmLoading = false
       }
