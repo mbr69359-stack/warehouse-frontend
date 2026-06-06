@@ -10,15 +10,17 @@
       <el-table-column prop="warehouseName" label="仓库名" width="140" />
       <el-table-column label="状态" width="100" align="center">
         <template slot-scope="{row}">
-          <el-tag :type="row.status === 'COMPLETED' ? 'success' : 'info'">
-            {{ row.status === 'COMPLETED' ? '已完成' : '草稿' }}
+          <el-tag :type="row.status === 'COMPLETED' ? 'success' : 'warning'">
+            {{ row.status === 'COMPLETED' ? '已完成' : '待确认' }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="createdAt" label="创建时间" width="170" />
-      <el-table-column label="操作" width="100" align="center">
+      <el-table-column label="操作" width="180" align="center">
         <template slot-scope="{row}">
           <el-button size="mini" type="primary" plain @click="openDetail(row)">查看明细</el-button>
+          <el-button v-if="row.status === 'DRAFT'" size="mini" type="success"
+            @click="openConfirm(row)">确认补发</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -72,7 +74,7 @@
     </el-dialog>
 
     <!-- 查看明细弹窗 -->
-    <el-dialog :title="'退换货明细 — ' + (currentReturn && currentReturn.returnNo)"
+    <el-dialog :title="'退换货明细 — ' + (currentReturn && currentReturn.exchangeNo)"
       :visible.sync="detailVisible" width="680px">
       <el-table :data="detailItems" v-loading="detailLoading" border size="small">
         <el-table-column prop="productName" label="商品名称" min-width="160" show-overflow-tooltip />
@@ -88,14 +90,40 @@
       </div>
 
       <div slot="footer">
+        <el-button v-if="currentReturn && currentReturn.status === 'DRAFT'" type="success"
+          @click="openConfirmFromDetail">确认补发出库</el-button>
         <el-button @click="detailVisible = false">关闭</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 确认补发弹窗 -->
+    <el-dialog title="确认补发出库 — 填写实际发货数量" :visible.sync="confirmVisible"
+      width="580px" :close-on-click-modal="false">
+      <el-table :data="confirmItems" v-loading="confirmLoading" border size="small">
+        <el-table-column label="商品" min-width="180">
+          <template slot-scope="{row}">
+            {{ row.productName || row.productId }}
+            <span v-if="row.skuCode" style="color:#909399;font-size:12px;"> ({{ row.skuCode }})</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="planQty" label="计划数量" width="100" align="center" />
+        <el-table-column label="实际发货数量" width="150">
+          <template slot-scope="{row}">
+            <el-input-number v-model="row.actualQty" :min="0" size="small" style="width:120px;" />
+          </template>
+        </el-table-column>
+      </el-table>
+      <div slot="footer">
+        <el-button @click="confirmVisible = false">取消</el-button>
+        <el-button type="success" :loading="confirming" @click="submitConfirm">确认出库</el-button>
       </div>
     </el-dialog>
   </el-card>
 </template>
 
 <script>
-import { getCustomerReturns, createCustomerReturn, getCustomerReturnItems } from '../../api/customerReturn'
+import { getCustomerReturns, createCustomerReturn, getCustomerReturnItems, confirmCustomerReturn } from '../../api/customerReturn'
+import { getOutOrderItems } from '../../api/outOrder'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 
@@ -116,7 +144,11 @@ export default {
       detailVisible: false,
       detailLoading: false,
       detailItems: [],
-      currentReturn: null
+      currentReturn: null,
+      confirmVisible: false,
+      confirmLoading: false,
+      confirming: false,
+      confirmItems: []
     }
   },
   created() {
@@ -171,7 +203,7 @@ export default {
         this.saving = true
         try {
           await createCustomerReturn(this.createForm)
-          this.$message.success('退换货单创建成功')
+          this.$message.success('退换货单创建成功，请在列表中确认补发出库')
           this.createVisible = false
           this.loadData()
         } finally {
@@ -189,6 +221,41 @@ export default {
         this.detailItems = r.data || []
       } finally {
         this.detailLoading = false
+      }
+    },
+    openConfirmFromDetail() {
+      this.detailVisible = false
+      this.openConfirm(this.currentReturn)
+    },
+    async openConfirm(row) {
+      this.currentReturn = row
+      this.confirmItems = []
+      this.confirmVisible = true
+      this.confirmLoading = true
+      try {
+        const r = await getOutOrderItems(row.outOrderId)
+        this.confirmItems = (r.data || []).map(i => ({
+          id: i.id,
+          productId: i.productId,
+          productName: i.productName,
+          skuCode: i.skuCode,
+          planQty: i.qty,
+          actualQty: i.qty
+        }))
+      } finally {
+        this.confirmLoading = false
+      }
+    },
+    async submitConfirm() {
+      this.confirming = true
+      try {
+        const payload = this.confirmItems.map(i => ({ itemId: i.id, actualQty: i.actualQty || 0 }))
+        await confirmCustomerReturn(this.currentReturn.id, payload)
+        this.$message.success('补发出库确认成功')
+        this.confirmVisible = false
+        this.loadData()
+      } finally {
+        this.confirming = false
       }
     },
     goOutOrder(no, id) {
