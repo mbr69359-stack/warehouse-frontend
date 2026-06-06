@@ -42,6 +42,25 @@
         </el-col>
       </el-row>
 
+      <!-- 财务KPI行 -->
+      <el-row :gutter="20" style="margin-bottom:20px;">
+        <el-col :span="12">
+          <el-card shadow="hover" class="dash-card" style="text-align:center;cursor:pointer;"
+            @click.native="$router.push('/out-orders')">
+            <i class="el-icon-sell" style="fontSize:36px;color:#409EFF"></i>
+            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ kpi.todayOutQty }}</div>
+            <div style="color:#909399;">今日出库量</div>
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card shadow="hover" class="dash-card" style="text-align:center;">
+            <i class="el-icon-money" style="fontSize:36px;color:#67C23A"></i>
+            <div style="font-size:28px;font-weight:bold;margin:8px 0;">¥{{ formatAmount(kpi.monthSalesAmount) }}</div>
+            <div style="color:#909399;">本月销售额</div>
+          </el-card>
+        </el-col>
+      </el-row>
+
       <!-- 展开图表区（带过渡动画） -->
       <transition name="chart-slide" mode="out-in">
         <el-card v-if="activeChart" :key="activeChart" style="margin-bottom:20px;" v-loading="chartLoading">
@@ -114,6 +133,21 @@
             </div>
           </div>
           <span class="material-symbols-outlined" style="font-size:20px;opacity:.7;">chevron_right</span>
+        </div>
+      </section>
+
+      <!-- 本月经营 -->
+      <section class="m-section">
+        <div class="m-section-title" style="margin-bottom:12px;">本月经营</div>
+        <div class="m-stat-grid">
+          <div class="m-stat-card" @click="$router.push('/out-orders')">
+            <div class="m-stat-label">今日出库量</div>
+            <div class="m-stat-value">{{ kpi.todayOutQty }}</div>
+          </div>
+          <div class="m-stat-card">
+            <div class="m-stat-label">本月销售额</div>
+            <div class="m-stat-value" style="font-size:18px;">¥{{ formatAmount(kpi.monthSalesAmount) }}</div>
+          </div>
         </div>
       </section>
 
@@ -213,6 +247,7 @@ import { getAlerts, getInventory, getInventoryStats, getInventoryChart } from '.
 import { getInOrders } from '../api/inOrder'
 import { getOutOrders } from '../api/outOrder'
 import { getProducts } from '../api/product'
+import { getDashboardStats } from '../api/report'
 import mobileMixin from '../mixins/mobile'
 import InventoryBarChart from '../components/InventoryBarChart.vue'
 export default {
@@ -222,6 +257,7 @@ export default {
     return {
       alerts: [],
       statsData: { totalQty: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseId: null },
+      kpi: { todayOutQty: 0, monthSalesAmount: 0 },
       activeChart: null,
       chartData: [],
       chartLoading: false,
@@ -235,14 +271,15 @@ export default {
     }
   },
   async created() {
-    const [alertRes, inRes, outRes, invRes, statsRes, prodRes, chartRes] = await Promise.all([
+    const [alertRes, inRes, outRes, invRes, statsRes, prodRes, chartRes, kpiRes] = await Promise.all([
       getAlerts().catch(() => ({ data: [] })),
       getInOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
       getOutOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
       getInventory({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
       getInventoryStats().catch(() => ({ data: {} })),
       getProducts({ size: 1000 }).catch(() => ({ data: {} })),
-      getInventoryChart({ type: 'all' }).catch(() => ({ data: [] }))
+      getInventoryChart({ type: 'all' }).catch(() => ({ data: [] })),
+      getDashboardStats().catch(() => ({ data: {} }))
     ])
     const prodItems = prodRes.data.records || prodRes.data || []
     this.productMap = Object.fromEntries(prodItems.map(p => [p.id, p.name]))
@@ -259,6 +296,8 @@ export default {
       maxWarehouseId:   s.maxWarehouseId    || null
     }
     this.chartData = chartRes.data || []
+    const k = kpiRes.data || {}
+    this.kpi = { todayOutQty: k.todayOutQty || 0, monthSalesAmount: k.monthSalesAmount || 0 }
   },
   mounted() {
     this.$nextTick(() => { this.activeChart = 'total' })
@@ -274,6 +313,9 @@ export default {
     }
   },
   methods: {
+    formatAmount(val) {
+      return (Number(val) || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    },
     async toggleChart(type) {
       if (this.activeChart === type) return
       this.activeChart = type
