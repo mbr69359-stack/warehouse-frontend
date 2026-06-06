@@ -8,19 +8,21 @@
     <el-table :data="list" v-loading="loading" border stripe>
       <el-table-column prop="exchangeNo" label="换货单号" width="180" show-overflow-tooltip />
       <el-table-column prop="warehouseName" label="仓库名" width="140" />
-      <el-table-column label="状态" width="100" align="center">
+      <el-table-column label="状态" width="120" align="center">
         <template slot-scope="{row}">
-          <el-tag :type="row.status === 'COMPLETED' ? 'success' : 'warning'">
-            {{ row.status === 'COMPLETED' ? '已完成' : '待确认' }}
-          </el-tag>
+          <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="createdAt" label="创建时间" width="170" />
-      <el-table-column label="操作" width="180" align="center">
+      <el-table-column label="操作" width="220" align="center">
         <template slot-scope="{row}">
           <el-button size="mini" type="primary" plain @click="openDetail(row)">查看明细</el-button>
-          <el-button v-if="row.status === 'DRAFT'" size="mini" type="success"
-            @click="openConfirm(row)">确认补发</el-button>
+          <!-- 步骤一：退货未入库 -->
+          <el-button v-if="row.status === 'DRAFT'" size="mini" type="warning"
+            @click="openInbound(row)">确认退货入库</el-button>
+          <!-- 步骤二：已入库，待补发 -->
+          <el-button v-if="row.status === 'INBOUND_DONE'" size="mini" type="success"
+            @click="openConfirm(row)">确认补发出库</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -90,14 +92,41 @@
       </div>
 
       <div slot="footer">
-        <el-button v-if="currentReturn && currentReturn.status === 'DRAFT'" type="success"
+        <el-button v-if="currentReturn && currentReturn.status === 'DRAFT'" type="warning"
+          @click="openInboundFromDetail">确认退货入库</el-button>
+        <el-button v-if="currentReturn && currentReturn.status === 'INBOUND_DONE'" type="success"
           @click="openConfirmFromDetail">确认补发出库</el-button>
         <el-button @click="detailVisible = false">关闭</el-button>
       </div>
     </el-dialog>
 
-    <!-- 确认补发弹窗 -->
-    <el-dialog title="确认补发出库 — 填写实际发货数量" :visible.sync="confirmVisible"
+    <!-- 步骤一：确认退货入库弹窗 -->
+    <el-dialog title="步骤一：确认退货入库 — 填写实际收货数量" :visible.sync="inboundVisible"
+      width="580px" :close-on-click-modal="false">
+      <el-alert type="info" :closable="false" style="margin-bottom:14px;"
+        title="货物入库后系统自动生成损坏记录，完成后才可进行补发出库。" />
+      <el-table :data="inboundItems" v-loading="inboundLoading" border size="small">
+        <el-table-column label="商品" min-width="180">
+          <template slot-scope="{row}">
+            {{ row.productName || row.productId }}
+            <span v-if="row.skuCode" style="color:#909399;font-size:12px;"> ({{ row.skuCode }})</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="planQty" label="计划退回" width="90" align="center" />
+        <el-table-column label="实际收货" width="140">
+          <template slot-scope="{row}">
+            <el-input-number v-model="row.actualQty" :min="0" size="small" style="width:110px;" />
+          </template>
+        </el-table-column>
+      </el-table>
+      <div slot="footer">
+        <el-button @click="inboundVisible = false">取消</el-button>
+        <el-button type="warning" :loading="inbounding" @click="submitInbound">确认入库</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 步骤二：确认补发出库弹窗 -->
+    <el-dialog title="步骤二：确认补发出库 — 填写实际发货数量" :visible.sync="confirmVisible"
       width="580px" :close-on-click-modal="false">
       <el-table :data="confirmItems" v-loading="confirmLoading" border size="small">
         <el-table-column label="商品" min-width="180">
@@ -106,10 +135,10 @@
             <span v-if="row.skuCode" style="color:#909399;font-size:12px;"> ({{ row.skuCode }})</span>
           </template>
         </el-table-column>
-        <el-table-column prop="planQty" label="计划数量" width="100" align="center" />
-        <el-table-column label="实际发货数量" width="150">
+        <el-table-column prop="planQty" label="计划补发" width="90" align="center" />
+        <el-table-column label="实际发货" width="140">
           <template slot-scope="{row}">
-            <el-input-number v-model="row.actualQty" :min="0" size="small" style="width:120px;" />
+            <el-input-number v-model="row.actualQty" :min="0" size="small" style="width:110px;" />
           </template>
         </el-table-column>
       </el-table>
@@ -122,7 +151,14 @@
 </template>
 
 <script>
-import { getCustomerReturns, createCustomerReturn, getCustomerReturnItems, confirmCustomerReturn } from '../../api/customerReturn'
+import {
+  getCustomerReturns,
+  createCustomerReturn,
+  getCustomerReturnItems,
+  getCustomerReturnInOrderItems,
+  confirmCustomerReturnInbound,
+  confirmCustomerReturn
+} from '../../api/customerReturn'
 import { getOutOrderItems } from '../../api/outOrder'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
@@ -134,6 +170,7 @@ export default {
       list: [], loading: false, total: 0,
       query: { current: 1, size: 20 },
       warehouses: [],
+      // 新建
       createVisible: false,
       saving: false,
       createForm: { warehouseId: null, items: [] },
@@ -141,10 +178,17 @@ export default {
         warehouseId: [{ required: true, message: '请选择仓库', trigger: 'change' }]
       },
       products: [], productLoading: false,
+      // 查看明细
       detailVisible: false,
       detailLoading: false,
       detailItems: [],
       currentReturn: null,
+      // 步骤一：退货入库
+      inboundVisible: false,
+      inboundLoading: false,
+      inbounding: false,
+      inboundItems: [],
+      // 步骤二：补发出库
       confirmVisible: false,
       confirmLoading: false,
       confirming: false,
@@ -156,6 +200,14 @@ export default {
     this.loadData()
   },
   methods: {
+    // 状态显示
+    statusLabel(status) {
+      return { DRAFT: '待退货入库', INBOUND_DONE: '待补发出库', COMPLETED: '已完成' }[status] || status
+    },
+    statusTagType(status) {
+      return { DRAFT: 'warning', INBOUND_DONE: 'primary', COMPLETED: 'success' }[status] || 'info'
+    },
+
     async loadData() {
       this.loading = true
       try {
@@ -166,6 +218,8 @@ export default {
         this.loading = false
       }
     },
+
+    // 新建
     openCreate() {
       this.createForm = { warehouseId: null, items: [] }
       this.products = []
@@ -195,15 +249,14 @@ export default {
           this.$message.warning('请至少添加一条退换商品')
           return
         }
-        const emptyItem = this.createForm.items.find(i => !i.productId)
-        if (emptyItem) {
+        if (this.createForm.items.find(i => !i.productId)) {
           this.$message.warning('存在未选择商品的明细行，请补充或删除')
           return
         }
         this.saving = true
         try {
           await createCustomerReturn(this.createForm)
-          this.$message.success('退换货单创建成功，请在列表中确认补发出库')
+          this.$message.success('退换货单创建成功，请确认退货入库')
           this.createVisible = false
           this.loadData()
         } finally {
@@ -211,6 +264,8 @@ export default {
         }
       })
     },
+
+    // 查看明细
     async openDetail(row) {
       this.currentReturn = row
       this.detailVisible = true
@@ -223,10 +278,53 @@ export default {
         this.detailLoading = false
       }
     },
+    openInboundFromDetail() {
+      this.detailVisible = false
+      this.openInbound(this.currentReturn)
+    },
     openConfirmFromDetail() {
       this.detailVisible = false
       this.openConfirm(this.currentReturn)
     },
+
+    // 步骤一：退货入库
+    async openInbound(row) {
+      this.currentReturn = row
+      this.inboundItems = []
+      this.inboundVisible = true
+      this.inboundLoading = true
+      try {
+        const r = await getCustomerReturnInOrderItems(row.id)
+        this.inboundItems = (r.data || []).map(i => ({
+          id: i.id,
+          productId: i.productId,
+          productName: i.productName,
+          skuCode: i.skuCode,
+          planQty: i.planQty,
+          actualQty: i.planQty  // 默认填计划数量
+        }))
+      } finally {
+        this.inboundLoading = false
+      }
+    },
+    async submitInbound() {
+      if (!this.inboundItems.some(i => (i.actualQty || 0) > 0)) {
+        this.$message.warning('请至少填写一件商品的实际收货数量')
+        return
+      }
+      this.inbounding = true
+      try {
+        const payload = this.inboundItems.map(i => ({ itemId: i.id, actualQty: i.actualQty || 0 }))
+        await confirmCustomerReturnInbound(this.currentReturn.id, payload)
+        this.$message.success('退货入库成功，已自动生成损坏记录，请继续确认补发出库')
+        this.inboundVisible = false
+        this.loadData()
+      } finally {
+        this.inbounding = false
+      }
+    },
+
+    // 步骤二：补发出库
     async openConfirm(row) {
       this.currentReturn = row
       this.confirmItems = []
@@ -247,6 +345,10 @@ export default {
       }
     },
     async submitConfirm() {
+      if (!this.confirmItems.some(i => (i.actualQty || 0) > 0)) {
+        this.$message.warning('请至少填写一件商品的实际发货数量')
+        return
+      }
       this.confirming = true
       try {
         const payload = this.confirmItems.map(i => ({ itemId: i.id, actualQty: i.actualQty || 0 }))
@@ -258,6 +360,7 @@ export default {
         this.confirming = false
       }
     },
+
     goOutOrder(no, id) {
       if (id) {
         this.$router.push(`/out-orders/${id}`)

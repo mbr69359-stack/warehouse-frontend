@@ -147,7 +147,6 @@ export default {
   },
   created() {
     getWarehouses().then(r => { this.warehouses = r.data })
-    getPendingCount().then(r => { this.pendingCount = r.data || 0 }).catch(() => {})
   },
   methods: {
     searchProducts(query) {
@@ -168,16 +167,26 @@ export default {
       this.products = []
       this.damageRecords = []
       this.selectedDamageIds = []
+      this.pendingCount = 0
       if (!warehouseId) return
-      getInventory({ warehouseId, size: 2000 }).then(r => {
-        const map = {}
-        const records = r.data.records || r.data || []
-        records.forEach(item => { map[item.productId] = item.qty })
-        this.inventoryMap = map
-      })
+      getPendingCount(warehouseId).then(r => { this.pendingCount = r.data || 0 }).catch(() => {})
+      this.loadAllInventory(warehouseId)
       if (this.form.type === 'DAMAGE_OUT') {
         this.loadDamageRecords(warehouseId)
       }
+    },
+    async loadAllInventory(warehouseId) {
+      const size = 500
+      let current = 1
+      const map = {}
+      while (true) {
+        const r = await getInventory({ warehouseId, current, size })
+        const records = r.data.records || r.data || []
+        records.forEach(item => { map[item.productId] = item.qty })
+        if (current * size >= (r.data.total || 0)) break
+        current++
+      }
+      this.inventoryMap = map
     },
     onTypeChange(type) {
       this.form.targetWarehouseId = null
