@@ -11,6 +11,7 @@
 
     <el-menu-item index="/warehouses"><i class="el-icon-office-building"></i><span slot="title">仓库管理</span></el-menu-item>
     <el-menu-item index="/suppliers"><i class="el-icon-s-cooperation"></i><span slot="title">供应商管理</span></el-menu-item>
+    <el-menu-item index="/customers"><i class="el-icon-user"></i><span slot="title">客户管理</span></el-menu-item>
 
     <el-submenu index="in-order">
       <template slot="title"><i class="el-icon-download"></i><span>入库管理</span></template>
