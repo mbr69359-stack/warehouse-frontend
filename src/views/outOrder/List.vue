@@ -23,6 +23,10 @@
             <el-tag :type="row.status==='CONFIRMED'?'success':'warning'">{{ row.status==='CONFIRMED'?'已确认':'草稿' }}</el-tag>
           </template>
         </el-table-column>
+        <!-- 显示关联客户名称 -->
+        <el-table-column prop="customerName" label="客户" width="120" show-overflow-tooltip>
+          <template slot-scope="{row}">{{ row.customerName || '—' }}</template>
+        </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" />
         <el-table-column label="操作" width="260">
           <template slot-scope="{row}">
