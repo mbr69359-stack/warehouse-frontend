@@ -36,6 +36,7 @@ const routes = [
       { path: 'report/supplier', component: () => import('../views/report/Supplier.vue') },
       { path: 'report/customer', component: () => import('../views/report/Customer.vue') },
       { path: 'report/stocktake', component: () => import('../views/report/Stocktake.vue') },
+      { path: 'report/gross-profit', component: () => import('../views/report/GrossProfit.vue') },
       { path: 'sys/users', component: () => import('../views/sys/Users.vue'), meta: { adminOnly: true } },
       { path: 'sys/roles', component: () => import('../views/sys/Roles.vue'), meta: { adminOnly: true } },
       { path: 'damage', component: () => import('../views/damage/Index.vue') },

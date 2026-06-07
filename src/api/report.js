@@ -8,3 +8,4 @@ export const getStockMovementReport = params => request.get('/reports/stock-move
 export const getSupplierStatement = params => request.get('/reports/supplier-statement', { params })
 export const getCustomerStatement = params => request.get('/reports/customer-statement', { params })
 export const getStocktakeReport = params => request.get('/reports/stocktake', { params })
+export const getGrossProfitReport = params => request.get('/reports/gross-profit', { params })
