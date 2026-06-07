@@ -1,7 +1,7 @@
 <template>
   <el-card>
     <div slot="header">库存流水查询</div>
-    <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
+    <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
       <el-select v-model="query.type" placeholder="流水类型" clearable style="width:150px;" @change="search">
         <el-option label="入库" value="inbound" />
         <el-option label="出库" value="outbound" />
@@ -18,8 +18,18 @@
       <el-select v-model="query.locationId" placeholder="仓库" clearable style="width:150px;" @change="search">
         <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
       </el-select>
+      <el-date-picker
+        v-model="dateRange"
+        type="daterange"
+        range-separator="至"
+        start-placeholder="开始日期"
+        end-placeholder="结束日期"
+        value-format="yyyy-MM-dd"
+        style="width:260px;"
+        @change="search" />
       <el-button type="primary" icon="el-icon-search" @click="search">搜索</el-button>
       <el-button icon="el-icon-refresh" @click="reset">重置</el-button>
+      <el-button type="success" icon="el-icon-download" :loading="exporting" @click="handleExport">导出 Excel</el-button>
       <el-button v-if="isAdmin" type="warning" icon="el-icon-refresh-left" :loading="rebuilding" @click="handleRebuild">重算快照</el-button>
     </div>
     <el-table :data="list" v-loading="loading" border stripe>
@@ -54,7 +64,7 @@
 </template>
 
 <script>
-import { getLedger, rebuildSnapshot } from '../../api/ledger'
+import { getLedger, rebuildSnapshot, exportLedger } from '../../api/ledger'
 import { getWarehouses } from '../../api/warehouse'
 
 const TYPE_MAP = {
@@ -77,8 +87,9 @@ export default {
   },
   data() {
     return {
-      list: [], total: 0, loading: false, rebuilding: false, warehouses: [],
-      query: { current: 1, size: 20, type: null, locationId: null }
+      list: [], total: 0, loading: false, rebuilding: false, exporting: false,
+      warehouses: [], dateRange: null,
+      query: { current: 1, size: 20, type: null, locationId: null, startDate: null, endDate: null }
     }
   },
   created() {
@@ -91,6 +102,8 @@ export default {
       const params = { ...this.query }
       if (!params.type) delete params.type
       if (!params.locationId) delete params.locationId
+      if (!params.startDate) delete params.startDate
+      if (!params.endDate) delete params.endDate
       try {
         const res = await getLedger(params)
         this.list = res.data.records
@@ -99,8 +112,38 @@ export default {
         this.loading = false
       }
     },
-    search() { this.query.current = 1; this.loadData() },
-    reset() { this.query = { current: 1, size: 20, type: null, locationId: null }; this.loadData() },
+    search() {
+      this.query.startDate = this.dateRange ? this.dateRange[0] : null
+      this.query.endDate   = this.dateRange ? this.dateRange[1] : null
+      this.query.current = 1
+      this.loadData()
+    },
+    reset() {
+      this.dateRange = null
+      this.query = { current: 1, size: 20, type: null, locationId: null, startDate: null, endDate: null }
+      this.loadData()
+    },
+    async handleExport() {
+      this.exporting = true
+      try {
+        const params = {}
+        if (this.query.type)       params.type       = this.query.type
+        if (this.query.locationId) params.locationId = this.query.locationId
+        if (this.query.startDate)  params.startDate  = this.query.startDate
+        if (this.query.endDate)    params.endDate    = this.query.endDate
+        const res = await exportLedger(params)
+        const url = window.URL.createObjectURL(new Blob([res.data]))
+        const a = document.createElement('a')
+        a.href = url
+        a.download = '库存台账_' + new Date().toISOString().slice(0, 10) + '.xlsx'
+        a.click()
+        window.URL.revokeObjectURL(url)
+      } catch {
+        this.$message.error('导出失败，请稍后重试')
+      } finally {
+        this.exporting = false
+      }
+    },
     typeLabel(t) { return TYPE_MAP[t] ? TYPE_MAP[t].label : t },
     typeColor(t) { return TYPE_MAP[t] ? TYPE_MAP[t].color : '' },
     async handleRebuild() {
