@@ -36,6 +36,7 @@
 </template>
 
 <script>
+import { todayKe, monthsAgoKe } from '../../utils/time'
 import { getSupplierStatement } from '../../api/report'
 import { getSuppliers } from '../../api/supplier'
 import mobileMixin from '../../mixins/mobile'
@@ -44,10 +45,9 @@ import { exportCSV } from '../../utils/export'
 export default {
   mixins: [mobileMixin],
   data() {
-    const end = new Date(); const start = new Date(); start.setMonth(start.getMonth() - 1)
     return {
       tableData: [], suppliers: [], filterSupplier: null,
-      dateRange: [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)]
+      dateRange: [monthsAgoKe(1), todayKe()]
     }
   },
   created() {

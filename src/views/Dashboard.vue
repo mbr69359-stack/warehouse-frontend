@@ -310,10 +310,9 @@ export default {
     }
   },
   async created() {
-    const now = new Date()
-    const pad = n => String(n).padStart(2, '0')
-    const startDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`
-    const endDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    const { firstDayOfMonthKe, todayKe } = await import('../utils/time')
+    const startDate = firstDayOfMonthKe()
+    const endDate = todayKe()
     getPendingCount().then(r => { this.pendingDamageCount = r.data || 0 }).catch(() => {})
     const [alertRes, inRes, outRes, invRes, statsRes, prodRes, chartRes, kpiRes, trendInRes, trendOutRes] = await Promise.all([
       getAlerts().catch(() => ({ data: [] })),

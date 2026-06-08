@@ -47,6 +47,7 @@
 </template>
 
 <script>
+import { todayKe, daysAgoKe } from '../../utils/time'
 import { getLedgerReport } from '../../api/report'
 import { getWarehouses } from '../../api/warehouse'
 import mobileMixin from '../../mixins/mobile'
@@ -66,10 +67,9 @@ const TYPE_TAG = {
 export default {
   mixins: [mobileMixin],
   data() {
-    const end = new Date(); const start = new Date(); start.setDate(start.getDate() - 29)
     return {
       tableData: [], warehouses: [],
-      dateRange: [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)],
+      dateRange: [daysAgoKe(29), todayKe()],
       filterType: '', filterWarehouse: null,
       typeLabelMap: TYPE_LABEL, typeTagMap: TYPE_TAG,
       typeOptions: Object.entries(TYPE_LABEL).map(([value, label]) => ({ value, label }))

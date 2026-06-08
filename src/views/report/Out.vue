@@ -25,14 +25,14 @@
 
 <script>
 import * as echarts from 'echarts'
+import { todayKe, daysAgoKe } from '../../utils/time'
 import { getOutReport } from '../../api/report'
 import mobileMixin from '../../mixins/mobile'
 import { exportCSV } from '../../utils/export'
 export default {
   mixins: [mobileMixin],
   data() {
-    const end = new Date(); const start = new Date(); start.setDate(start.getDate() - 6)
-    return { chart: null, tableData: [], dateRange: [start.toISOString().slice(0,10), end.toISOString().slice(0,10)] }
+    return { chart: null, tableData: [], dateRange: [daysAgoKe(6), todayKe()] }
   },
   mounted() { if (!this.isMobile) { this.chart = echarts.init(this.$refs.chart); this.loadData() } },
   beforeDestroy() { this.chart && this.chart.dispose() },
