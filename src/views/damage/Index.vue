@@ -19,7 +19,27 @@
           {{ row.productName }}<span style="color:#909399; margin-left:6px;">({{ row.skuCode }})</span>
         </template>
       </el-table-column>
-      <el-table-column prop="qty" label="损坏数量" width="100" align="center" />
+      <el-table-column prop="qty" label="破损数(个)" width="100" align="center" />
+      <el-table-column label="成本核销" width="110" align="right">
+        <template slot-scope="{row}">
+          <span v-if="row.costDeduction != null" style="color:#F56C6C;">
+            ¥{{ Number(row.costDeduction).toFixed(2) }}
+          </span>
+          <span v-else style="color:#C0C4CC;">—</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="好货调拨" width="100" align="center">
+        <template slot-scope="{row}">
+          <span v-if="row.goodQty != null">{{ row.goodQty }} 个</span>
+          <span v-else style="color:#C0C4CC;">—</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="零售定价" width="100" align="right">
+        <template slot-scope="{row}">
+          <span v-if="row.transferPrice != null">¥{{ Number(row.transferPrice).toFixed(2) }}</span>
+          <span v-else style="color:#C0C4CC;">—</span>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" width="100" align="center">
         <template slot-scope="{row}">
           <el-tag :type="row.status === 'PENDING' ? 'warning' : 'success'">
@@ -27,11 +47,14 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="remark" label="备注" min-width="120" show-overflow-tooltip />
+      <el-table-column prop="remark" label="备注" min-width="100" show-overflow-tooltip />
       <el-table-column prop="createdAt" label="登记时间" width="160" />
-      <el-table-column label="操作" width="90" align="center">
+      <el-table-column label="操作" width="130" align="center">
         <template slot-scope="{row}">
-          <el-button v-if="row.status === 'PENDING'" size="mini" type="danger" @click="handleDelete(row.id)">删除</el-button>
+          <template v-if="row.status === 'PENDING'">
+            <el-button size="mini" type="primary" @click="openTransfer(row)">调拨</el-button>
+            <el-button size="mini" type="danger" @click="handleDelete(row.id)">删除</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -45,6 +68,7 @@
       :current-page.sync="query.current"
       @current-change="loadData" />
 
+    <!-- 新建损坏记录弹窗 -->
     <el-dialog title="新建损坏记录" :visible.sync="dialogVisible" width="460px" @close="resetForm">
       <el-form :model="form" :rules="rules" ref="form" label-width="80px">
         <el-form-item label="仓库" prop="warehouseId">
@@ -80,11 +104,70 @@
         <el-button type="primary" :loading="saving" @click="handleCreate">提交</el-button>
       </div>
     </el-dialog>
+
+    <!-- 调拨弹窗 -->
+    <el-dialog title="调拨好货到零售仓" :visible.sync="transferVisible" width="480px" @close="resetTransfer">
+      <div v-if="transferRow" style="margin-bottom:16px; padding:12px; background:#f5f7fa; border-radius:4px; font-size:14px; line-height:1.8;">
+        <div>
+          商品：<strong>{{ transferRow.productName }}</strong>（{{ transferRow.skuCode }}）
+        </div>
+        <div>破损数量：<span style="color:#F56C6C;">{{ transferRow.qty }} 个</span></div>
+        <template v-if="transferRow.productQtyPerBox">
+          <div>
+            成本核销：<span style="color:#F56C6C;">
+              ¥{{ (transferRow.qty * (transferRow.productCostPrice || 0)).toFixed(2) }}
+            </span>
+            （{{ transferRow.qty }} 个 × ¥{{ Number(transferRow.productCostPrice || 0).toFixed(2) }}）
+          </div>
+          <div>
+            好货数量：<span style="color:#67C23A;">{{ transferRow.productQtyPerBox - transferRow.qty }} 个</span>
+            （每箱 {{ transferRow.productQtyPerBox }} 个）
+          </div>
+        </template>
+        <el-alert v-else type="warning" :closable="false" show-icon
+          title="该商品未设每箱数量，无法调拨" style="margin-top:8px;" />
+      </div>
+
+      <el-form v-if="transferRow && transferRow.productQtyPerBox"
+        :model="transferForm" :rules="transferRules" ref="transferForm" label-width="90px">
+        <el-form-item label="目标仓库" prop="targetWarehouseId">
+          <el-select v-model="transferForm.targetWarehouseId" placeholder="请选择按个仓库" style="width:100%;">
+            <el-option
+              v-for="w in pieceWarehouses"
+              :key="w.id"
+              :label="w.name"
+              :value="w.id" />
+          </el-select>
+          <div v-if="pieceWarehouses.length === 0" style="color:#E6A23C; font-size:12px; margin-top:4px;">
+            暂无按个仓库，请先在仓库管理中创建 PIECE 类型仓库
+          </div>
+        </el-form-item>
+        <el-form-item label="零售定价" prop="transferPrice">
+          <el-input-number
+            v-model="transferForm.transferPrice"
+            :min="0.01"
+            :precision="2"
+            style="width:100%;"
+            placeholder="每个零售价" />
+        </el-form-item>
+      </el-form>
+
+      <div slot="footer">
+        <el-button @click="transferVisible = false">取消</el-button>
+        <el-button
+          v-if="transferRow && transferRow.productQtyPerBox"
+          type="primary"
+          :loading="transferSaving"
+          @click="handleTransfer">
+          确认调拨
+        </el-button>
+      </div>
+    </el-dialog>
   </el-card>
 </template>
 
 <script>
-import { getDamageRecords, createDamageRecord, deleteDamageRecord } from '../../api/damageRecord'
+import { getDamageRecords, createDamageRecord, deleteDamageRecord, transferDamageRecord } from '../../api/damageRecord'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 
@@ -106,7 +189,21 @@ export default {
         warehouseId: [{ required: true, message: '请选择仓库', trigger: 'change' }],
         productId:   [{ required: true, message: '请选择商品', trigger: 'change' }],
         qty:         [{ required: true, message: '请输入数量', trigger: 'blur' }]
+      },
+      // 调拨弹窗
+      transferVisible: false,
+      transferSaving: false,
+      transferRow: null,
+      transferForm: { targetWarehouseId: null, transferPrice: null },
+      transferRules: {
+        targetWarehouseId: [{ required: true, message: '请选择目标仓库', trigger: 'change' }],
+        transferPrice:     [{ required: true, message: '请输入零售定价', trigger: 'blur' }]
       }
+    }
+  },
+  computed: {
+    pieceWarehouses() {
+      return this.warehouses.filter(w => w.type === 'PIECE')
     }
   },
   created() {
@@ -160,6 +257,29 @@ export default {
       await deleteDamageRecord(id)
       this.$message.success('删除成功')
       this.loadData()
+    },
+    openTransfer(row) {
+      this.transferRow = row
+      this.transferForm = { targetWarehouseId: null, transferPrice: null }
+      this.transferVisible = true
+    },
+    resetTransfer() {
+      this.$refs.transferForm && this.$refs.transferForm.clearValidate()
+      this.transferRow = null
+    },
+    handleTransfer() {
+      this.$refs.transferForm.validate(async valid => {
+        if (!valid) return
+        this.transferSaving = true
+        try {
+          await transferDamageRecord(this.transferRow.id, this.transferForm)
+          this.$message.success('调拨成功')
+          this.transferVisible = false
+          this.loadData()
+        } finally {
+          this.transferSaving = false
+        }
+      })
     }
   }
 }

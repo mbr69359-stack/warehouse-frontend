@@ -4,3 +4,4 @@ export const getPendingDamageRecords = warehouseId => request.get('/damage-recor
 export const getPendingCount = warehouseId => request.get('/damage-records/pending-count', { params: { warehouseId } })
 export const createDamageRecord = data => request.post('/damage-records', data)
 export const deleteDamageRecord = id => request.delete(`/damage-records/${id}`)
+export const transferDamageRecord = (id, data) => request.post(`/damage-records/${id}/transfer`, data)
