@@ -3,6 +3,11 @@
 
     <!-- ── 桌面端 ── -->
     <el-card v-if="!isMobile">
+      <el-alert v-if="totalDraftCount > 0"
+        :title="`您有 ${totalDraftCount} 张出库单待确认实际数量`"
+        type="warning" show-icon :closable="false"
+        style="margin-bottom:16px;cursor:pointer;"
+        @click.native="switchToDraft" />
       <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
         <el-select v-model="query.status" placeholder="状态" clearable style="width:130px;" @change="loadData">
           <el-option label="草稿" value="DRAFT" /><el-option label="已确认" value="CONFIRMED" />
@@ -168,13 +173,13 @@
 </template>
 
 <script>
-import { getOutOrders, confirmOutOrder, deleteOutOrder, getOutOrderItems } from '../../api/outOrder'
+import { getOutOrders, confirmOutOrder, deleteOutOrder, getOutOrderItems, getDraftOutOrderCount } from '../../api/outOrder'
 import mobileMixin from '../../mixins/mobile'
 export default {
   mixins: [mobileMixin],
   data() {
     return {
-      list: [], total: 0, loading: false,
+      list: [], total: 0, loading: false, totalDraftCount: 0,
       mobileSearch: '',
       dateRange: null,
       query: { current: 1, size: 10, status: null, startDate: null, endDate: null },
@@ -197,8 +202,12 @@ export default {
       return this.list.filter(r => r.status === 'DRAFT').length
     }
   },
-  created() { this.loadData() },
+  created() { this.loadData(); this.refreshDraftCount() },
   methods: {
+    refreshDraftCount() {
+      getDraftOutOrderCount().then(n => { this.totalDraftCount = n })
+    },
+    switchToDraft() { this.query.status = 'DRAFT'; this.query.current = 1; this.loadData() },
     typeLabel(type) {
       const map = { SALE: '销售出库', TRANSFER: '调拨出库', DAMAGE_OUT: '损坏出库', REPLACEMENT_OUT: '换货补发' }
       return map[type] || type
@@ -240,6 +249,7 @@ export default {
         this.$message.success('出库确认成功')
         this.dialogVisible = false
         this.loadData()
+        this.refreshDraftCount()
       } finally {
         this.confirming = false
       }

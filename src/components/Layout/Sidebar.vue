@@ -20,7 +20,11 @@
     </el-submenu>
 
     <el-submenu index="out-order">
-      <template slot="title"><i class="el-icon-upload2"></i><span>出库管理</span></template>
+      <template slot="title">
+        <i class="el-icon-upload2"></i>
+        <span>出库管理</span>
+        <span v-if="pendingOutCount > 0 && !collapsed" class="damage-pending-badge">{{ pendingOutCount }}</span>
+      </template>
       <el-menu-item index="/out-orders">出库单列表</el-menu-item>
       <el-menu-item index="/out-orders/create">新建出库单</el-menu-item>
     </el-submenu>
@@ -73,12 +77,14 @@
 <script>
 import { mapGetters } from 'vuex'
 import { getPendingCount } from '../../api/damageRecord'
+import { getDraftOutOrderCount } from '../../api/outOrder'
 export default {
   props: { collapsed: Boolean },
-  data() { return { pendingDamageCount: 0 } },
+  data() { return { pendingDamageCount: 0, pendingOutCount: 0 } },
   computed: { ...mapGetters(['isAdmin']) },
   mounted() {
     getPendingCount().then(r => { this.pendingDamageCount = r.data || 0 }).catch(() => {})
+    getDraftOutOrderCount().then(n => { this.pendingOutCount = n })
   }
 }
 </script>

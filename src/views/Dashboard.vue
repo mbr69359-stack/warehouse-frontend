@@ -67,6 +67,12 @@
         type="warning" show-icon :closable="false"
         style="margin-bottom:20px;cursor:pointer;"
         @click.native="$router.push('/damage-records')" />
+      <!-- 待确认出库单提醒 -->
+      <el-alert v-if="pendingOutOrderCount > 0"
+        :title="`${pendingOutOrderCount} 张出库单待确认实际数量，请及时处理`"
+        type="warning" show-icon :closable="false"
+        style="margin-bottom:20px;cursor:pointer;"
+        @click.native="$router.push('/out-orders')" />
 
       <!-- 展开图表区（带过渡动画） -->
       <transition name="chart-slide" mode="out-in">
@@ -153,6 +159,17 @@
             <div>
               <div style="font-size:12px;opacity:.85;">库存预警</div>
               <div style="font-size:22px;font-weight:700;line-height:1.1;">{{ cards[2].value }} <span style="font-size:13px;font-weight:400;">件商品低于预警值</span></div>
+            </div>
+          </div>
+          <span class="material-symbols-outlined" style="font-size:20px;opacity:.7;">chevron_right</span>
+        </div>
+        <!-- 待确认出库单提醒 -->
+        <div v-if="pendingOutOrderCount > 0" class="m-out-pending-banner" @click="$router.push('/out-orders')">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="material-symbols-outlined" style="font-size:22px;">output</span>
+            <div>
+              <div style="font-size:12px;opacity:.85;">待确认出库</div>
+              <div style="font-size:22px;font-weight:700;line-height:1.1;">{{ pendingOutOrderCount }} <span style="font-size:13px;font-weight:400;">张出库单待确认数量</span></div>
             </div>
           </div>
           <span class="material-symbols-outlined" style="font-size:20px;opacity:.7;">chevron_right</span>
@@ -280,7 +297,7 @@
 import { getAlerts, getInventory, getInventoryStats, getInventoryChart } from '../api/inventory'
 import { getPendingCount } from '../api/damageRecord'
 import { getInOrders } from '../api/inOrder'
-import { getOutOrders } from '../api/outOrder'
+import { getOutOrders, getDraftOutOrderCount } from '../api/outOrder'
 import { getProducts } from '../api/product'
 import { getDashboardStats, getInReport, getOutReport } from '../api/report'
 import mobileMixin from '../mixins/mobile'
@@ -293,7 +310,7 @@ export default {
   data() {
     return {
       alerts: [],
-      pendingDamageCount: 0,
+      pendingDamageCount: 0, pendingOutOrderCount: 0,
       statsData: { totalQty: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseId: null },
       kpi: { todayOutQty: 0, monthSalesAmount: 0 },
       trendIn: [], trendOut: [],
@@ -314,6 +331,7 @@ export default {
     const startDate = firstDayOfMonthKe()
     const endDate = todayKe()
     getPendingCount().then(r => { this.pendingDamageCount = r.data || 0 }).catch(() => {})
+    getDraftOutOrderCount().then(n => { this.pendingOutOrderCount = n })
     const [alertRes, inRes, outRes, invRes, statsRes, prodRes, chartRes, kpiRes, trendInRes, trendOutRes] = await Promise.all([
       getAlerts().catch(() => ({ data: [] })),
       getInOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
@@ -403,6 +421,20 @@ export default {
 }
 .m-alert-banner:active { opacity: .8; }
 
+.m-out-pending-banner {
+  margin-top: 10px;
+  background: #fff3cd;
+  border: 1px solid rgba(255,160,0,.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #7a4f00;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.m-out-pending-banner:active { opacity: .8; }
 .m-damage-banner {
   margin-top: 10px;
   background: #fff3cd;
