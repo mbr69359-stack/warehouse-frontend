@@ -28,9 +28,10 @@
       <el-table-column prop="status" label="状态" width="80">
         <template slot-scope="{row}"><el-tag :type="row.status===1?'success':'info'">{{ row.status===1?'上架':'下架' }}</el-tag></template>
       </el-table-column>
-      <el-table-column label="操作" width="160">
+      <el-table-column label="操作" width="240">
         <template slot-scope="{row}">
           <el-button size="mini" type="primary" @click="openForm(row)">编辑</el-button>
+          <el-button size="mini" type="warning" @click="openCostHistory(row)">进价历史</el-button>
           <el-button size="mini" type="danger" @click="handleDelete(row.id)">删除</el-button>
         </template>
       </el-table-column>
@@ -38,6 +39,29 @@
     <el-pagination style="margin-top:16px;text-align:right;" background layout="total, sizes, prev, pager, next"
       :total="total" :page-size="query.size" :current-page="query.current"
       @current-change="p=>{query.current=p;loadData()}" @size-change="s=>{query.size=s;loadData()}" />
+
+    <!-- 进价历史对话框 -->
+    <el-dialog :title="historyProductName + ' · 进价历史'" :visible.sync="historyVisible" width="720px" @open="renderHistoryChart">
+      <div ref="historyChart" style="width:100%;height:260px;margin-bottom:16px;" />
+      <el-table :data="historyList" border size="small" v-loading="historyLoading">
+        <el-table-column label="时间" prop="changedAt" width="160" />
+        <el-table-column label="旧均价" width="110" align="right">
+          <template slot-scope="{row}">KSh {{ row.oldPrice }}</template>
+        </el-table-column>
+        <el-table-column label="新均价" width="110" align="right">
+          <template slot-scope="{row}">
+            <span :style="{color: row.newPrice > row.oldPrice ? '#F56C6C' : '#67C23A', fontWeight:'bold'}">
+              KSh {{ row.newPrice }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="本次入库量" prop="qtyAdded" width="100" align="center" />
+        <el-table-column label="关联入库单" prop="orderNo" />
+      </el-table>
+      <div v-if="!historyLoading && historyList.length === 0" style="text-align:center;color:#909399;padding:20px 0;">
+        暂无进价变动记录
+      </div>
+    </el-dialog>
 
     <el-dialog :title="form.id?'编辑商品':'新增商品'" :visible.sync="dialogVisible" width="500px">
       <el-form :model="form" :rules="rules" ref="form" label-width="90px">
@@ -68,18 +92,21 @@
 </template>
 
 <script>
-import { getProducts, createProduct, updateProduct, deleteProduct } from '../../api/product'
+import * as echarts from 'echarts'
+import { getProducts, createProduct, updateProduct, deleteProduct, getProductCostHistory } from '../../api/product'
 import { getCategories } from '../../api/category'
 export default {
   data() {
     return {
       list: [], total: 0, loading: false, saving: false, dialogVisible: false, categories: [],
+      historyVisible: false, historyLoading: false, historyList: [], historyProductName: '', historyChart: null,
       query: { current: 1, size: 10, name: '', categoryId: null },
       form: { id: null, name: '', skuCode: '', categoryId: null, unit: '个', price: 0, costPrice: 0, spec: '', barcode: '', weightPerBox: null, qtyPerBox: null, status: 1 },
       rules: { name: [{ required: true, message: '请输入商品名称' }], skuCode: [{ required: true, message: '请输入SKU' }], unit: [{ required: true, message: '请输入单位' }] }
     }
   },
   created() { this.loadData(); getCategories().then(r => { this.categories = r.data }) },
+  beforeDestroy() { if (this.historyChart) { this.historyChart.dispose(); this.historyChart = null } },
   methods: {
     async loadData() {
       this.loading = true
@@ -101,6 +128,37 @@ export default {
           this.$message.success('保存成功'); this.dialogVisible = false; this.loadData()
         } finally { this.saving = false }
       })
+    },
+    async openCostHistory(row) {
+      this.historyProductName = row.name
+      this.historyVisible = true
+      this.historyLoading = true
+      try {
+        const res = await getProductCostHistory(row.id)
+        this.historyList = (res.data || []).slice().reverse()
+      } finally {
+        this.historyLoading = false
+        this.$nextTick(() => this.renderHistoryChart())
+      }
+    },
+    renderHistoryChart() {
+      if (!this.$refs.historyChart) return
+      if (!this.historyChart) this.historyChart = echarts.init(this.$refs.historyChart)
+      const dates = this.historyList.map(r => r.changedAt ? r.changedAt.slice(0, 10) : '')
+      const prices = this.historyList.map(r => Number(r.newPrice))
+      this.historyChart.setOption({
+        tooltip: { trigger: 'axis', formatter: params => `${params[0].axisValue}<br/>均价：KSh ${params[0].value}` },
+        grid: { left: '3%', right: '4%', top: '10%', bottom: '8%', containLabel: true },
+        xAxis: { type: 'category', data: dates, axisLabel: { rotate: dates.length > 6 ? 30 : 0 } },
+        yAxis: { type: 'value', name: 'KSh', scale: true },
+        series: [{
+          type: 'line', data: prices, smooth: false,
+          symbol: 'circle', symbolSize: 6,
+          itemStyle: { color: '#E6A23C' },
+          lineStyle: { color: '#E6A23C', width: 2 },
+          areaStyle: { color: 'rgba(230,162,60,0.08)' }
+        }]
+      }, true)
     },
     async handleDelete(id) {
       try {
