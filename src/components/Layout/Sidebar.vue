@@ -47,8 +47,10 @@
       <el-menu-item index="/report/supplier">供应商对账单</el-menu-item>
       <el-menu-item index="/report/customer">客户对账单</el-menu-item>
       <el-menu-item index="/report/stocktake">库存盘点表</el-menu-item>
-      <el-menu-item index="/report/gross-profit">毛利报表</el-menu-item>
+      <el-menu-item index="/report/gross-profit">净利润报表</el-menu-item>
     </el-submenu>
+
+    <el-menu-item index="/expenses"><i class="el-icon-money"></i><span slot="title">费用管理</span></el-menu-item>
 
     <el-submenu index="damage">
       <template slot="title">
