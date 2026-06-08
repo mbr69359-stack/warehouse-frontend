@@ -162,7 +162,7 @@ export default {
         <div class="total">合计金额：KSh ${total.toFixed(2)}</div>
         <div class="footer">
           <span>备注：${this.order.remark || '无'}</span>
-          <span>打印时间：${new Date().toLocaleString('zh-CN')}</span>
+          <span>打印时间：${new Date().toLocaleString('zh-CN', { timeZone: 'Africa/Nairobi' })}</span>
         </div>
         <script>window.onload=()=>{window.print();}<\/script>
       </body></html>`
