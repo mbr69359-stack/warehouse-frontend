@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <div v-if="isMobile" class="m-page m-empty" style="padding-top:60px;">
       <span class="material-symbols-outlined" style="font-size:56px;color:#c4c5d5;">swap_vert</span>
@@ -26,13 +26,13 @@
           <template slot-scope="{row}"><span style="color:#67C23A;">{{ row.inQty }}</span></template>
         </el-table-column>
         <el-table-column label="入库金额" width="110" align="right">
-          <template slot-scope="{row}"><span style="color:#67C23A;">¥{{ fmt(row.inAmount) }}</span></template>
+          <template slot-scope="{row}"><span style="color:#67C23A;">KSh {{ fmt(row.inAmount) }}</span></template>
         </el-table-column>
         <el-table-column label="出库数量" width="90" align="right">
           <template slot-scope="{row}"><span style="color:#F56C6C;">{{ row.outQty }}</span></template>
         </el-table-column>
         <el-table-column label="出库金额" width="110" align="right">
-          <template slot-scope="{row}"><span style="color:#F56C6C;">¥{{ fmt(row.outAmount) }}</span></template>
+          <template slot-scope="{row}"><span style="color:#F56C6C;">KSh {{ fmt(row.outAmount) }}</span></template>
         </el-table-column>
         <el-table-column label="净变动" width="90" align="right">
           <template slot-scope="{row}">
@@ -83,7 +83,7 @@ export default {
         legend: { data: ['入库金额', '出库金额'] },
         grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
         xAxis: { type: 'category', data: top10.map(d => d.productName), axisLabel: { interval: 0, rotate: 20 } },
-        yAxis: { type: 'value', name: '金额(¥)' },
+        yAxis: { type: 'value', name: '金额(KSh )' },
         series: [
           { name: '入库金额', type: 'bar', data: top10.map(d => Number(d.inAmount || 0).toFixed(2)), itemStyle: { color: '#67C23A', barBorderRadius: [4, 4, 0, 0] } },
           { name: '出库金额', type: 'bar', data: top10.map(d => Number(d.outAmount || 0).toFixed(2)), itemStyle: { color: '#F56C6C', barBorderRadius: [4, 4, 0, 0] } }
@@ -96,7 +96,7 @@ export default {
         const keys = { 4: 'inQty', 5: 'inAmount', 6: 'outQty', 7: 'outAmount' }
         if (!keys[i]) return ''
         const sum = data.reduce((s, r) => s + Number(r[keys[i]] || 0), 0)
-        return keys[i].includes('Amount') ? '¥' + sum.toFixed(2) : sum
+        return keys[i].includes('Amount') ? 'KSh ' + sum.toFixed(2) : sum
       })
     },
     handleExport() {

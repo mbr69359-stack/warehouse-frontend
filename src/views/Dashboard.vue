@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
 
     <!-- ── 桌面端 ── -->
@@ -55,7 +55,7 @@
         <el-col :span="12">
           <el-card shadow="hover" class="dash-card" style="text-align:center;">
             <i class="el-icon-money" style="fontSize:36px;color:#67C23A"></i>
-            <div style="font-size:28px;font-weight:bold;margin:8px 0;">¥{{ formatAmount(kpi.monthSalesAmount) }}</div>
+            <div style="font-size:28px;font-weight:bold;margin:8px 0;">KSh {{ formatAmount(kpi.monthSalesAmount) }}</div>
             <div style="color:#909399;">本月销售额</div>
           </el-card>
         </el-col>
@@ -180,7 +180,7 @@
           </div>
           <div class="m-stat-card">
             <div class="m-stat-label">本月销售额</div>
-            <div class="m-stat-value" style="font-size:18px;">¥{{ formatAmount(kpi.monthSalesAmount) }}</div>
+            <div class="m-stat-value" style="font-size:18px;">KSh {{ formatAmount(kpi.monthSalesAmount) }}</div>
           </div>
         </div>
       </section>

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-card v-loading="loading">
     <div slot="header" style="display:flex;align-items:center;gap:8px;">
       <el-button icon="el-icon-arrow-left" @click="$router.back()" circle size="mini" />
@@ -26,10 +26,10 @@
       </el-table-column>
       <el-table-column prop="qty" label="计划数量" width="110" />
       <el-table-column prop="actualQty" label="实际数量" width="110" />
-      <el-table-column label="单价" width="100"><template slot-scope="{row}">¥{{ row.price }}</template></el-table-column>
+      <el-table-column label="单价" width="100"><template slot-scope="{row}">KSh {{ row.price }}</template></el-table-column>
       <el-table-column label="小计">
         <template slot-scope="{row}">
-          ¥{{ subtotal(row) }}
+          KSh {{ subtotal(row) }}
         </template>
       </el-table-column>
     </el-table>
@@ -127,8 +127,8 @@ export default {
           <td>${r.productName || r.productId}${r.skuCode ? '<br><small style="color:#888">' + r.skuCode + '</small>' : ''}</td>
           <td style="text-align:center">${r.qty}</td>
           <td style="text-align:center">${r.actualQty ?? '—'}</td>
-          <td style="text-align:right">¥${Number(r.price || 0).toFixed(2)}</td>
-          <td style="text-align:right">¥${sub}</td>
+          <td style="text-align:right">KSh ${Number(r.price || 0).toFixed(2)}</td>
+          <td style="text-align:right">KSh ${sub}</td>
         </tr>`
       }).join('')
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
@@ -159,7 +159,7 @@ export default {
           <thead><tr><th>商品</th><th style="text-align:center">计划数量</th><th style="text-align:center">实际数量</th><th style="text-align:right">单价</th><th style="text-align:right">小计</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
-        <div class="total">合计金额：¥${total.toFixed(2)}</div>
+        <div class="total">合计金额：KSh ${total.toFixed(2)}</div>
         <div class="footer">
           <span>备注：${this.order.remark || '无'}</span>
           <span>打印时间：${new Date().toLocaleString('zh-CN')}</span>

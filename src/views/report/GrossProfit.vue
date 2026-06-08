@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-card>
     <div slot="header" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <span style="font-weight:600;">毛利报表</span>
@@ -12,26 +12,26 @@
       <el-col :span="6">
         <el-card shadow="never" style="text-align:center;">
           <div style="font-size:13px;color:#909399;">销售额</div>
-          <div style="font-size:22px;font-weight:700;color:#409EFF;margin-top:4px;">¥{{ fmt(totals.revenue) }}</div>
+          <div style="font-size:22px;font-weight:700;color:#409EFF;margin-top:4px;">KSh {{ fmt(totals.revenue) }}</div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card shadow="never" style="text-align:center;">
           <div style="font-size:13px;color:#909399;">销售成本</div>
-          <div style="font-size:22px;font-weight:700;color:#E6A23C;margin-top:4px;">¥{{ fmt(totals.cogs) }}</div>
+          <div style="font-size:22px;font-weight:700;color:#E6A23C;margin-top:4px;">KSh {{ fmt(totals.cogs) }}</div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card shadow="never" style="text-align:center;">
           <div style="font-size:13px;color:#909399;">损失合计</div>
-          <div style="font-size:22px;font-weight:700;color:#F56C6C;margin-top:4px;">¥{{ fmt(totals.totalLoss) }}</div>
+          <div style="font-size:22px;font-weight:700;color:#F56C6C;margin-top:4px;">KSh {{ fmt(totals.totalLoss) }}</div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card shadow="never" style="text-align:center;">
           <div style="font-size:13px;color:#909399;">毛利润</div>
           <div :style="{ fontSize:'22px', fontWeight:'700', marginTop:'4px', color: totals.grossProfit >= 0 ? '#67C23A' : '#F56C6C' }">
-            ¥{{ fmt(totals.grossProfit) }}
+            KSh {{ fmt(totals.grossProfit) }}
           </div>
         </el-card>
       </el-col>
@@ -40,21 +40,21 @@
     <el-table :data="tableData" border stripe show-summary :summary-method="getSummary" v-loading="loading">
       <el-table-column prop="statDate" label="日期" width="120" />
       <el-table-column label="销售额" align="right" width="130">
-        <template slot-scope="{row}"><span style="color:#409EFF;">¥{{ fmt(row.revenue) }}</span></template>
+        <template slot-scope="{row}"><span style="color:#409EFF;">KSh {{ fmt(row.revenue) }}</span></template>
       </el-table-column>
       <el-table-column label="销售成本" align="right" width="130">
-        <template slot-scope="{row}">¥{{ fmt(row.cogs) }}</template>
+        <template slot-scope="{row}">KSh {{ fmt(row.cogs) }}</template>
       </el-table-column>
       <el-table-column label="退换货损失" align="right" width="130">
-        <template slot-scope="{row}"><span style="color:#E6A23C;">¥{{ fmt(row.replacementLoss) }}</span></template>
+        <template slot-scope="{row}"><span style="color:#E6A23C;">KSh {{ fmt(row.replacementLoss) }}</span></template>
       </el-table-column>
       <el-table-column label="损坏损失" align="right" width="130">
-        <template slot-scope="{row}"><span style="color:#F56C6C;">¥{{ fmt(row.damageLoss) }}</span></template>
+        <template slot-scope="{row}"><span style="color:#F56C6C;">KSh {{ fmt(row.damageLoss) }}</span></template>
       </el-table-column>
       <el-table-column label="毛利润" align="right" width="140">
         <template slot-scope="{row}">
           <span :style="{ fontWeight:'600', color: grossProfit(row) >= 0 ? '#67C23A' : '#F56C6C' }">
-            ¥{{ fmt(grossProfit(row)) }}
+            KSh {{ fmt(grossProfit(row)) }}
           </span>
         </template>
       </el-table-column>
@@ -124,11 +124,11 @@ export default {
         const keys = ['revenue', 'cogs', 'replacementLoss', 'damageLoss']
         if (i >= 1 && i <= 4) {
           const sum = data.reduce((s, r) => s + Number(r[keys[i - 1]] || 0), 0)
-          return '¥' + sum.toFixed(2)
+          return 'KSh ' + sum.toFixed(2)
         }
         if (i === 5) {
           const gp = data.reduce((s, r) => s + this.grossProfit(r), 0)
-          return '¥' + gp.toFixed(2)
+          return 'KSh ' + gp.toFixed(2)
         }
         if (i === 6) {
           const rev = data.reduce((s, r) => s + Number(r.revenue || 0), 0)

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-card>
     <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
       <el-input v-model="query.name" placeholder="商品名称" clearable style="width:200px;" @clear="loadData" />
@@ -15,8 +15,8 @@
       <el-table-column prop="spec" label="规格" width="120" show-overflow-tooltip />
       <el-table-column prop="barcode" label="条码" width="130" show-overflow-tooltip />
       <el-table-column prop="unit" label="单位" width="70" />
-      <el-table-column prop="price" label="价格" width="100"><template slot-scope="{row}">¥{{ row.price }}</template></el-table-column>
-      <el-table-column prop="costPrice" label="成本价" width="100"><template slot-scope="{row}">¥{{ row.costPrice || '0.00' }}</template></el-table-column>
+      <el-table-column prop="price" label="价格" width="100"><template slot-scope="{row}">KSh {{ row.price }}</template></el-table-column>
+      <el-table-column prop="costPrice" label="成本价" width="100"><template slot-scope="{row}">KSh {{ row.costPrice || '0.00' }}</template></el-table-column>
       <el-table-column label="箱规" width="140" show-overflow-tooltip>
         <template slot-scope="{row}">
           <span v-if="row.weightPerBox || row.qtyPerBox">

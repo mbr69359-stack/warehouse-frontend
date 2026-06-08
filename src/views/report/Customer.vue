@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <div v-if="isMobile" class="m-page m-empty" style="padding-top:60px;">
       <span class="material-symbols-outlined" style="font-size:56px;color:#c4c5d5;">person_check</span>
@@ -27,7 +27,7 @@
         </el-table-column>
         <el-table-column label="出货总金额" width="130" align="right">
           <template slot-scope="{row}">
-            <span style="font-weight:600;color:#E6A23C;">¥{{ fmt(row.totalAmount) }}</span>
+            <span style="font-weight:600;color:#E6A23C;">KSh {{ fmt(row.totalAmount) }}</span>
           </template>
         </el-table-column>
       </el-table>
@@ -68,7 +68,7 @@ export default {
         if (i === 0) return '合计'
         if (i === 3) return data.reduce((s, r) => s + Number(r.orderCount || 0), 0)
         if (i === 4) return data.reduce((s, r) => s + Number(r.totalQty || 0), 0)
-        if (i === 5) return '¥' + data.reduce((s, r) => s + Number(r.totalAmount || 0), 0).toFixed(2)
+        if (i === 5) return 'KSh ' + data.reduce((s, r) => s + Number(r.totalAmount || 0), 0).toFixed(2)
         return ''
       })
     },

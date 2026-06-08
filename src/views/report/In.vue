@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
   <div v-if="isMobile" class="m-page m-empty" style="padding-top:60px;">
     <span class="material-symbols-outlined" style="font-size:56px;color:#c4c5d5;">bar_chart</span>
@@ -17,7 +17,7 @@
     <el-table :data="tableData" border stripe style="margin-top:20px;">
       <el-table-column prop="date" label="日期" width="130" />
       <el-table-column prop="count" label="入库单数" width="110" />
-      <el-table-column label="入库金额"><template slot-scope="{row}">¥{{ Number(row.amount||0).toFixed(2) }}</template></el-table-column>
+      <el-table-column label="入库金额"><template slot-scope="{row}">KSh {{ Number(row.amount||0).toFixed(2) }}</template></el-table-column>
     </el-table>
   </el-card>
   </div>
@@ -52,7 +52,7 @@ export default {
       this.chart.setOption({
         tooltip: { trigger: 'axis' }, legend: { data: ['入库单数', '入库金额'] },
         xAxis: { type: 'category', data: this.tableData.map(d => d.date) },
-        yAxis: [{ type: 'value', name: '单数' }, { type: 'value', name: '金额(¥)' }],
+        yAxis: [{ type: 'value', name: '单数' }, { type: 'value', name: '金额(KSh )' }],
         series: [
           { name: '入库单数', type: 'bar', data: this.tableData.map(d => d.count), itemStyle: { color: '#409EFF', barBorderRadius: [4, 4, 0, 0] }, animationType: 'scale', animationEasing: 'elasticOut', animationDuration: 800, animationDelay: idx => idx * 60 },
           { name: '入库金额', type: 'line', yAxisIndex: 1, data: this.tableData.map(d => Number(d.amount||0).toFixed(2)), itemStyle: { color: '#67C23A' } }

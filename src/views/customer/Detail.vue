@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-card v-loading="loading">
     <!-- 页面头部：返回按钮 + 标题 -->
     <div slot="header" style="display:flex;align-items:center;gap:8px;">
@@ -20,7 +20,7 @@
       <span style="font-weight:bold;">历史出库单</span>
       <span style="font-size:15px;">
         总消费额（已确认）：
-        <b style="color:#409EFF;font-size:18px;">¥{{ totalAmount }}</b>
+        <b style="color:#409EFF;font-size:18px;">KSh {{ totalAmount }}</b>
       </span>
     </div>
 

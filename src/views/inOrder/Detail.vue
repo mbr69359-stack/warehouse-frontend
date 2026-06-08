@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-card v-loading="loading">
     <div slot="header" style="display:flex;align-items:center;gap:8px;">
       <el-button icon="el-icon-arrow-left" @click="$router.back()" circle size="mini" />
@@ -25,10 +25,10 @@
       </el-table-column>
       <el-table-column prop="planQty" label="计划数量" width="110" />
       <el-table-column prop="actualQty" label="实际数量" width="110" />
-      <el-table-column label="单价" width="100"><template slot-scope="{row}">¥{{ row.price }}</template></el-table-column>
+      <el-table-column label="单价" width="100"><template slot-scope="{row}">KSh {{ row.price }}</template></el-table-column>
       <el-table-column label="小计">
         <template slot-scope="{row}">
-          ¥{{ subtotal(row) }}
+          KSh {{ subtotal(row) }}
         </template>
       </el-table-column>
     </el-table>

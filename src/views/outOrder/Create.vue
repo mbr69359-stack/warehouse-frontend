@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-card>
     <div slot="header" style="display:flex;align-items:center;gap:8px;">
       <el-button icon="el-icon-arrow-left" @click="$router.back()" circle size="mini" />
@@ -238,7 +238,7 @@ export default {
       const price = r.data
       if (price != null) {
         row.price = Number(price)
-        row._lastPriceTip = `参考上次：¥${Number(price).toFixed(2)}`
+        row._lastPriceTip = `参考上次：KSh ${Number(price).toFixed(2)}`
       } else {
         row._lastPriceTip = null
       }
