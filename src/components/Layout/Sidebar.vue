@@ -25,7 +25,7 @@
         <span>出库管理</span>
         <span v-if="pendingOutCount > 0 && !collapsed" class="damage-pending-badge">{{ pendingOutCount }}</span>
       </template>
-      <el-menu-item index="/out-orders">出库单列表</el-menu-item>
+      <el-menu-item index="/out-orders">出库单列表<span v-if="pendingOutCount > 0" class="damage-pending-badge">{{ pendingOutCount }}</span></el-menu-item>
       <el-menu-item index="/out-orders/create">新建出库单</el-menu-item>
     </el-submenu>
 
