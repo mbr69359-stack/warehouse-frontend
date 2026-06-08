@@ -61,6 +61,13 @@
         </el-col>
       </el-row>
 
+      <!-- 损坏待核销提醒 -->
+      <el-alert v-if="pendingDamageCount > 0"
+        :title="`${pendingDamageCount} 件损坏品待核销，请及时创建出库单完成核销`"
+        type="warning" show-icon :closable="false"
+        style="margin-bottom:20px;cursor:pointer;"
+        @click.native="$router.push('/damage-records')" />
+
       <!-- 展开图表区（带过渡动画） -->
       <transition name="chart-slide" mode="out-in">
         <el-card v-if="activeChart" :key="activeChart" style="margin-bottom:20px;" v-loading="chartLoading">
@@ -146,6 +153,17 @@
             <div>
               <div style="font-size:12px;opacity:.85;">库存预警</div>
               <div style="font-size:22px;font-weight:700;line-height:1.1;">{{ cards[2].value }} <span style="font-size:13px;font-weight:400;">件商品低于预警值</span></div>
+            </div>
+          </div>
+          <span class="material-symbols-outlined" style="font-size:20px;opacity:.7;">chevron_right</span>
+        </div>
+        <!-- 损坏待核销提醒 -->
+        <div v-if="pendingDamageCount > 0" class="m-damage-banner" @click="$router.push('/damage-records')">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="material-symbols-outlined" style="font-size:22px;">broken_image</span>
+            <div>
+              <div style="font-size:12px;opacity:.85;">损坏待核销</div>
+              <div style="font-size:22px;font-weight:700;line-height:1.1;">{{ pendingDamageCount }} <span style="font-size:13px;font-weight:400;">件损坏品待核销</span></div>
             </div>
           </div>
           <span class="material-symbols-outlined" style="font-size:20px;opacity:.7;">chevron_right</span>
@@ -260,6 +278,7 @@
 
 <script>
 import { getAlerts, getInventory, getInventoryStats, getInventoryChart } from '../api/inventory'
+import { getPendingCount } from '../api/damageRecord'
 import { getInOrders } from '../api/inOrder'
 import { getOutOrders } from '../api/outOrder'
 import { getProducts } from '../api/product'
@@ -274,6 +293,7 @@ export default {
   data() {
     return {
       alerts: [],
+      pendingDamageCount: 0,
       statsData: { totalQty: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseId: null },
       kpi: { todayOutQty: 0, monthSalesAmount: 0 },
       trendIn: [], trendOut: [],
@@ -294,6 +314,7 @@ export default {
     const pad = n => String(n).padStart(2, '0')
     const startDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`
     const endDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+    getPendingCount().then(r => { this.pendingDamageCount = r.data || 0 }).catch(() => {})
     const [alertRes, inRes, outRes, invRes, statsRes, prodRes, chartRes, kpiRes, trendInRes, trendOutRes] = await Promise.all([
       getAlerts().catch(() => ({ data: [] })),
       getInOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
@@ -382,6 +403,21 @@ export default {
   -webkit-tap-highlight-color: transparent;
 }
 .m-alert-banner:active { opacity: .8; }
+
+.m-damage-banner {
+  margin-top: 10px;
+  background: #fff3cd;
+  border: 1px solid rgba(255,160,0,.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #7a4f00;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.m-damage-banner:active { opacity: .8; }
 
 .m-quick-grid2 {
   display: grid;

@@ -47,7 +47,11 @@
     </el-submenu>
 
     <el-submenu index="damage">
-      <template slot="title"><i class="el-icon-warning-outline"></i><span>损坏管理</span></template>
+      <template slot="title">
+        <i class="el-icon-warning-outline"></i>
+        <span>损坏管理</span>
+        <span v-if="pendingDamageCount > 0 && !collapsed" class="damage-pending-badge">{{ pendingDamageCount }}</span>
+      </template>
       <el-menu-item index="/damage-records">损坏登记</el-menu-item>
       <el-menu-item index="/customer-returns">退换货</el-menu-item>
     </el-submenu>
@@ -68,12 +72,30 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import { getPendingCount } from '../../api/damageRecord'
 export default {
   props: { collapsed: Boolean },
-  computed: { ...mapGetters(['isAdmin']) }
+  data() { return { pendingDamageCount: 0 } },
+  computed: { ...mapGetters(['isAdmin']) },
+  mounted() {
+    getPendingCount().then(r => { this.pendingDamageCount = r.data || 0 }).catch(() => {})
+  }
 }
 </script>
 
 <style>
 .el-aside::-webkit-scrollbar { display: none; }
+.damage-pending-badge {
+  display: inline-block;
+  background: #F56C6C;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 11px;
+  padding: 0 6px;
+  height: 18px;
+  line-height: 18px;
+  margin-left: 8px;
+  font-style: normal;
+  vertical-align: middle;
+}
 </style>

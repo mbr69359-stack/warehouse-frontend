@@ -10,13 +10,39 @@
           </el-select>
           <el-button type="primary" icon="el-icon-search" @click="onFilter">搜索</el-button>
         </template>
-        <div style="margin-left:auto;">
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <el-button icon="el-icon-upload2" @click="importDialog=true">导入期初库存</el-button>
           <el-button-group>
             <el-button :type="viewMode==='list'?'primary':''" icon="el-icon-menu" @click="switchViewMode('list')">列表</el-button>
             <el-button :type="viewMode==='chart'?'primary':''" icon="el-icon-data-analysis" @click="switchViewMode('chart')">图表</el-button>
           </el-button-group>
         </div>
       </div>
+
+      <!-- 导入期初库存弹窗 -->
+      <el-dialog title="导入期初库存" :visible.sync="importDialog" width="480px" @closed="resetImport">
+        <div style="margin-bottom:12px;color:#909399;font-size:13px;">
+          Excel 需包含列：<b>SKU码</b>、<b>仓库名称</b>、<b>数量</b>，与系统中完全一致。
+          <el-button type="text" @click="downloadTemplate" style="padding:0 4px;">下载模板</el-button>
+        </div>
+        <el-upload drag action="" :auto-upload="false" :on-change="onFileChange" :file-list="fileList"
+          accept=".xlsx,.xls" :limit="1" :on-exceed="() => $message.warning('只能上传一个文件')">
+          <i class="el-icon-upload"></i>
+          <div class="el-upload__text">拖拽文件到此处，或 <em>点击上传</em></div>
+          <div class="el-upload__tip" slot="tip">仅支持 .xlsx / .xls 文件</div>
+        </el-upload>
+        <div v-if="importResult" style="margin-top:16px;">
+          <el-alert :title="`导入完成：成功 ${importResult.successCount} 行，失败 ${importResult.failCount} 行`"
+            :type="importResult.failCount > 0 ? 'warning' : 'success'" show-icon :closable="false" />
+          <div v-if="importResult.failDetails && importResult.failDetails.length" style="margin-top:8px;max-height:160px;overflow-y:auto;">
+            <div v-for="d in importResult.failDetails" :key="d" style="font-size:12px;color:#F56C6C;line-height:1.8;">{{ d }}</div>
+          </div>
+        </div>
+        <div slot="footer">
+          <el-button @click="importDialog=false">关闭</el-button>
+          <el-button type="primary" :loading="importing" :disabled="!importFile" @click="doImport">开始导入</el-button>
+        </div>
+      </el-dialog>
 
       <!-- 图表视图 -->
       <div v-if="viewMode === 'chart'">
@@ -183,7 +209,7 @@
 </template>
 
 <script>
-import { getInventory, setAlertQty, getInventoryChart } from '../../api/inventory'
+import { getInventory, setAlertQty, getInventoryChart, importInventory, downloadImportTemplate } from '../../api/inventory'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 import mobileMixin from '../../mixins/mobile'
@@ -204,7 +230,12 @@ export default {
       chartTab: 'all',
       chartWarehouseId: null,
       chartData: [],
-      chartLoading: false
+      chartLoading: false,
+      importDialog: false,
+      importing: false,
+      importFile: null,
+      fileList: [],
+      importResult: null
     }
   },
   computed: {
@@ -286,6 +317,31 @@ export default {
       this.$message.success('预警值已更新')
       this.alertDialog = false
       this.loadData()
+    },
+    onFileChange(file) { this.importFile = file.raw; this.importResult = null },
+    resetImport() { this.importFile = null; this.fileList = []; this.importResult = null },
+    async doImport() {
+      if (!this.importFile) return
+      this.importing = true
+      try {
+        const r = await importInventory(this.importFile)
+        this.importResult = r.data
+        if (r.data.failCount === 0) {
+          this.$message.success(`导入成功，共 ${r.data.successCount} 行`)
+          this.loadData()
+        }
+      } catch (e) {
+        this.$message.error('导入失败')
+      } finally {
+        this.importing = false
+      }
+    },
+    async downloadTemplate() {
+      const r = await downloadImportTemplate()
+      const url = URL.createObjectURL(new Blob([r.data]))
+      const a = document.createElement('a')
+      a.href = url; a.download = '期初库存导入模板.xlsx'; a.click()
+      URL.revokeObjectURL(url)
     }
   }
 }
