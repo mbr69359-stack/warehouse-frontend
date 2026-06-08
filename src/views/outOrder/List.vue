@@ -28,9 +28,17 @@
             <el-tag :type="row.status==='CONFIRMED'?'success':'warning'">{{ row.status==='CONFIRMED'?'已确认':'草稿' }}</el-tag>
           </template>
         </el-table-column>
-        <!-- 显示关联客户名称 -->
         <el-table-column prop="customerName" label="客户" width="120" show-overflow-tooltip>
           <template slot-scope="{row}">{{ row.customerName || '—' }}</template>
+        </el-table-column>
+        <el-table-column label="销售渠道" width="100" align="center">
+          <template slot-scope="{row}">
+            <el-tag v-if="row.type==='SALE' && row.saleChannel" size="mini"
+              :type="row.saleChannel==='RETAIL'?'':'success'">
+              {{ row.saleChannel==='RETAIL'?'零售':'批发' }}
+            </el-tag>
+            <span v-else style="color:#c0c4cc;">—</span>
+          </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" />
         <el-table-column label="操作" width="260">

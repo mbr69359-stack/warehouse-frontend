@@ -101,10 +101,17 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 月度净利润趋势图 -->
+    <div v-if="monthlyTrend.length > 1" style="margin-top:32px;">
+      <div style="font-weight:600;margin-bottom:12px;font-size:14px;">月度净利润趋势</div>
+      <div ref="trendChart" style="height:300px;"></div>
+    </div>
   </el-card>
 </template>
 
 <script>
+import * as echarts from 'echarts'
 import { todayKe, monthsAgoKe } from '../../utils/time'
 import { getGrossProfitReport } from '../../api/report'
 import { getWarehouses } from '../../api/warehouse'
@@ -117,10 +124,21 @@ export default {
       tableData: [],
       warehouses: [],
       warehouseId: null,
-      dateRange: [monthsAgoKe(1), todayKe()]
+      dateRange: [monthsAgoKe(1), todayKe()],
+      trendChart: null
     }
   },
   computed: {
+    monthlyTrend() {
+      const map = {}
+      this.tableData.forEach(r => {
+        const month = (r.statDate || '').slice(0, 7)
+        if (!month) return
+        if (!map[month]) map[month] = 0
+        map[month] += this.calcNet(r)
+      })
+      return Object.keys(map).sort().map(m => ({ month: m, netProfit: map[m] }))
+    },
     totals() {
       const sum = key => this.tableData.reduce((s, r) => s + Number(r[key] || 0), 0)
       const revenue         = sum('revenue')
@@ -135,11 +153,39 @@ export default {
       return { revenue, cogs, replacementLoss, damageLoss, grossProfit, totalExpense, netProfit, netMargin }
     }
   },
+  watch: {
+    monthlyTrend() {
+      this.$nextTick(() => this.drawTrendChart())
+    }
+  },
   created() {
     this.loadWarehouses()
     this.loadData()
   },
   methods: {
+    drawTrendChart() {
+      if (!this.$refs.trendChart) return
+      if (!this.trendChart) {
+        this.trendChart = echarts.init(this.$refs.trendChart)
+      }
+      const months = this.monthlyTrend.map(d => d.month)
+      const values = this.monthlyTrend.map(d => Number(d.netProfit.toFixed(2)))
+      this.trendChart.setOption({
+        tooltip: { trigger: 'axis', formatter: p => `${p[0].name}<br/>净利润：KSh ${p[0].value.toLocaleString()}` },
+        xAxis: { type: 'category', data: months, axisLabel: { rotate: 30 } },
+        yAxis: { type: 'value', name: 'KSh', axisLabel: { formatter: v => v.toLocaleString() } },
+        series: [{
+          type: 'line', data: values, smooth: true, symbol: 'circle', symbolSize: 8,
+          itemStyle: { color: '#409EFF' },
+          lineStyle: { width: 2 },
+          areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [{ offset: 0, color: 'rgba(64,158,255,0.25)' }, { offset: 1, color: 'rgba(64,158,255,0.02)' }] } },
+          markLine: { silent: true, data: [{ type: 'average', name: '均值' }] }
+        }],
+        grid: { left: '3%', right: '4%', bottom: '14%', containLabel: true }
+      })
+    },
+
     fmt(v) { return Number(v || 0).toFixed(2) },
 
     calcGross(row) {

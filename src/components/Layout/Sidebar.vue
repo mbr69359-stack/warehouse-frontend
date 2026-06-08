@@ -48,6 +48,7 @@
       <el-menu-item index="/report/customer">客户对账单</el-menu-item>
       <el-menu-item index="/report/stocktake">库存盘点表</el-menu-item>
       <el-menu-item index="/report/gross-profit">净利润报表</el-menu-item>
+      <el-menu-item index="/report/product-profit">商品毛利分析</el-menu-item>
     </el-submenu>
 
     <el-menu-item index="/expenses"><i class="el-icon-money"></i><span slot="title">费用管理</span></el-menu-item>
@@ -72,6 +73,7 @@
       <template slot="title"><i class="el-icon-setting"></i><span>系统设置</span></template>
       <el-menu-item index="/sys/users">用户管理</el-menu-item>
       <el-menu-item index="/sys/roles">角色管理</el-menu-item>
+      <el-menu-item index="/sys/config">系统参数</el-menu-item>
     </el-submenu>
   </el-menu>
 </template>

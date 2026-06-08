@@ -23,6 +23,12 @@
           <el-radio label="REPLACEMENT_OUT">补发出库</el-radio>
         </el-radio-group>
       </el-form-item>
+      <el-form-item v-if="form.type === 'SALE'" label="销售渠道" prop="saleChannel">
+        <el-select v-model="form.saleChannel" placeholder="请选择销售渠道" style="width:100%;">
+          <el-option label="零售" value="RETAIL" />
+          <el-option label="批发" value="WHOLESALE" />
+        </el-select>
+      </el-form-item>
       <el-form-item v-if="form.type === 'TRANSFER'" label="目标仓库" prop="targetWarehouseId">
         <el-select v-model="form.targetWarehouseId" placeholder="请选择目标仓库" style="width:100%;">
           <el-option v-for="w in targetWarehouses" :key="w.id" :label="w.name" :value="w.id" />
@@ -137,10 +143,11 @@ export default {
       damageRecords: [],
       damageLoading: false,
       selectedDamageIds: [],
-      form: { warehouseId: null, targetWarehouseId: null, type: 'SALE', remark: '', customerId: null, items: [] },
+      form: { warehouseId: null, targetWarehouseId: null, type: 'SALE', saleChannel: null, remark: '', customerId: null, items: [] },
       baseRules: {
         warehouseId: [{ required: true, message: '请选择仓库' }],
-        type: [{ required: true, message: '请选择类型' }]
+        type: [{ required: true, message: '请选择类型' }],
+        saleChannel: [{ required: true, message: '请选择销售渠道', trigger: 'change' }]
       },
       transferRules: {
         warehouseId: [{ required: true, message: '请选择仓库' }],
@@ -151,7 +158,11 @@ export default {
   },
   computed: {
     currentRules() {
-      return this.form.type === 'TRANSFER' ? this.transferRules : this.baseRules
+      if (this.form.type === 'TRANSFER') return this.transferRules
+      if (this.form.type === 'SALE') return this.baseRules
+      // 非SALE类型去掉saleChannel校验
+      const { saleChannel, ...rest } = this.baseRules
+      return rest
     },
     targetWarehouses() {
       return this.warehouses.filter(w => w.id !== this.form.warehouseId)
@@ -204,6 +215,7 @@ export default {
     },
     onTypeChange(type) {
       this.form.targetWarehouseId = null
+      this.form.saleChannel = null
       this.form.items = []
       this.damageRecords = []
       this.selectedDamageIds = []

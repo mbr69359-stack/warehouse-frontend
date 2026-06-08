@@ -9,3 +9,4 @@ export const getSupplierStatement = params => request.get('/reports/supplier-sta
 export const getCustomerStatement = params => request.get('/reports/customer-statement', { params })
 export const getStocktakeReport = params => request.get('/reports/stocktake', { params })
 export const getGrossProfitReport = params => request.get('/reports/gross-profit', { params })
+export const getProductProfitReport = params => request.get('/reports/product-profit', { params })

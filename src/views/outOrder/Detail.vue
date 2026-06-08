@@ -12,9 +12,13 @@
       <el-descriptions-item label="出库类型">{{ typeLabel(order.type) }}</el-descriptions-item>
       <el-descriptions-item label="创建时间">{{ order.createTime }}</el-descriptions-item>
       <el-descriptions-item label="确认时间">{{ order.confirmTime || '—' }}</el-descriptions-item>
-      <!-- 显示关联客户名称 -->
       <el-descriptions-item label="客户">{{ order.customerName || '—' }}</el-descriptions-item>
-      <el-descriptions-item label="备注" :span="2">{{ order.remark || '—' }}</el-descriptions-item>
+      <el-descriptions-item v-if="order.type==='SALE'" label="销售渠道">
+        <el-tag size="mini" :type="order.saleChannel==='RETAIL'?'':'success'">
+          {{ order.saleChannel==='RETAIL'?'零售':order.saleChannel==='WHOLESALE'?'批发':'—' }}
+        </el-tag>
+      </el-descriptions-item>
+      <el-descriptions-item label="备注" :span="order.type==='SALE'?1:2">{{ order.remark || '—' }}</el-descriptions-item>
     </el-descriptions>
 
     <el-table :data="items" border stripe>
