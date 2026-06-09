@@ -8,7 +8,11 @@ import store from './store'
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(r => r.unregister())
+    if (regs.length > 0) {
+      Promise.all(regs.map(r => r.unregister())).then(() => {
+        window.location.reload()
+      })
+    }
   })
 }
 
