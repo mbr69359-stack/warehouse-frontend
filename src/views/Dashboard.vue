@@ -73,7 +73,7 @@
           </el-card>
         </el-col>
         <!-- 主仓库（可展开图表） -->
-        <el-col :span="6">
+        <el-col :span="6" v-if="!selectedWarehouseId">
           <el-card shadow="hover" :class="['dash-card', activeChart === 'max' ? 'dash-card--active' : '']"
             style="text-align:center;cursor:pointer;" @click.native="toggleChart('max')">
             <i class="el-icon-office-building" style="fontSize:36px;color:#67C23A"></i>
@@ -178,8 +178,7 @@
               <span>库存预警</span>
               <el-link type="primary" @click="$router.push('/inventory/alerts')">查看全部</el-link>
             </div>
-            <inventory-bar-chart v-if="alertChartData.length" :chart-data="alertChartData" title="" :height="Math.max(200, alertChartData.length * 40) + 'px'" :horizontal="true" />
-            <el-empty v-else description="当前没有库存预警" :image-size="60" />
+            <el-empty v-if="false" description="当前没有库存预警" :image-size="60" />
           </el-card>
         </el-col>
       </el-row>
@@ -383,11 +382,9 @@ export default {
   mixins: [mobileMixin],
   data() {
     return {
-      alerts: [],
       pendingDamageCount: 0, pendingOutOrderCount: 0,
       selectedWarehouseId: null,
       warehouseList: [],
-      warehouses: [],
       warehouseSummary: {},
       warehouseInvList: [],
       warehouseInvLoading: false,
@@ -412,7 +409,7 @@ export default {
     const endDate = todayKe()
     getPendingCount().then(r => { this.pendingDamageCount = r.data || 0 }).catch(() => {})
     getDraftOutOrderCount().then(n => { this.pendingOutOrderCount = n })
-    getWarehouses().then(r => { this.warehouseList = r.data || []; this.warehouses = r.data || [] })
+    getWarehouses().then(r => { this.warehouseList = r.data || [] })
     const [dashRes, inRes, outRes, prodRes, chartRes, trendInRes, trendOutRes] = await Promise.all([
       getDashboardStats({ warehouseId: this.selectedWarehouseId }).catch(() => ({ data: {} })),
       getInOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
@@ -447,40 +444,13 @@ export default {
   computed: {
     selectedWarehouseName() {
       if (!this.selectedWarehouseId) return '全部仓库'
-      const w = this.warehouses.find(wh => wh.id === this.selectedWarehouseId)
+      const w = this.warehouseList.find(wh => wh.id === this.selectedWarehouseId)
       return w ? w.name : '仓库'
     },
-    alertChartData() {
-      return this.alerts.map(row => ({
-        productName: this.productMap[row.productId] || `商品#${row.productId}`,
-        qty: row.qty,
-        alertQty: row.alertQty,
-        isLow: true
-      }))
-    }
   },
   methods: {
     formatAmount(val) {
       return (Number(val) || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-    },
-    async selectWarehouse(id) {
-      this.selectedWarehouseId = id
-      if (!id) {
-        this.warehouseSummary = {}
-        this.warehouseInvList = []
-        return
-      }
-      this.warehouseInvLoading = true
-      try {
-        const [summaryRes, invRes] = await Promise.all([
-          getInventorySummary({ warehouseId: id }).catch(() => ({ data: {} })),
-          getInventory({ warehouseId: id, current: 1, size: 8 }).catch(() => ({ data: { records: [] } }))
-        ])
-        this.warehouseSummary = summaryRes.data || {}
-        this.warehouseInvList = (invRes.data.records || invRes.data || [])
-      } finally {
-        this.warehouseInvLoading = false
-      }
     },
     async toggleChart(type) {
       if (this.activeChart === type) return
