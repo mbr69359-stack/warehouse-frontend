@@ -56,6 +56,9 @@
       <el-table-column label="退换货损失" align="right" width="120">
         <template slot-scope="{row}"><span style="color:#E6A23C;">KSh {{ fmt(row.replacementLoss) }}</span></template>
       </el-table-column>
+      <el-table-column label="退货品损失" align="right" width="120">
+        <template slot-scope="{row}"><span style="color:#E6A23C;">KSh {{ fmt(row.returnDamageLoss) }}</span></template>
+      </el-table-column>
       <el-table-column label="损坏损失" align="right" width="110">
         <template slot-scope="{row}"><span style="color:#F56C6C;">KSh {{ fmt(row.damageLoss) }}</span></template>
       </el-table-column>
@@ -142,15 +145,16 @@ export default {
     totals() {
       const sum = key => this.tableData.reduce((s, r) => s + Number(r[key] || 0), 0)
       const revenue         = sum('revenue')
-      const cogs            = sum('cogs')
-      const replacementLoss = sum('replacementLoss')
-      const damageLoss      = sum('damageLoss')
-      const grossProfit     = revenue - cogs - replacementLoss - damageLoss
+      const cogs              = sum('cogs')
+      const replacementLoss   = sum('replacementLoss')
+      const returnDamageLoss  = sum('returnDamageLoss')
+      const damageLoss        = sum('damageLoss')
+      const grossProfit       = revenue - cogs - replacementLoss - returnDamageLoss - damageLoss
       const totalExpense    = sum('unloadingFee') + sum('deliveryFee') + sum('salaryFee') +
                               sum('commissionFee') + sum('storageFee') + sum('otherFee')
       const netProfit       = grossProfit - totalExpense
       const netMargin       = revenue > 0 ? (netProfit / revenue * 100).toFixed(2) : '0.00'
-      return { revenue, cogs, replacementLoss, damageLoss, grossProfit, totalExpense, netProfit, netMargin }
+      return { revenue, cogs, replacementLoss, returnDamageLoss, damageLoss, grossProfit, totalExpense, netProfit, netMargin }
     }
   },
   watch: {
@@ -190,7 +194,8 @@ export default {
 
     calcGross(row) {
       return Number(row.revenue || 0) - Number(row.cogs || 0)
-             - Number(row.replacementLoss || 0) - Number(row.damageLoss || 0)
+             - Number(row.replacementLoss || 0) - Number(row.returnDamageLoss || 0)
+             - Number(row.damageLoss || 0)
     },
     calcTotalExpense(row) {
       return Number(row.unloadingFee || 0) + Number(row.deliveryFee || 0)
@@ -226,7 +231,8 @@ export default {
     getSummary({ columns, data }) {
       const numCols = {
         '销售额': 'revenue', '销售成本': 'cogs', '退换货损失': 'replacementLoss',
-        '损坏损失': 'damageLoss', '卸货费': 'unloadingFee', '配送费': 'deliveryFee',
+        '退货品损失': 'returnDamageLoss', '损坏损失': 'damageLoss',
+        '卸货费': 'unloadingFee', '配送费': 'deliveryFee',
         '员工工资': 'salaryFee', '销售提成': 'commissionFee', '仓储费': 'storageFee',
         '其他费用': 'otherFee'
       }
@@ -247,12 +253,12 @@ export default {
 
     handleExport() {
       exportCSV(
-        ['日期', '销售额', '销售成本', '退换货损失', '损坏损失', '毛利润',
+        ['日期', '销售额', '销售成本', '退换货损失', '退货品损失', '损坏损失', '毛利润',
          '卸货费', '配送费', '员工工资', '销售提成', '仓储费', '其他费用', '净利润', '净利润率'],
         this.tableData.map(r => [
           r.statDate,
           this.fmt(r.revenue), this.fmt(r.cogs),
-          this.fmt(r.replacementLoss), this.fmt(r.damageLoss),
+          this.fmt(r.replacementLoss), this.fmt(r.returnDamageLoss), this.fmt(r.damageLoss),
           this.fmt(this.calcGross(r)),
           this.fmt(r.unloadingFee), this.fmt(r.deliveryFee),
           this.fmt(r.salaryFee), this.fmt(r.commissionFee),
