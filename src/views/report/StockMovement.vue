@@ -114,7 +114,7 @@ export default {
         const keys = { 4: 'inQty', 5: 'inAmount', 6: 'outQty', 7: 'outAmount' }
         if (!keys[i]) return ''
         const sum = data.reduce((s, r) => s + Number(r[keys[i]] || 0), 0)
-        return keys[i].includes('Amount') ? 'KSh ' + sum.toFixed(2) : sum
+        return keys[i].includes('Amount') ? 'KSh ' + sum.toFixed(2) : sum + '个'
       })
     },
     handleExport() {
