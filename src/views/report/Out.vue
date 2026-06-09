@@ -18,6 +18,10 @@
       <el-table-column prop="date" label="日期" width="130" />
       <el-table-column prop="count" label="出库单数" width="110" />
       <el-table-column label="出库金额"><template slot-scope="{row}">KSh {{ Number(row.amount||0).toFixed(2) }}</template></el-table-column>
+      <el-table-column prop="totalQty" label="总件数" width="100" align="right" />
+      <el-table-column label="折合箱数(参考)" width="130" align="right">
+        <template slot-scope="{row}">{{ Number(row.totalBoxes||0) }}箱</template>
+      </el-table-column>
     </el-table>
   </el-card>
   </div>
@@ -40,8 +44,8 @@ export default {
     handleExport() {
       const filename = `出库报表_${this.dateRange[0]}_${this.dateRange[1]}.csv`
       exportCSV(
-        ['日期', '出库单数', '出库金额(元)'],
-        this.tableData.map(r => [r.date, r.count, Number(r.amount || 0).toFixed(2)]),
+        ['日期', '出库单数', '出库金额(KSh)', '总件数', '折合箱数(参考)'],
+        this.tableData.map(r => [r.date, r.count, Number(r.amount || 0).toFixed(2), r.totalQty || 0, r.totalBoxes || 0]),
         filename
       )
     },
