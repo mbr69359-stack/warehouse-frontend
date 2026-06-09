@@ -10,3 +10,4 @@ export const getCustomerStatement = params => request.get('/reports/customer-sta
 export const getStocktakeReport = params => request.get('/reports/stocktake', { params })
 export const getGrossProfitReport = params => request.get('/reports/gross-profit', { params })
 export const getProductProfitReport = params => request.get('/reports/product-profit', { params })
+export const getDamageReport = params => request.get('/reports/damage', { params })
