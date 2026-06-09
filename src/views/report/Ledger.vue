@@ -38,6 +38,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="unit" label="单位" width="60" />
+        <el-table-column label="记账单位" width="85" align="center">
+          <template slot-scope="{row}">
+            <el-tag :type="(row.qtyUnit || 'PIECE') === 'BOX' ? 'warning' : 'success'" size="mini">
+              {{ (row.qtyUnit || 'PIECE') === 'BOX' ? '箱' : '个' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="documentNo" label="单据号" width="150" show-overflow-tooltip />
         <el-table-column prop="operator" label="操作人" width="90" />
         <el-table-column prop="note" label="备注" min-width="120" show-overflow-tooltip />
@@ -91,9 +98,10 @@ export default {
     handleExport() {
       const filename = `流水报表_${this.dateRange[0]}_${this.dateRange[1]}.csv`
       exportCSV(
-        ['时间', '仓库', '商品名称', 'SKU', '单位', '类型', '变动数量', '单据号', '操作人', '备注'],
+        ['时间', '仓库', '商品名称', 'SKU', '单位', '记账单位', '类型', '变动数量', '单据号', '操作人', '备注'],
         this.tableData.map(r => [
           r.occurredAt, r.warehouseName, r.productName, r.skuCode, r.unit,
+          (r.qtyUnit || 'PIECE') === 'BOX' ? '箱' : '个',
           TYPE_LABEL[r.type] || r.type, r.changeQty, r.documentNo || '', r.operator || '', r.note || ''
         ]),
         filename
