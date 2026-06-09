@@ -45,6 +45,13 @@
           <span v-else style="color:#c0c4cc;">—</span>
         </template>
       </el-table-column>
+      <el-table-column label="" width="36">
+        <template slot-scope="{row}">
+          <el-tooltip v-if="showQtyPerBoxWarn(row)" content="该商品未设每箱数量，库存将以箱为单位存入，无法换算个数" placement="top">
+            <i class="el-icon-warning" style="color:#E6A23C;font-size:16px;cursor:help;"></i>
+          </el-tooltip>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="70">
         <template slot-scope="{$index}"><el-button type="danger" size="mini" icon="el-icon-delete" circle @click="form.items.splice($index,1)" /></template>
       </el-table-column>
@@ -68,6 +75,10 @@ export default {
   computed: {
     productMap() {
       return Object.fromEntries(this.products.map(p => [p.id, p]))
+    },
+    selectedWarehouseType() {
+      const w = this.warehouses.find(wh => wh.id === this.form.warehouseId)
+      return w ? w.type : null
     },
     totalWeight() {
       return this.form.items.reduce((sum, row) => {
@@ -98,6 +109,11 @@ export default {
           this.products = [...this.products, ...incoming.filter(p => !seen.has(p.id))]
         })
         .finally(() => { this.productLoading = false })
+    },
+    showQtyPerBoxWarn(row) {
+      if (this.selectedWarehouseType !== 'BOX') return false
+      const p = this.productMap[row.productId]
+      return p && (!p.qtyPerBox || p.qtyPerBox <= 0)
     },
     addItem() { this.form.items.push({ productId: null, planQty: 0, price: 0 }) },
     handleSave() {
