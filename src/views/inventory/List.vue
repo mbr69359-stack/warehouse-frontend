@@ -9,6 +9,10 @@
             <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
           </el-select>
           <el-button type="primary" icon="el-icon-search" @click="onFilter">搜索</el-button>
+          <el-radio-group v-model="displayMode" size="small" style="margin-left:8px;">
+            <el-radio-button label="box">按箱查看</el-radio-button>
+            <el-radio-button label="piece">按个查看</el-radio-button>
+          </el-radio-group>
         </template>
         <div style="margin-left:auto;display:flex;gap:8px;">
           <el-button icon="el-icon-upload2" @click="importDialog=true">导入期初库存</el-button>
@@ -64,12 +68,14 @@
       <!-- 列表视图 -->
       <el-table v-if="viewMode === 'list'" :data="list" v-loading="loading" border stripe>
         <el-table-column label="仓库" min-width="120">
-          <template slot-scope="{row}">{{ warehouseMap[row.warehouseId] || row.warehouseId }}</template>
+          <template slot-scope="{row}">{{ warehouseMap[row.warehouseId]?.name || row.warehouseId }}</template>
         </el-table-column>
         <el-table-column label="商品" min-width="160">
-          <template slot-scope="{row}">{{ productMap[row.productId] || row.productId }}</template>
+          <template slot-scope="{row}">{{ productMap[row.productId]?.name || row.productId }}</template>
         </el-table-column>
-        <el-table-column prop="qty" label="当前库存" width="110" align="center" />
+        <el-table-column label="当前库存" width="130" align="center">
+          <template slot-scope="{row}">{{ formatQty(row) }}</template>
+        </el-table-column>
         <el-table-column prop="alertQty" label="预警值" width="100" align="center" />
         <el-table-column label="状态" width="100" align="center">
           <template slot-scope="{row}">
@@ -87,7 +93,7 @@
       <el-dialog title="设置预警值" :visible.sync="alertDialog" width="360px">
         <el-form label-width="90px">
           <el-form-item label="商品">
-            <el-input :value="productMap[alertForm.productId] || alertForm.productId" disabled />
+            <el-input :value="productMap[alertForm.productId]?.name || alertForm.productId" disabled />
           </el-form-item>
           <el-form-item label="预警库存">
             <el-input-number v-model="alertForm.alertQty" :min="0" style="width:100%;" />
@@ -129,13 +135,13 @@
           <!-- 卡头（可点击展开） -->
           <div class="m-inv-card-header" @click="toggleCard(row)">
             <div class="m-inv-info">
-              <div class="m-inv-name">{{ productMap[row.productId] || ('商品 #'+row.productId) }}</div>
-              <div class="m-inv-sub">仓库: {{ warehouseMap[row.warehouseId] || row.warehouseId }}</div>
+              <div class="m-inv-name">{{ productMap[row.productId]?.name || ('商品 #'+row.productId) }}</div>
+              <div class="m-inv-sub">仓库: {{ warehouseMap[row.warehouseId]?.name || row.warehouseId }}</div>
             </div>
             <div class="m-inv-nums">
               <div class="m-inv-num-block">
                 <div class="m-inv-num-label">总库存</div>
-                <div class="m-inv-num-val" :class="isLow(row)?'warn':''">{{ row.qty }}</div>
+                <div class="m-inv-num-val" :class="isLow(row)?'warn':''">{{ formatQty(row) }}</div>
               </div>
             </div>
             <span class="m-status-badge" :class="isLow(row)?'danger':'success'" style="margin-left:8px;">
@@ -153,7 +159,7 @@
             <div class="m-inv-detail-label">库位信息</div>
             <div class="m-inv-detail-row">
               <span class="m-inv-detail-key">当前库存</span>
-              <span class="m-inv-detail-val">{{ row.qty }}</span>
+              <span class="m-inv-detail-val">{{ formatQty(row) }}</span>
             </div>
             <div class="m-inv-detail-row">
               <span class="m-inv-detail-key">预警值</span>
@@ -192,7 +198,7 @@
       <el-dialog title="设置预警值" :visible.sync="alertDialog" width="92%">
         <el-form label-width="80px">
           <el-form-item label="商品">
-            <el-input :value="productMap[alertForm.productId] || alertForm.productId" disabled />
+            <el-input :value="productMap[alertForm.productId]?.name || alertForm.productId" disabled />
           </el-form-item>
           <el-form-item label="预警库存">
             <el-input-number v-model="alertForm.alertQty" :min="0" style="width:100%;" />
@@ -220,7 +226,9 @@ export default {
   data() {
     return {
       list: [], total: 0, loading: false,
-      warehouses: [], warehouseMap: {}, productMap: {},
+      warehouses: [], warehouseMap: {},
+      productMap: {},
+      displayMode: 'box',
       alertDialog: false, alertForm: {},
       query: { current: 1, size: 10, warehouseId: null },
       mobileSearch: '',
@@ -244,7 +252,7 @@ export default {
       if (this.mobileSearch) {
         const kw = this.mobileSearch.toLowerCase()
         arr = arr.filter(r => {
-          const name = (this.productMap[r.productId] || '').toLowerCase()
+          const name = (this.productMap[r.productId]?.name || '').toLowerCase()
           return name.includes(kw) || String(r.productId).includes(kw)
         })
       }
@@ -257,7 +265,7 @@ export default {
     this.loadData()
     getWarehouses().then(r => {
       this.warehouses = r.data || []
-      this.warehouseMap = Object.fromEntries(this.warehouses.map(w => [w.id, w.name]))
+      this.warehouseMap = Object.fromEntries(this.warehouses.map(w => [w.id, w]))
     })
     this.loadAllProducts()
   },
@@ -297,7 +305,19 @@ export default {
         if (items.length < 200) break
         current++
       }
-      this.productMap = Object.fromEntries(all.map(p => [p.id, p.name]))
+      this.productMap = Object.fromEntries(all.map(p => [p.id, p]))
+    },
+    formatQty(row) {
+      const wh = this.warehouseMap[row.warehouseId]
+      const prod = this.productMap[row.productId]
+      const qty = Number(row.qty) || 0
+      const qtyPerBox = prod?.qtyPerBox
+      if (this.displayMode === 'piece') return `${qty} 个`
+      if (wh?.type === 'PIECE') return `${qty} 个`
+      if (!qtyPerBox) return `${qty} 箱 ⚠️`
+      const boxes = Math.floor(qty / qtyPerBox)
+      const loose = qty % qtyPerBox
+      return loose > 0 ? `${boxes}箱 ${loose}个` : `${boxes}箱`
     },
     onFilter() { this.query.current = 1; this.loadData() },
     prevPage()  { this.query.current--; this.loadData() },
