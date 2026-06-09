@@ -26,15 +26,21 @@
         <el-select v-model="warehouseId" placeholder="全部仓库" clearable style="width:160px;" @change="loadData">
           <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
         </el-select>
+        <el-radio-group v-model="displayMode" size="small">
+          <el-radio-button label="piece">按个</el-radio-button>
+          <el-radio-button label="box">按箱</el-radio-button>
+        </el-radio-group>
       </div>
       <el-table :data="list" v-loading="loading" border stripe>
         <el-table-column label="仓库" min-width="120">
-          <template slot-scope="{row}">{{ warehouseMap[row.warehouseId] || row.warehouseId }}</template>
+          <template slot-scope="{row}">{{ (warehouseMap[row.warehouseId] && warehouseMap[row.warehouseId].name) || row.warehouseId }}</template>
         </el-table-column>
         <el-table-column label="商品" min-width="160">
-          <template slot-scope="{row}">{{ productMap[row.productId] || row.productId }}</template>
+          <template slot-scope="{row}">{{ (productMap[row.productId] && productMap[row.productId].name) || row.productId }}</template>
         </el-table-column>
-        <el-table-column prop="qty" label="当前库存" width="110" align="center" />
+        <el-table-column label="当前库存" width="120" align="center">
+          <template slot-scope="{row}">{{ fmtQty(row) }}</template>
+        </el-table-column>
         <el-table-column prop="alertQty" label="预警值" width="100" align="center" />
         <el-table-column label="状态" width="100" align="center">
           <template slot-scope="{row}">
@@ -60,17 +66,18 @@ export default {
     return {
       summary: {}, list: [], loading: false,
       warehouses: [], warehouseId: null,
-      warehouseMap: {}, productMap: {}
+      warehouseMap: {}, productMap: {},
+      displayMode: 'piece'
     }
   },
   created() {
     getWarehouses().then(r => {
       this.warehouses = r.data || []
-      this.warehouseMap = Object.fromEntries(this.warehouses.map(w => [w.id, w.name]))
+      this.warehouseMap = Object.fromEntries(this.warehouses.map(w => [w.id, w]))
     })
     getProducts({ size: 1000 }).then(r => {
       const items = r.data.records || r.data || []
-      this.productMap = Object.fromEntries(items.map(p => [p.id, p.name]))
+      this.productMap = Object.fromEntries(items.map(p => [p.id, p]))
     })
     this.loadData()
   },
@@ -83,6 +90,18 @@ export default {
       ]).finally(() => { this.loading = false })
       this.summary = sumRes.data || {}
       this.list = invRes.data.records || []
+    },
+    fmtQty(row) {
+      const qty = Number(row.qty || 0)
+      if (this.displayMode === 'piece') return qty + '个'
+      const wh = this.warehouseMap[row.warehouseId]
+      const prod = this.productMap[row.productId]
+      if (wh && wh.type === 'BOX' && prod && prod.qtyPerBox > 0) {
+        const boxes = Math.floor(qty / prod.qtyPerBox)
+        const rem = qty % prod.qtyPerBox
+        return boxes > 0 ? (rem > 0 ? `${boxes}箱${rem}个` : `${boxes}箱`) : `${rem}个`
+      }
+      return qty + '个'
     }
   }
 }
