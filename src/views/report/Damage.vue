@@ -83,8 +83,14 @@ export default {
       this.loading = true
       const params = { startDate: this.dateRange[0], endDate: this.dateRange[1] }
       if (this.warehouseId) params.warehouseId = this.warehouseId
-      const res = await getDamageReport(params).finally(() => { this.loading = false })
-      this.tableData = res.data || []
+      try {
+        const res = await getDamageReport(params)
+        this.tableData = res.data || []
+      } catch (e) {
+        this.$message.error('加载失败，请重试')
+      } finally {
+        this.loading = false
+      }
     },
     getSummary({ columns, data }) {
       return columns.map((col, i) => {
