@@ -12,6 +12,10 @@
           start-placeholder="开始日期" end-placeholder="结束日期" value-format="yyyy-MM-dd"
           @change="loadData" style="width:240px;" />
         <el-button icon="el-icon-download" @click="handleExport" :disabled="!tableData.length">导出 Excel</el-button>
+        <el-radio-group v-model="displayMode" size="small">
+          <el-radio-button label="piece">按个</el-radio-button>
+          <el-radio-button label="box">按箱</el-radio-button>
+        </el-radio-group>
         <span style="color:#999;font-size:12px;">共 {{ tableData.length }} 个商品</span>
       </div>
 
@@ -22,22 +26,22 @@
         <el-table-column prop="skuCode" label="SKU" width="120" />
         <el-table-column prop="categoryName" label="分类" width="90" />
         <el-table-column prop="unit" label="单位" width="60" />
-        <el-table-column label="入库数量" width="90" align="right">
-          <template slot-scope="{row}"><span style="color:#67C23A;">{{ row.inQty }}</span></template>
+        <el-table-column label="入库数量" width="100" align="right">
+          <template slot-scope="{row}"><span style="color:#67C23A;">{{ fmtQty(row.inQty, row.qtyPerBox) }}</span></template>
         </el-table-column>
         <el-table-column label="入库金额" width="110" align="right">
           <template slot-scope="{row}"><span style="color:#67C23A;">KSh {{ fmt(row.inAmount) }}</span></template>
         </el-table-column>
-        <el-table-column label="出库数量" width="90" align="right">
-          <template slot-scope="{row}"><span style="color:#F56C6C;">{{ row.outQty }}</span></template>
+        <el-table-column label="出库数量" width="100" align="right">
+          <template slot-scope="{row}"><span style="color:#F56C6C;">{{ fmtQty(row.outQty, row.qtyPerBox) }}</span></template>
         </el-table-column>
         <el-table-column label="出库金额" width="110" align="right">
           <template slot-scope="{row}"><span style="color:#F56C6C;">KSh {{ fmt(row.outAmount) }}</span></template>
         </el-table-column>
-        <el-table-column label="净变动" width="90" align="right">
+        <el-table-column label="净变动" width="100" align="right">
           <template slot-scope="{row}">
             <span :style="{ color: (row.inQty - row.outQty) >= 0 ? '#67C23A' : '#F56C6C', fontWeight: 600 }">
-              {{ row.inQty - row.outQty >= 0 ? '+' : '' }}{{ row.inQty - row.outQty }}
+              {{ fmtQty(row.inQty - row.outQty, row.qtyPerBox, true) }}
             </span>
           </template>
         </el-table-column>
@@ -58,7 +62,8 @@ export default {
   data() {
     return {
       tableData: [], chart: null,
-      dateRange: [monthsAgoKe(1), todayKe()]
+      dateRange: [monthsAgoKe(1), todayKe()],
+      displayMode: 'piece'
     }
   },
   mounted() {
@@ -70,6 +75,19 @@ export default {
   beforeDestroy() { this.chart && this.chart.dispose() },
   methods: {
     fmt(v) { return Number(v || 0).toFixed(2) },
+    fmtQty(qty, qtyPerBox, signed) {
+      qty = Number(qty || 0)
+      if (this.displayMode === 'box' && qtyPerBox > 0) {
+        const abs = Math.abs(qty)
+        const sign = qty < 0 ? '-' : (signed && qty > 0 ? '+' : '')
+        const boxes = Math.floor(abs / qtyPerBox)
+        const rem = abs % qtyPerBox
+        const str = boxes > 0 ? (rem > 0 ? `${boxes}箱${rem}个` : `${boxes}箱`) : `${rem}个`
+        return sign + str
+      }
+      const prefix = signed ? (qty >= 0 ? '+' : '') : ''
+      return prefix + qty + '个'
+    },
     async loadData() {
       if (!this.dateRange || !this.dateRange[0]) return
       const res = await getStockMovementReport({ startDate: this.dateRange[0], endDate: this.dateRange[1] })
