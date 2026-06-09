@@ -2,7 +2,7 @@ import request from './request'
 export const getInReport = params => request.get('/reports/in', { params })
 export const getOutReport = params => request.get('/reports/out', { params })
 export const getInventorySummary = params => request.get('/reports/inventory', { params })
-export const getDashboardStats = () => request.get('/reports/dashboard')
+export const getDashboardStats = (params) => request.get('/reports/dashboard', { params })
 export const getLedgerReport = params => request.get('/reports/ledger', { params })
 export const getStockMovementReport = params => request.get('/reports/stock-movement', { params })
 export const getSupplierStatement = params => request.get('/reports/supplier-statement', { params })

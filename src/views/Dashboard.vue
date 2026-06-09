@@ -3,6 +3,65 @@
 
     <!-- ── 桌面端 ── -->
     <template v-if="!isMobile">
+      <!-- 仓库选择器 -->
+      <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <span style="color:#606266;font-weight:500;">查看仓库：</span>
+        <el-select v-model="selectedWarehouseId" placeholder="全部仓库" clearable
+          style="width:200px;" @change="onWarehouseChange">
+          <el-option v-for="w in warehouseList" :key="w.id" :label="w.name" :value="w.id" />
+        </el-select>
+      </div>
+
+      <!-- 选中仓库时的快照卡片 + 库存明细 -->
+      <template v-if="selectedWarehouseId">
+        <el-row :gutter="20" style="margin-bottom:20px;">
+          <el-col :span="8">
+            <el-card shadow="hover" style="text-align:center;">
+              <i class="el-icon-s-data" style="fontSize:32px;color:#409EFF;"></i>
+              <div style="font-size:26px;font-weight:bold;margin:8px 0;">{{ warehouseSummary.totalQty || 0 }}</div>
+              <div style="color:#909399;">总库存（个）</div>
+            </el-card>
+          </el-col>
+          <el-col :span="8">
+            <el-card shadow="hover" style="text-align:center;">
+              <i class="el-icon-s-grid" style="fontSize:32px;color:#67C23A;"></i>
+              <div style="font-size:26px;font-weight:bold;margin:8px 0;">{{ warehouseSummary.totalSkus || 0 }}</div>
+              <div style="color:#909399;">库存种类</div>
+            </el-card>
+          </el-col>
+          <el-col :span="8">
+            <el-card shadow="hover" style="text-align:center;cursor:pointer;"
+              @click.native="$router.push('/inventory/alerts')">
+              <i class="el-icon-warning" style="fontSize:32px;"
+                :style="(warehouseSummary.alertCount||0)>0?'color:#E6A23C':'color:#C0C4CC'"></i>
+              <div style="font-size:26px;font-weight:bold;margin:8px 0;"
+                :style="(warehouseSummary.alertCount||0)>0?'color:#E6A23C':''">
+                {{ warehouseSummary.alertCount || 0 }}
+              </div>
+              <div style="color:#909399;">库存预警</div>
+            </el-card>
+          </el-col>
+        </el-row>
+        <el-card style="margin-bottom:20px;" v-loading="warehouseInvLoading">
+          <div slot="header" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>{{ selectedWarehouseName }} · 库存明细</span>
+            <el-button type="text" @click="$router.push('/inventory?warehouseId='+selectedWarehouseId)">查看全部</el-button>
+          </div>
+          <el-table :data="warehouseInvList" size="small" border stripe>
+            <el-table-column label="商品" min-width="160">
+              <template slot-scope="{row}">{{ productMap[row.productId] || ('商品#'+row.productId) }}</template>
+            </el-table-column>
+            <el-table-column prop="qty" label="库存数量" width="120" align="center" />
+            <el-table-column label="状态" width="90" align="center">
+              <template slot-scope="{row}">
+                <el-tag v-if="row.alertQty > 0 && row.qty < row.alertQty" type="danger" size="mini">预警</el-tag>
+                <el-tag v-else type="success" size="mini">正常</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </template>
+
       <el-row :gutter="20" style="margin-bottom:20px;">
         <!-- 库存总数（可展开图表） -->
         <el-col :span="6">
@@ -44,7 +103,14 @@
 
       <!-- 财务KPI行 -->
       <el-row :gutter="20" style="margin-bottom:20px;">
-        <el-col :span="12">
+        <el-col :span="8">
+          <el-card shadow="hover" class="dash-card" style="text-align:center;">
+            <i class="el-icon-coin" style="fontSize:36px;color:#909399"></i>
+            <div style="font-size:28px;font-weight:bold;margin:8px 0;">KSh {{ formatAmount(statsData.totalValue) }}</div>
+            <div style="color:#909399;">总库存价值</div>
+          </el-card>
+        </el-col>
+        <el-col :span="8">
           <el-card shadow="hover" class="dash-card" style="text-align:center;cursor:pointer;"
             @click.native="$router.push('/out-orders')">
             <i class="el-icon-sell" style="fontSize:36px;color:#409EFF"></i>
@@ -52,7 +118,7 @@
             <div style="color:#909399;">今日出库量</div>
           </el-card>
         </el-col>
-        <el-col :span="12">
+        <el-col :span="8">
           <el-card shadow="hover" class="dash-card" style="text-align:center;">
             <i class="el-icon-money" style="fontSize:36px;color:#67C23A"></i>
             <div style="font-size:28px;font-weight:bold;margin:8px 0;">KSh {{ formatAmount(kpi.monthSalesAmount) }}</div>
@@ -121,6 +187,13 @@
 
     <!-- ── 移动端 ── -->
     <div v-else class="m-page">
+
+      <div style="padding:12px 16px 0;">
+        <el-select v-model="selectedWarehouseId" placeholder="全部仓库" clearable
+          style="width:100%;" size="small" @change="onWarehouseChange">
+          <el-option v-for="w in warehouseList" :key="w.id" :label="w.name" :value="w.id" />
+        </el-select>
+      </div>
 
       <!-- 页头 -->
       <div class="m-page-header">
@@ -294,12 +367,13 @@
 </template>
 
 <script>
-import { getAlerts, getInventory, getInventoryStats, getInventoryChart } from '../api/inventory'
+import { getInventory, getInventoryChart } from '../api/inventory'
 import { getPendingCount } from '../api/damageRecord'
 import { getInOrders } from '../api/inOrder'
 import { getOutOrders, getDraftOutOrderCount } from '../api/outOrder'
 import { getProducts } from '../api/product'
-import { getDashboardStats, getInReport, getOutReport } from '../api/report'
+import { getDashboardStats, getInReport, getOutReport, getInventorySummary } from '../api/report'
+import { getWarehouses } from '../api/warehouse'
 import mobileMixin from '../mixins/mobile'
 import InventoryBarChart from '../components/InventoryBarChart.vue'
 import TrendChart from '../components/TrendChart.vue'
@@ -311,7 +385,13 @@ export default {
     return {
       alerts: [],
       pendingDamageCount: 0, pendingOutOrderCount: 0,
-      statsData: { totalQty: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseId: null },
+      selectedWarehouseId: null,
+      warehouseList: [],
+      warehouses: [],
+      warehouseSummary: {},
+      warehouseInvList: [],
+      warehouseInvLoading: false,
+      statsData: { totalQty: 0, totalValue: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseId: null },
       kpi: { todayOutQty: 0, monthSalesAmount: 0 },
       trendIn: [], trendOut: [],
       activeChart: null,
@@ -332,35 +412,32 @@ export default {
     const endDate = todayKe()
     getPendingCount().then(r => { this.pendingDamageCount = r.data || 0 }).catch(() => {})
     getDraftOutOrderCount().then(n => { this.pendingOutOrderCount = n })
-    const [alertRes, inRes, outRes, invRes, statsRes, prodRes, chartRes, kpiRes, trendInRes, trendOutRes] = await Promise.all([
-      getAlerts().catch(() => ({ data: [] })),
+    getWarehouses().then(r => { this.warehouseList = r.data || []; this.warehouses = r.data || [] })
+    const [dashRes, inRes, outRes, prodRes, chartRes, trendInRes, trendOutRes] = await Promise.all([
+      getDashboardStats({ warehouseId: this.selectedWarehouseId }).catch(() => ({ data: {} })),
       getInOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
       getOutOrders({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
-      getInventory({ current: 1, size: 1 }).catch(() => ({ data: { total: 0 } })),
-      getInventoryStats().catch(() => ({ data: {} })),
       getProducts({ size: 1000 }).catch(() => ({ data: {} })),
       getInventoryChart({ type: 'all' }).catch(() => ({ data: [] })),
-      getDashboardStats().catch(() => ({ data: {} })),
       getInReport({ startDate, endDate }).catch(() => ({ data: [] })),
       getOutReport({ startDate, endDate }).catch(() => ({ data: [] }))
     ])
     const prodItems = prodRes.data.records || prodRes.data || []
     this.productMap = Object.fromEntries(prodItems.map(p => [p.id, p.name]))
-    this.alerts         = alertRes.data || []
     this.cards[0].value = inRes.data.total  || 0
     this.cards[1].value = outRes.data.total || 0
-    this.cards[2].value = this.alerts.length
-    this.cards[3].value = invRes.data.total || 0
-    const s = statsRes.data || {}
+    const d = dashRes.data || {}
+    this.cards[2].value = d.alertCount   || 0
+    this.cards[3].value = d.productCount || 0
     this.statsData = {
-      totalQty:         s.totalQty         || 0,
-      maxWarehouseName: s.maxWarehouseName  || '',
-      maxWarehouseQty:  s.maxWarehouseQty   || 0,
-      maxWarehouseId:   s.maxWarehouseId    || null
+      totalQty:         d.totalQty         || 0,
+      totalValue:       d.totalValue        || 0,
+      maxWarehouseName: d.maxWarehouseName  || '',
+      maxWarehouseQty:  d.maxWarehouseQty   || 0,
+      maxWarehouseId:   d.maxWarehouseId    || null
     }
     this.chartData = chartRes.data || []
-    const k = kpiRes.data || {}
-    this.kpi = { todayOutQty: k.todayOutQty || 0, monthSalesAmount: k.monthSalesAmount || 0 }
+    this.kpi = { todayOutQty: d.todayOutQty || 0, monthSalesAmount: d.monthSalesAmount || 0 }
     this.trendIn  = trendInRes.data  || []
     this.trendOut = trendOutRes.data || []
   },
@@ -368,6 +445,11 @@ export default {
     this.$nextTick(() => { this.activeChart = 'total' })
   },
   computed: {
+    selectedWarehouseName() {
+      if (!this.selectedWarehouseId) return '全部仓库'
+      const w = this.warehouses.find(wh => wh.id === this.selectedWarehouseId)
+      return w ? w.name : '仓库'
+    },
     alertChartData() {
       return this.alerts.map(row => ({
         productName: this.productMap[row.productId] || `商品#${row.productId}`,
@@ -381,6 +463,25 @@ export default {
     formatAmount(val) {
       return (Number(val) || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
     },
+    async selectWarehouse(id) {
+      this.selectedWarehouseId = id
+      if (!id) {
+        this.warehouseSummary = {}
+        this.warehouseInvList = []
+        return
+      }
+      this.warehouseInvLoading = true
+      try {
+        const [summaryRes, invRes] = await Promise.all([
+          getInventorySummary({ warehouseId: id }).catch(() => ({ data: {} })),
+          getInventory({ warehouseId: id, current: 1, size: 8 }).catch(() => ({ data: { records: [] } }))
+        ])
+        this.warehouseSummary = summaryRes.data || {}
+        this.warehouseInvList = (invRes.data.records || invRes.data || [])
+      } finally {
+        this.warehouseInvLoading = false
+      }
+    },
     async toggleChart(type) {
       if (this.activeChart === type) return
       this.activeChart = type
@@ -389,6 +490,29 @@ export default {
       const params = type === 'max'
         ? { type: 'warehouse', warehouseId: this.statsData.maxWarehouseId }
         : { type: 'all' }
+      const res = await getInventoryChart(params).catch(() => ({ data: [] }))
+      this.chartData = res.data || []
+      this.chartLoading = false
+    },
+    async onWarehouseChange() {
+      const d = (await getDashboardStats({ warehouseId: this.selectedWarehouseId })
+        .catch(() => ({ data: {} }))).data || {}
+      this.cards[2].value = d.alertCount   || 0
+      this.cards[3].value = d.productCount || 0
+      this.statsData = {
+        totalQty:         d.totalQty         || 0,
+        totalValue:       d.totalValue        || 0,
+        maxWarehouseName: d.maxWarehouseName  || '',
+        maxWarehouseQty:  d.maxWarehouseQty   || 0,
+        maxWarehouseId:   d.maxWarehouseId    || null
+      }
+      this.kpi = { todayOutQty: d.todayOutQty || 0, monthSalesAmount: d.monthSalesAmount || 0 }
+      this.chartData = []
+      this.chartLoading = true
+      const whId = this.selectedWarehouseId
+      const params = this.activeChart === 'max'
+        ? { type: 'warehouse', warehouseId: whId || this.statsData.maxWarehouseId }
+        : { type: 'all', warehouseId: whId }
       const res = await getInventoryChart(params).catch(() => ({ data: [] }))
       this.chartData = res.data || []
       this.chartLoading = false
