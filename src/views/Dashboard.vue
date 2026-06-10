@@ -120,7 +120,7 @@
           <el-card shadow="hover" class="dash-card" style="text-align:center;cursor:pointer;"
             @click.native="$router.push('/out-orders')">
             <i class="el-icon-sell" style="fontSize:36px;color:#409EFF"></i>
-            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ kpi.todayOutQty }}</div>
+            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ kpi.todayOutQty }}<span style="font-size:14px;font-weight:400;margin-left:2px;">箱</span></div>
             <div style="color:#909399;">今日出库量</div>
           </el-card>
         </el-col>
@@ -275,7 +275,7 @@
         <div class="m-stat-grid">
           <div class="m-stat-card" @click="$router.push('/out-orders')">
             <div class="m-stat-label">今日出库量</div>
-            <div class="m-stat-value">{{ kpi.todayOutQty }}</div>
+            <div class="m-stat-value">{{ kpi.todayOutQty }}<span style="font-size:13px;font-weight:400;">箱</span></div>
           </div>
           <div class="m-stat-card">
             <div class="m-stat-label">本月销售额</div>

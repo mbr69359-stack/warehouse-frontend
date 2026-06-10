@@ -12,8 +12,8 @@
         <div style="color:#909399;margin-top:8px;">商品种类（SKU）</div>
       </el-card></el-col>
       <el-col :span="8"><el-card shadow="hover" style="text-align:center;">
-        <div style="font-size:36px;font-weight:bold;color:#67C23A;">{{ summary.totalQty||0 }}</div>
-        <div style="color:#909399;margin-top:8px;">总库存数量</div>
+        <div style="font-size:36px;font-weight:bold;color:#67C23A;">{{ displayMode === 'box' ? summaryBoxDisplay : (summary.totalQty||0) }}</div>
+        <div style="color:#909399;margin-top:8px;">总库存（{{ displayMode === 'box' ? '箱' : '个' }}）</div>
       </el-card></el-col>
       <el-col :span="8"><el-card shadow="hover" style="text-align:center;">
         <div style="font-size:36px;font-weight:bold;color:#F56C6C;">{{ summary.alertCount||0 }}</div>
@@ -68,6 +68,19 @@ export default {
       warehouses: [], warehouseId: null,
       warehouseMap: {}, productMap: {},
       displayMode: 'piece'
+    }
+  },
+  computed: {
+    summaryBoxDisplay() {
+      const totalBoxes = this.list.reduce((s, row) => {
+        const wh = this.warehouseMap[row.warehouseId]
+        const prod = this.productMap[row.productId]
+        if (wh && wh.type === 'BOX' && prod && prod.qtyPerBox > 0) {
+          return s + Math.floor(Number(row.qty || 0) / prod.qtyPerBox)
+        }
+        return s + Number(row.qty || 0)
+      }, 0)
+      return totalBoxes
     }
   },
   created() {

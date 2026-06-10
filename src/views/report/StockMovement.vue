@@ -109,12 +109,28 @@ export default {
       })
     },
     getSummary({ columns, data }) {
+      const fmtSum = (key) => {
+        const totalPieces = data.reduce((s, r) => s + Number(r[key] || 0), 0)
+        if (this.displayMode === 'box') {
+          const totalBoxes = data.reduce((s, r) => {
+            const qpb = r.qtyPerBox
+            return s + (qpb > 0 ? Math.floor(Number(r[key] || 0) / qpb) : Number(r[key] || 0))
+          }, 0)
+          const remPieces = data.reduce((s, r) => {
+            const qpb = r.qtyPerBox
+            return s + (qpb > 0 ? Number(r[key] || 0) % qpb : 0)
+          }, 0)
+          return remPieces > 0 ? `${totalBoxes}箱${remPieces}个` : `${totalBoxes}箱`
+        }
+        return totalPieces + '个'
+      }
       return columns.map((col, i) => {
         if (i === 0) return '合计'
-        const keys = { 4: 'inQty', 5: 'inAmount', 6: 'outQty', 7: 'outAmount' }
-        if (!keys[i]) return ''
-        const sum = data.reduce((s, r) => s + Number(r[keys[i]] || 0), 0)
-        return keys[i].includes('Amount') ? 'KSh ' + sum.toFixed(2) : sum + '个'
+        if (i === 4) return fmtSum('inQty')
+        if (i === 5) return 'KSh ' + data.reduce((s, r) => s + Number(r.inAmount || 0), 0).toFixed(2)
+        if (i === 6) return fmtSum('outQty')
+        if (i === 7) return 'KSh ' + data.reduce((s, r) => s + Number(r.outAmount || 0), 0).toFixed(2)
+        return ''
       })
     },
     handleExport() {

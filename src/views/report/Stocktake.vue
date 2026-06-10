@@ -29,10 +29,10 @@
         <el-table-column prop="spec" label="规格" width="120" show-overflow-tooltip />
         <el-table-column prop="unit" label="单位" width="60" />
         <el-table-column prop="categoryName" label="分类" width="90" />
-        <el-table-column label="当前库存" width="100" align="right">
+        <el-table-column label="当前库存" width="120" align="right">
           <template slot-scope="{row}">
             <span :style="{ color: row.isAlert ? '#F56C6C' : '#303133', fontWeight: row.isAlert ? 600 : 400 }">
-              {{ row.currentQty }}
+              {{ fmtQty(row) }}
             </span>
           </template>
         </el-table-column>
@@ -43,12 +43,12 @@
             <el-tag v-else type="success" size="mini">正常</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="盘点数量" width="100" align="center" class-name="no-print">
+        <el-table-column label="盘点数量(个)" width="110" align="center" class-name="no-print">
           <template slot-scope="{row}">
-            <el-input-number v-model="row.checkQty" :min="0" size="mini" style="width:80px;" controls-position="right" />
+            <el-input-number v-model="row.checkQty" :min="0" size="mini" style="width:90px;" controls-position="right" />
           </template>
         </el-table-column>
-        <el-table-column label="差异" width="80" align="right" class-name="no-print">
+        <el-table-column label="差异(个)" width="90" align="right" class-name="no-print">
           <template slot-scope="{row}">
             <span v-if="row.checkQty !== undefined && row.checkQty !== null"
               :style="{ color: row.checkQty - row.currentQty !== 0 ? '#F56C6C' : '#67C23A', fontWeight: 600 }">
@@ -99,23 +99,46 @@ export default {
       const res = await getStocktakeReport(params)
       this.tableData = (res.data || []).map(r => ({ ...r, checkQty: null }))
     },
+    fmtQty(row) {
+      const qty = Number(row.currentQty || 0)
+      const qpb = row.qtyPerBox
+      if (row.warehouseType === 'BOX' && qpb > 0) {
+        const boxes = Math.floor(qty / qpb)
+        const rem = qty % qpb
+        if (boxes > 0) return rem > 0 ? `${boxes}箱${rem}个` : `${boxes}箱`
+        return `${rem}个`
+      }
+      return `${qty}个`
+    },
     rowStyle({ row }) {
       return row.isAlert ? { background: '#fff5f5' } : {}
     },
     getSummary({ columns, data }) {
       return columns.map((col, i) => {
         if (i === 0) return '合计'
-        if (i === 6) return data.reduce((s, r) => s + Number(r.currentQty || 0), 0)
+        if (i === 6) {
+          const totalPieces = data.reduce((s, r) => s + Number(r.currentQty || 0), 0)
+          const totalBoxes = data.reduce((s, r) => {
+            const qpb = r.qtyPerBox
+            if (r.warehouseType === 'BOX' && qpb > 0) return s + Math.floor(Number(r.currentQty || 0) / qpb)
+            return s
+          }, 0)
+          const pieceOnly = data.reduce((s, r) => {
+            if (r.warehouseType !== 'BOX' || !r.qtyPerBox) return s + Number(r.currentQty || 0)
+            return s + (Number(r.currentQty || 0) % r.qtyPerBox)
+          }, 0)
+          return totalBoxes > 0 ? `${totalBoxes}箱${pieceOnly > 0 ? pieceOnly + '个' : ''}(共${totalPieces}个)` : `${totalPieces}个`
+        }
         return ''
       })
     },
     handlePrint() { window.print() },
     handleExport() {
       exportCSV(
-        ['仓库', '商品名称', 'SKU编号', '规格', '单位', '分类', '当前库存', '预警值', '状态'],
+        ['仓库', '商品名称', 'SKU编号', '规格', '单位', '分类', '当前库存(箱/个)', '当前库存(个)', '预警值', '状态'],
         this.filteredData.map(r => [
           r.warehouseName, r.productName, r.skuCode, r.spec || '', r.unit,
-          r.categoryName, r.currentQty, r.alertQty, r.isAlert ? '预警' : '正常'
+          r.categoryName, this.fmtQty(r), r.currentQty, r.alertQty, r.isAlert ? '预警' : '正常'
         ]),
         `库存盘点表_${new Date().toISOString().slice(0, 10)}.csv`
       )
