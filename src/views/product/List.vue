@@ -99,6 +99,7 @@ export default {
   data() {
     return {
       list: [], total: 0, loading: false, saving: false, dialogVisible: false, categories: [],
+      originalQtyPerBox: null,
       historyVisible: false, historyLoading: false, historyList: [], historyProductName: '', historyChart: null,
       query: { current: 1, size: 10, name: '', categoryId: null },
       form: { id: null, name: '', skuCode: '', categoryId: null, unit: '个', price: 0, costPrice: 0, spec: '', barcode: '', weightPerBox: null, qtyPerBox: null, status: 1 },
@@ -115,12 +116,20 @@ export default {
     },
     openForm(row) {
       this.form = row ? { ...row } : { id: null, name: '', skuCode: '', categoryId: null, unit: '个', price: 0, costPrice: 0, spec: '', barcode: '', weightPerBox: null, qtyPerBox: null, status: 1 }
+      this.originalQtyPerBox = row ? row.qtyPerBox : null
       this.dialogVisible = true
       this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate())
     },
     handleSave() {
       this.$refs.form.validate(async valid => {
         if (!valid) return
+        if (this.form.id && this.originalQtyPerBox > 0 && this.form.qtyPerBox > 0 && this.form.qtyPerBox !== this.originalQtyPerBox) {
+          try {
+            await this.$confirm('每箱片数已修改，历史库存不会自动换算，如有偏差请通过盘点调整。确认保存？', '提示', { type: 'warning' })
+          } catch {
+            return
+          }
+        }
         this.saving = true
         try {
           if (this.form.id) await updateProduct(this.form.id, this.form)
