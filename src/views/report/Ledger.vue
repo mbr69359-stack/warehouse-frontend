@@ -17,6 +17,10 @@
         <el-select v-model="filterWarehouse" placeholder="全部仓库" clearable style="width:130px;" @change="loadData">
           <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
         </el-select>
+        <el-radio-group v-model="displayMode" size="small">
+          <el-radio-button label="box">按箱</el-radio-button>
+          <el-radio-button label="piece">按个</el-radio-button>
+        </el-radio-group>
         <el-button icon="el-icon-download" @click="handleExport" :disabled="!tableData.length">导出 Excel</el-button>
         <span style="color:#999;font-size:12px;">共 {{ tableData.length }} 条</span>
       </div>
@@ -30,14 +34,13 @@
             <el-tag :type="typeTagMap[row.type] || 'info'" size="mini">{{ typeLabelMap[row.type] || row.type }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="变动数量" width="100" align="right">
+        <el-table-column label="变动数量" width="130" align="right">
           <template slot-scope="{row}">
             <span :style="{ color: row.changeQty > 0 ? '#67C23A' : '#F56C6C', fontWeight: 600 }">
-              {{ row.changeQty > 0 ? '+' : '' }}{{ row.changeQty }}
+              {{ formatChangeQty(row) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="unit" label="单位" width="60" />
         <el-table-column label="记账单位" width="85" align="center">
           <template slot-scope="{row}">
             <el-tag :type="(row.qtyUnit || 'PIECE') === 'BOX' ? 'warning' : 'success'" size="mini">
@@ -57,6 +60,7 @@
 import { todayKe, daysAgoKe } from '../../utils/time'
 import { getLedgerReport } from '../../api/report'
 import { getWarehouses } from '../../api/warehouse'
+import { getProducts } from '../../api/product'
 import mobileMixin from '../../mixins/mobile'
 import { exportCSV } from '../../utils/export'
 
@@ -73,9 +77,15 @@ const TYPE_TAG = {
 
 export default {
   mixins: [mobileMixin],
+  computed: {
+    displayMode: {
+      get() { return this.$store.state.displayUnit },
+      set(v) { this.$store.commit('SET_DISPLAY_UNIT', v) }
+    }
+  },
   data() {
     return {
-      tableData: [], warehouses: [],
+      tableData: [], warehouses: [], productMap: {}, warehouseMap: {},
       dateRange: [daysAgoKe(29), todayKe()],
       filterType: '', filterWarehouse: null,
       typeLabelMap: TYPE_LABEL, typeTagMap: TYPE_TAG,
@@ -83,7 +93,14 @@ export default {
     }
   },
   created() {
-    getWarehouses().then(r => { this.warehouses = r.data || [] })
+    getWarehouses().then(r => {
+      this.warehouses = r.data || []
+      this.warehouseMap = Object.fromEntries(this.warehouses.map(w => [w.id, w]))
+    })
+    getProducts({ size: 1000 }).then(r => {
+      const items = r.data.records || r.data || []
+      this.productMap = Object.fromEntries(items.map(p => [p.id, p]))
+    })
     this.loadData()
   },
   methods: {
@@ -95,14 +112,38 @@ export default {
       const res = await getLedgerReport(params)
       this.tableData = res.data || []
     },
+    formatChangeQty(row) {
+      const qty = Number(row.changeQty) || 0
+      const qtyUnit = row.qtyUnit || 'PIECE'
+      const wh = this.warehouseMap[row.warehouseId]
+      const prod = this.productMap[row.productId]
+      const qtyPerBox = prod?.qtyPerBox
+      const sign = qty >= 0 ? '+' : ''
+      if (this.displayMode === 'piece') {
+        if (qtyUnit === 'BOX') {
+          if (!qtyPerBox) return `${sign}${qty} 箱⚠️`
+          return `${sign}${qty * qtyPerBox} 个`
+        }
+        return `${sign}${qty} 个`
+      } else {
+        if (wh?.type === 'PIECE') return `${sign}${qty} 个`
+        if (qtyUnit === 'BOX') return `${sign}${qty} 箱`
+        if (!qtyPerBox) return `${sign}${qty} 个⚠️`
+        const abs = Math.abs(qty)
+        const prefix = qty < 0 ? '-' : '+'
+        const boxes = Math.floor(abs / qtyPerBox)
+        const loose = abs % qtyPerBox
+        return loose > 0 ? `${prefix}${boxes}箱 ${loose}个` : `${prefix}${boxes}箱`
+      }
+    },
     handleExport() {
       const filename = `流水报表_${this.dateRange[0]}_${this.dateRange[1]}.csv`
       exportCSV(
-        ['时间', '仓库', '商品名称', 'SKU', '单位', '记账单位', '类型', '变动数量', '单据号', '操作人', '备注'],
+        ['时间', '仓库', '商品名称', 'SKU', '记账单位', '类型', '变动数量', '单据号', '操作人', '备注'],
         this.tableData.map(r => [
-          r.occurredAt, r.warehouseName, r.productName, r.skuCode, r.unit,
+          r.occurredAt, r.warehouseName, r.productName, r.skuCode,
           (r.qtyUnit || 'PIECE') === 'BOX' ? '箱' : '个',
-          TYPE_LABEL[r.type] || r.type, r.changeQty, r.documentNo || '', r.operator || '', r.note || ''
+          TYPE_LABEL[r.type] || r.type, this.formatChangeQty(r), r.documentNo || '', r.operator || '', r.note || ''
         ]),
         filename
       )

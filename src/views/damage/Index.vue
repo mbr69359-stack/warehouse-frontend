@@ -9,6 +9,10 @@
       <el-select v-model="query.warehouseId" placeholder="全部仓库" clearable style="width:160px;" @change="loadData">
         <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
       </el-select>
+      <el-radio-group v-model="displayMode" size="small">
+        <el-radio-button label="box">按箱</el-radio-button>
+        <el-radio-button label="piece">按个</el-radio-button>
+      </el-radio-group>
       <el-button type="success" icon="el-icon-plus" style="margin-left:auto;" @click="openCreate">新建损坏记录</el-button>
     </div>
 
@@ -19,7 +23,9 @@
           {{ row.productName }}<span style="color:#909399; margin-left:6px;">({{ row.skuCode }})</span>
         </template>
       </el-table-column>
-      <el-table-column prop="qty" label="破损数(个)" width="100" align="center" />
+      <el-table-column label="破损数量" width="110" align="center">
+        <template slot-scope="{row}">{{ fmtQty(row.qty, row.warehouseId, row.productId) }}</template>
+      </el-table-column>
       <el-table-column label="成本核销" width="110" align="right">
         <template slot-scope="{row}">
           <span v-if="row.costDeduction != null" style="color:#F56C6C;">
@@ -28,9 +34,9 @@
           <span v-else style="color:#C0C4CC;">—</span>
         </template>
       </el-table-column>
-      <el-table-column label="好货调拨" width="100" align="center">
+      <el-table-column label="好货调拨" width="110" align="center">
         <template slot-scope="{row}">
-          <span v-if="row.goodQty != null">{{ row.goodQty }} 个</span>
+          <span v-if="row.goodQty != null">{{ fmtQty(row.goodQty, row.warehouseId, row.productId) }}</span>
           <span v-else style="color:#C0C4CC;">—</span>
         </template>
       </el-table-column>
@@ -173,6 +179,15 @@ import { getProducts } from '../../api/product'
 
 export default {
   name: 'DamageIndex',
+  computed: {
+    displayMode: {
+      get() { return this.$store.state.displayUnit },
+      set(v) { this.$store.commit('SET_DISPLAY_UNIT', v) }
+    },
+    pieceWarehouses() {
+      return this.warehouses.filter(w => w.type === 'PIECE')
+    }
+  },
   data() {
     return {
       list: [],
@@ -180,6 +195,7 @@ export default {
       total: 0,
       query: { current: 1, size: 20, status: '', warehouseId: null },
       warehouses: [],
+      allProductsMap: {},
       dialogVisible: false,
       saving: false,
       form: { warehouseId: null, productId: null, qty: 1, remark: '' },
@@ -201,19 +217,30 @@ export default {
       }
     }
   },
-  computed: {
-    pieceWarehouses() {
-      return this.warehouses.filter(w => w.type === 'PIECE')
-    }
-  },
   created() {
-    getWarehouses().then(r => { this.warehouses = r.data })
+    getWarehouses().then(r => { this.warehouses = r.data || [] })
+    getProducts({ size: 1000 }).then(r => {
+      const items = r.data.records || r.data || []
+      this.allProductsMap = Object.fromEntries(items.map(p => [p.id, p]))
+    })
     if (this.$route.query.warehouseId) {
       this.query.warehouseId = Number(this.$route.query.warehouseId)
     }
     this.loadData()
   },
   methods: {
+    fmtQty(qty, warehouseId, productId) {
+      const wh = this.warehouses.find(w => w.id === warehouseId)
+      const prod = this.allProductsMap[productId]
+      const n = Number(qty) || 0
+      const qtyPerBox = prod?.qtyPerBox
+      if (this.displayMode === 'piece') return `${n} 个`
+      if (wh?.type === 'PIECE') return `${n} 个`
+      if (!qtyPerBox) return `${n} 个`
+      const boxes = Math.floor(n / qtyPerBox)
+      const loose = n % qtyPerBox
+      return loose > 0 ? `${boxes}箱 ${loose}个` : `${boxes}箱`
+    },
     async loadData() {
       this.loading = true
       const params = { current: this.query.current, size: this.query.size }

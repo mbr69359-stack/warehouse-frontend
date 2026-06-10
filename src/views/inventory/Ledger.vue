@@ -31,6 +31,10 @@
       <el-button icon="el-icon-refresh" @click="reset">重置</el-button>
       <el-button type="success" icon="el-icon-download" :loading="exporting" @click="handleExport">导出 Excel</el-button>
       <el-button v-if="isAdmin" type="warning" icon="el-icon-refresh-left" :loading="rebuilding" @click="handleRebuild">重算快照</el-button>
+      <el-radio-group v-model="displayMode" size="small" style="margin-left:auto;">
+        <el-radio-button label="box">按箱</el-radio-button>
+        <el-radio-button label="piece">按个</el-radio-button>
+      </el-radio-group>
     </div>
     <el-table :data="list" v-loading="loading" border stripe>
       <el-table-column prop="id" label="流水ID" width="80">
@@ -44,10 +48,10 @@
       <el-table-column prop="type" label="类型" width="110">
         <template slot-scope="{row}"><el-tag :type="typeColor(row.type)" size="small">{{ typeLabel(row.type) }}</el-tag></template>
       </el-table-column>
-      <el-table-column prop="changeQty" label="变动数量" width="100">
+      <el-table-column label="变动数量" width="130">
         <template slot-scope="{row}">
           <span :style="{ color: row.changeQty > 0 ? '#67C23A' : '#F56C6C' }">
-            {{ row.changeQty > 0 ? '+' : '' }}{{ row.changeQty }}
+            {{ formatChangeQty(row) }}
           </span>
         </template>
       </el-table-column>
@@ -66,6 +70,7 @@
 <script>
 import { getLedger, rebuildSnapshot, exportLedger } from '../../api/ledger'
 import { getWarehouses } from '../../api/warehouse'
+import { getProducts } from '../../api/product'
 
 const TYPE_MAP = {
   inbound: { label: '入库', color: 'success' },
@@ -83,17 +88,25 @@ const TYPE_MAP = {
 
 export default {
   computed: {
-    isAdmin() { return this.$store.getters.isAdmin }
+    isAdmin() { return this.$store.getters.isAdmin },
+    displayMode: {
+      get() { return this.$store.state.displayUnit },
+      set(v) { this.$store.commit('SET_DISPLAY_UNIT', v) }
+    }
   },
   data() {
     return {
       list: [], total: 0, loading: false, rebuilding: false, exporting: false,
-      warehouses: [], dateRange: null,
+      warehouses: [], productMap: {}, dateRange: null,
       query: { current: 1, size: 20, type: null, locationId: null, startDate: null, endDate: null }
     }
   },
   created() {
     getWarehouses().then(r => { this.warehouses = Array.isArray(r.data) ? r.data : (r.data.records || []) })
+    getProducts({ size: 1000 }).then(r => {
+      const items = r.data.records || r.data || []
+      this.productMap = Object.fromEntries(items.map(p => [p.id, p]))
+    })
     this.loadData()
   },
   methods: {
@@ -161,6 +174,21 @@ export default {
       if (!id || id === 0) return '全局'
       const w = this.warehouses.find(w => w.id === id)
       return w ? w.name : id
+    },
+    formatChangeQty(row) {
+      const qty = Number(row.changeQty) || 0
+      const wh = this.warehouses.find(w => w.id === row.locationId)
+      const prod = this.productMap[row.productId]
+      const qtyPerBox = prod?.qtyPerBox
+      const sign = qty >= 0 ? '+' : ''
+      if (this.displayMode === 'piece') return `${sign}${qty} 个`
+      if (wh?.type === 'PIECE') return `${sign}${qty} 个`
+      if (!qtyPerBox) return `${sign}${qty} 箱 ⚠️`
+      const abs = Math.abs(qty)
+      const prefix = qty < 0 ? '-' : '+'
+      const boxes = Math.floor(abs / qtyPerBox)
+      const loose = abs % qtyPerBox
+      return loose > 0 ? `${prefix}${boxes}箱 ${loose}个` : `${prefix}${boxes}箱`
     }
   }
 }
