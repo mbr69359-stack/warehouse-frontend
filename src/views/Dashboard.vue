@@ -10,6 +10,10 @@
           style="width:200px;" @change="onWarehouseChange">
           <el-option v-for="w in warehouseList" :key="w.id" :label="w.name" :value="w.id" />
         </el-select>
+        <el-button-group style="margin-left:8px;">
+          <el-button :type="displayUnit==='box'?'primary':''" size="small" @click="$store.commit('SET_DISPLAY_UNIT','box')">按箱</el-button>
+          <el-button :type="displayUnit==='piece'?'primary':''" size="small" @click="$store.commit('SET_DISPLAY_UNIT','piece')">按个</el-button>
+        </el-button-group>
       </div>
 
       <!-- 选中仓库时的快照卡片 + 库存明细 -->
@@ -18,8 +22,8 @@
           <el-col :span="8">
             <el-card shadow="hover" style="text-align:center;">
               <i class="el-icon-s-data" style="fontSize:32px;color:#409EFF;"></i>
-              <div style="font-size:26px;font-weight:bold;margin:8px 0;">{{ warehouseSummary.totalQty || 0 }}</div>
-              <div style="color:#909399;">总库存（个）</div>
+              <div style="font-size:26px;font-weight:bold;margin:8px 0;">{{ formattedWarehouseTotalQty }}</div>
+              <div style="color:#909399;">总库存（{{ displayUnit==='box'?'箱':'个' }}）</div>
             </el-card>
           </el-col>
           <el-col :span="8">
@@ -49,9 +53,11 @@
           </div>
           <el-table :data="warehouseInvList" size="small" border stripe>
             <el-table-column label="商品" min-width="160">
-              <template slot-scope="{row}">{{ productMap[row.productId] || ('商品#'+row.productId) }}</template>
+              <template slot-scope="{row}">{{ productMap[row.productId]?.name || ('商品#'+row.productId) }}</template>
             </el-table-column>
-            <el-table-column prop="qty" label="库存数量" width="120" align="center" />
+            <el-table-column label="库存数量" width="120" align="center">
+              <template slot-scope="{row}">{{ formatWarehouseQty(row) }}</template>
+            </el-table-column>
             <el-table-column label="状态" width="90" align="center">
               <template slot-scope="{row}">
                 <el-tag v-if="row.alertQty > 0 && row.qty < row.alertQty" type="danger" size="mini">预警</el-tag>
@@ -68,8 +74,8 @@
           <el-card shadow="hover" :class="['dash-card', activeChart === 'total' ? 'dash-card--active' : '']"
             style="text-align:center;cursor:pointer;" @click.native="toggleChart('total')">
             <i class="el-icon-s-data" style="fontSize:36px;color:#409EFF"></i>
-            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ statsData.totalQty }}</div>
-            <div style="color:#909399;">库存总数</div>
+            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ formattedTotalQty }}</div>
+            <div style="color:#909399;">库存总数（{{ displayUnit==='box'?'箱':'个' }}）</div>
           </el-card>
         </el-col>
         <!-- 主仓库（可展开图表） -->
@@ -77,7 +83,7 @@
           <el-card shadow="hover" :class="['dash-card', activeChart === 'max' ? 'dash-card--active' : '']"
             style="text-align:center;cursor:pointer;" @click.native="toggleChart('max')">
             <i class="el-icon-office-building" style="fontSize:36px;color:#67C23A"></i>
-            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ statsData.maxWarehouseQty }}</div>
+            <div style="font-size:28px;font-weight:bold;margin:8px 0;">{{ formattedMaxWhQty }}</div>
             <div style="color:#909399;">{{ statsData.maxWarehouseName || '主仓库' }}</div>
           </el-card>
         </el-col>
@@ -192,6 +198,10 @@
           style="width:100%;" size="small" @change="onWarehouseChange">
           <el-option v-for="w in warehouseList" :key="w.id" :label="w.name" :value="w.id" />
         </el-select>
+        <el-button-group style="margin-top:8px;display:flex;">
+          <el-button :type="displayUnit==='box'?'primary':''" size="small" style="flex:1;" @click="$store.commit('SET_DISPLAY_UNIT','box')">按箱</el-button>
+          <el-button :type="displayUnit==='piece'?'primary':''" size="small" style="flex:1;" @click="$store.commit('SET_DISPLAY_UNIT','piece')">按个</el-button>
+        </el-button-group>
       </div>
 
       <!-- 页头 -->
@@ -385,10 +395,10 @@ export default {
       pendingDamageCount: 0, pendingOutOrderCount: 0,
       selectedWarehouseId: null,
       warehouseList: [],
-      warehouseSummary: {},
+      warehouseSummary: { totalQty: 0, totalBoxCount: 0, totalSkus: 0, alertCount: 0 },
       warehouseInvList: [],
       warehouseInvLoading: false,
-      statsData: { totalQty: 0, totalValue: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseId: null },
+      statsData: { totalQty: 0, totalBoxCount: 0, totalValue: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseBoxQty: 0, maxWarehouseId: null },
       kpi: { todayOutQty: 0, monthSalesAmount: 0 },
       trendIn: [], trendOut: [],
       activeChart: null,
@@ -420,18 +430,20 @@ export default {
       getOutReport({ startDate, endDate }).catch(() => ({ data: [] }))
     ])
     const prodItems = prodRes.data.records || prodRes.data || []
-    this.productMap = Object.fromEntries(prodItems.map(p => [p.id, p.name]))
+    this.productMap = Object.fromEntries(prodItems.map(p => [p.id, p]))
     this.cards[0].value = inRes.data.total  || 0
     this.cards[1].value = outRes.data.total || 0
     const d = dashRes.data || {}
     this.cards[2].value = d.alertCount   || 0
     this.cards[3].value = d.productCount || 0
     this.statsData = {
-      totalQty:         d.totalQty         || 0,
-      totalValue:       d.totalValue        || 0,
-      maxWarehouseName: d.maxWarehouseName  || '',
-      maxWarehouseQty:  d.maxWarehouseQty   || 0,
-      maxWarehouseId:   d.maxWarehouseId    || null
+      totalQty:           d.totalQty           || 0,
+      totalBoxCount:      d.totalBoxCount       || 0,
+      totalValue:         d.totalValue          || 0,
+      maxWarehouseName:   d.maxWarehouseName    || '',
+      maxWarehouseQty:    d.maxWarehouseQty     || 0,
+      maxWarehouseBoxQty: d.maxWarehouseBoxQty  || 0,
+      maxWarehouseId:     d.maxWarehouseId      || null
     }
     this.chartData = chartRes.data || []
     this.kpi = { todayOutQty: d.todayOutQty || 0, monthSalesAmount: d.monthSalesAmount || 0 }
@@ -447,8 +459,38 @@ export default {
       const w = this.warehouseList.find(wh => wh.id === this.selectedWarehouseId)
       return w ? w.name : '仓库'
     },
+    displayUnit() { return this.$store.state.displayUnit },
+    selectedWarehouseType() {
+      const w = this.warehouseList.find(w => w.id === this.selectedWarehouseId)
+      return w?.type || null
+    },
+    formattedTotalQty() {
+      if (this.displayUnit === 'box') return `${this.statsData.totalBoxCount || 0} 箱`
+      return `${this.statsData.totalQty || 0} 个`
+    },
+    formattedMaxWhQty() {
+      if (this.displayUnit === 'box') return `${this.statsData.maxWarehouseBoxQty || 0} 箱`
+      return `${this.statsData.maxWarehouseQty || 0} 个`
+    },
+    formattedWarehouseTotalQty() {
+      if (this.displayUnit === 'box' && this.selectedWarehouseType === 'BOX')
+        return `${this.warehouseSummary.totalBoxCount || 0} 箱`
+      return `${this.warehouseSummary.totalQty || 0} 个`
+    },
   },
   methods: {
+    formatWarehouseQty(row) {
+      const qty = Number(row.qty) || 0
+      const prod = this.productMap[row.productId]
+      const qpb = prod?.qtyPerBox || 48
+      if (this.displayUnit === 'piece') return `${qty} 个`
+      if (this.selectedWarehouseType === 'BOX') {
+        const boxes = Math.floor(qty / qpb)
+        const loose = qty % qpb
+        return loose > 0 ? `${boxes}箱 ${loose}个` : `${boxes}箱`
+      }
+      return `${qty} 个`
+    },
     formatAmount(val) {
       return (Number(val) || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
     },
@@ -470,13 +512,28 @@ export default {
       this.cards[2].value = d.alertCount   || 0
       this.cards[3].value = d.productCount || 0
       this.statsData = {
-        totalQty:         d.totalQty         || 0,
-        totalValue:       d.totalValue        || 0,
-        maxWarehouseName: d.maxWarehouseName  || '',
-        maxWarehouseQty:  d.maxWarehouseQty   || 0,
-        maxWarehouseId:   d.maxWarehouseId    || null
+        totalQty:           d.totalQty           || 0,
+        totalBoxCount:      d.totalBoxCount       || 0,
+        totalValue:         d.totalValue          || 0,
+        maxWarehouseName:   d.maxWarehouseName    || '',
+        maxWarehouseQty:    d.maxWarehouseQty     || 0,
+        maxWarehouseBoxQty: d.maxWarehouseBoxQty  || 0,
+        maxWarehouseId:     d.maxWarehouseId      || null
       }
       this.kpi = { todayOutQty: d.todayOutQty || 0, monthSalesAmount: d.monthSalesAmount || 0 }
+      if (this.selectedWarehouseId) {
+        this.warehouseSummary = {
+          totalQty: d.totalQty || 0, totalBoxCount: d.totalBoxCount || 0,
+          totalSkus: d.productCount || 0, alertCount: d.alertCount || 0
+        }
+        this.warehouseInvLoading = true
+        getInventory({ warehouseId: this.selectedWarehouseId, size: 50 })
+          .then(r => { this.warehouseInvList = r.data.records || [] })
+          .catch(() => {})
+          .finally(() => { this.warehouseInvLoading = false })
+      } else {
+        this.warehouseInvList = []
+      }
       this.chartData = []
       this.chartLoading = true
       const whId = this.selectedWarehouseId

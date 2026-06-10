@@ -32,7 +32,8 @@ export default new Vuex.Store({
   state: {
     token: loadToken(),
     user: JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || 'null'),
-    roles: JSON.parse(localStorage.getItem('roles') || sessionStorage.getItem('roles') || '[]')
+    roles: JSON.parse(localStorage.getItem('roles') || sessionStorage.getItem('roles') || '[]'),
+    displayUnit: localStorage.getItem('displayUnit') || 'box'
   },
   mutations: {
     SET_TOKEN(state, { token, remember }) {
@@ -56,6 +57,10 @@ export default new Vuex.Store({
       state.roles = roles
       sessionStorage.setItem('roles', JSON.stringify(roles))
       localStorage.setItem('roles', JSON.stringify(roles))
+    },
+    SET_DISPLAY_UNIT(state, unit) {
+      state.displayUnit = unit
+      localStorage.setItem('displayUnit', unit)
     },
     LOGOUT(state) {
       state.token = ''; state.user = null; state.roles = []

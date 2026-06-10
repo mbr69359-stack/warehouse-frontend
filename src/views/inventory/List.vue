@@ -228,7 +228,6 @@ export default {
       list: [], total: 0, loading: false,
       warehouses: [], warehouseMap: {},
       productMap: {},
-      displayMode: 'box',
       alertDialog: false, alertForm: {},
       query: { current: 1, size: 10, warehouseId: null },
       mobileSearch: '',
@@ -247,6 +246,10 @@ export default {
     }
   },
   computed: {
+    displayMode: {
+      get() { return this.$store.state.displayUnit },
+      set(v) { this.$store.commit('SET_DISPLAY_UNIT', v) }
+    },
     filteredList() {
       let arr = this.list
       if (this.mobileSearch) {
