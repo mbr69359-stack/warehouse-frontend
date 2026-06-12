@@ -72,15 +72,11 @@ export default {
   },
   computed: {
     summaryBoxDisplay() {
-      const totalBoxes = this.list.reduce((s, row) => {
-        const wh = this.warehouseMap[row.warehouseId]
-        const prod = this.productMap[row.productId]
-        if (wh && wh.type === 'BOX' && prod && prod.qtyPerBox > 0) {
-          return s + Math.floor(Number(row.qty || 0) / prod.qtyPerBox)
-        }
-        return s + Number(row.qty || 0)
-      }, 0)
-      return totalBoxes
+      const boxes = Number(this.summary.totalBoxCount || 0)
+      const loose = Number(this.summary.looseCount || 0)
+      if (boxes <= 0) return `${loose}\u4e2a`
+      if (loose > 0) return `${boxes}\u7bb1\u96f6${loose}\u4e2a`
+      return `${boxes}\u7bb1`
     }
   },
   created() {
