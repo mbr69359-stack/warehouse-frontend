@@ -16,15 +16,17 @@
       <el-table-column prop="createdAt" label="创建时间" width="170" />
       <el-table-column label="操作" width="300" align="center">
         <template slot-scope="{row}">
-          <el-button size="mini" type="primary" plain @click="openDetail(row)">查看明细</el-button>
-          <el-button v-if="row.status === 'DRAFT'" size="mini" type="danger" plain
-            @click="handleDelete(row)">删除草稿</el-button>
-          <!-- 步骤一：退货未入库 -->
-          <el-button v-if="row.status === 'DRAFT'" size="mini" type="warning"
-            @click="openInbound(row)">确认退货入库</el-button>
-          <!-- 步骤二：已入库，待补发 -->
-          <el-button v-if="row.status === 'INBOUND_DONE'" size="mini" type="success"
-            @click="openConfirm(row)">确认补发出库</el-button>
+          <div class="customer-return-actions">
+            <el-button size="mini" type="primary" plain @click="openDetail(row)">查看明细</el-button>
+            <el-button v-if="row.status === 'DRAFT'" size="mini" type="danger" plain
+              @click="handleDelete(row)">删除草稿</el-button>
+            <!-- 步骤一：退货未入库 -->
+            <el-button v-if="row.status === 'DRAFT'" size="mini" type="warning"
+              @click="openInbound(row)">确认退货入库</el-button>
+            <!-- 步骤二：已入库，待补发 -->
+            <el-button v-if="row.status === 'INBOUND_DONE'" size="mini" type="success"
+              @click="openConfirm(row)">确认补发出库</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -417,3 +419,18 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.customer-return-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+}
+
+.customer-return-actions .el-button + .el-button {
+  margin-left: 0;
+}
+</style>
