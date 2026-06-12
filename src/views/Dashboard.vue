@@ -6,8 +6,9 @@
       <!-- 仓库选择器 -->
       <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;">
         <span style="color:#606266;font-weight:500;">查看仓库：</span>
-        <el-select v-model="selectedWarehouseId" placeholder="全部仓库"
+        <el-select v-model="selectedWarehouseId"
           style="width:200px;" @change="onWarehouseChange">
+          <el-option label="全部仓库" :value="0" />
           <el-option v-for="w in warehouseList" :key="w.id" :label="w.name" :value="w.id" />
         </el-select>
         <el-button-group style="margin-left:8px;">
@@ -151,8 +152,9 @@
     <div v-else class="m-page">
 
       <div style="padding:12px 16px 0;">
-        <el-select v-model="selectedWarehouseId" placeholder="全部仓库"
+        <el-select v-model="selectedWarehouseId"
           style="width:100%;" size="small" @change="onWarehouseChange">
+          <el-option label="全部仓库" :value="0" />
           <el-option v-for="w in warehouseList" :key="w.id" :label="w.name" :value="w.id" />
         </el-select>
         <el-button-group style="margin-top:8px;display:flex;">
@@ -283,7 +285,7 @@ export default {
   data() {
     return {
       pendingDamageCount: 0, pendingOutOrderCount: 0,
-      selectedWarehouseId: null,
+      selectedWarehouseId: 0,   // 0 = 全部仓库（保持 falsy，模板判断不变；发请求经 whParam 转 null）
       warehouseList: [],
       warehouseInvList: [],
       warehouseInvLoading: false,
@@ -312,7 +314,7 @@ export default {
     getDraftOutOrderCount().then(n => { this.pendingOutOrderCount = n })
     getWarehouses().then(r => { this.warehouseList = r.data || [] })
     const [dashRes, inRes, outRes, prodRes, chartRes, trendInRes, trendOutRes] = await Promise.all([
-      getDashboardStats({ warehouseId: this.selectedWarehouseId }).catch(() => ({ data: {} })),
+      getDashboardStats({ warehouseId: this.whParam }).catch(() => ({ data: {} })),
       getInOrders({ current: 1, size: 1, status: 'DRAFT' }).catch(() => ({ data: { total: 0 } })),
       getOutOrders({ current: 1, size: 1, status: 'DRAFT' }).catch(() => ({ data: { total: 0 } })),
       getProducts({ size: 1000 }).catch(() => ({ data: {} })),
@@ -346,6 +348,9 @@ export default {
     this.$nextTick(() => { this.activeChart = 'total' })
   },
   computed: {
+    whParam() {
+      return this.selectedWarehouseId || null
+    },
     selectedWarehouseName() {
       if (!this.selectedWarehouseId) return '全部仓库'
       const w = this.warehouseList.find(wh => wh.id === this.selectedWarehouseId)
@@ -420,7 +425,7 @@ export default {
       getOutOrders(params).then(r => { this.cards[1].value = r.data.total || 0 }).catch(() => {})
     },
     async onWarehouseChange() {
-      const d = (await getDashboardStats({ warehouseId: this.selectedWarehouseId })
+      const d = (await getDashboardStats({ warehouseId: this.whParam })
         .catch(() => ({ data: {} }))).data || {}
       this.cards[2].value = d.alertCount   || 0
       this.cards[3].value = d.productCount || 0
