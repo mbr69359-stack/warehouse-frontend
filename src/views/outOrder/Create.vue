@@ -84,17 +84,26 @@
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column label="可用库存" width="90" align="center">
+        <el-table-column label="可用库存" :width="isBoxMode ? 130 : 90" align="center">
           <template slot-scope="{row}">
-            <span :style="row.productId && row.qty >= (inventoryMap[row.productId] || 0) ? 'color:#f56c6c;font-weight:bold;' : ''">
-              {{ row.productId ? (inventoryMap[row.productId] || 0) : '—' }}
-            </span>
+            <template v-if="row.productId">
+              <el-tooltip v-if="isBoxMode && !qtyPerBoxOf(row.productId)"
+                content="该商品未设每箱数量，库存按箱计" placement="top">
+                <span :style="row.qty >= maxQty(row.productId) ? 'color:#f56c6c;font-weight:bold;' : ''">
+                  {{ stockText(row.productId) }} ⚠️
+                </span>
+              </el-tooltip>
+              <span v-else :style="row.qty >= maxQty(row.productId) ? 'color:#f56c6c;font-weight:bold;' : ''">
+                {{ stockText(row.productId) }}
+              </span>
+            </template>
+            <span v-else>—</span>
           </template>
         </el-table-column>
-        <el-table-column label="数量" width="130">
+        <el-table-column :label="isBoxMode ? '数量（箱）' : '数量'" width="130">
           <template slot-scope="{row}">
             <el-input-number v-model="row.qty" :min="1"
-              :max="row.productId ? (inventoryMap[row.productId] || 0) : undefined"
+              :max="row.productId ? maxQty(row.productId) : undefined"
               size="small" style="width:100%;" />
           </template>
         </el-table-column>
@@ -166,6 +175,14 @@ export default {
     },
     targetWarehouses() {
       return this.warehouses.filter(w => w.id !== this.form.warehouseId)
+    },
+    productMap() {
+      return Object.fromEntries(this.products.map(p => [p.id, p]))
+    },
+    // BOX 仓且非损坏出库时，数量按"箱"录入（与后端扣库存逻辑一致）
+    isBoxMode() {
+      const w = this.warehouses.find(wh => wh.id === this.form.warehouseId)
+      return !!w && w.type === 'BOX' && this.form.type !== 'DAMAGE_OUT'
     }
   },
   created() {
@@ -232,13 +249,39 @@ export default {
     onDamageSelectionChange(rows) {
       this.selectedDamageIds = rows.map(r => r.id)
     },
+    // 商品已设每箱数量（>0）则返回该值，否则返回 null
+    qtyPerBoxOf(productId) {
+      const p = this.productMap[productId]
+      return p && p.qtyPerBox > 0 ? p.qtyPerBox : null
+    },
+    // 可用库存展示文案：BOX 仓按箱展示，PIECE 仓按个展示
+    stockText(productId) {
+      const qty = this.inventoryMap[productId] || 0
+      if (!this.isBoxMode) return qty
+      const qpb = this.qtyPerBoxOf(productId)
+      if (!qpb) return `${qty}箱`
+      return `${Math.floor(qty / qpb)}箱（${qty}个）`
+    },
+    // 数量输入上限：BOX 仓且已设每箱数量时换算为箱数，否则为原始数
+    maxQty(productId) {
+      const qty = this.inventoryMap[productId] || 0
+      if (!this.isBoxMode) return qty
+      const qpb = this.qtyPerBoxOf(productId)
+      return qpb ? Math.floor(qty / qpb) : qty
+    },
     productLabel(p) {
-      const stock = this.inventoryMap[p.id] !== undefined ? this.inventoryMap[p.id] : '—'
+      const raw = this.inventoryMap[p.id]
+      if (this.isBoxMode && raw !== undefined) {
+        const qpb = p.qtyPerBox > 0 ? p.qtyPerBox : null
+        if (!qpb) return `${p.name}(${p.skuCode}) — 库存:${raw}箱⚠️`
+        return `${p.name}(${p.skuCode}) — 库存:${Math.floor(raw / qpb)}箱(${raw}个)`
+      }
+      const stock = raw !== undefined ? raw : '—'
       return `${p.name}(${p.skuCode}) — 库存:${stock}件`
     },
     addItem() { this.form.items.push({ productId: null, qty: 1, price: 0, _lastPriceTip: null }) },
     onProductChange(row) {
-      const max = this.inventoryMap[row.productId] || 0
+      const max = this.maxQty(row.productId)
       if (row.qty > max) row.qty = max
       // 选择商品后自动拉取参考价
       this.fetchLastPrice(row)
@@ -285,11 +328,12 @@ export default {
           return
         }
         if (this.form.type !== 'REPLACEMENT_OUT') {
-          const overItem = this.form.items.find(i => i.qty > (this.inventoryMap[i.productId] || 0))
+          const overItem = this.form.items.find(i => i.qty > this.maxQty(i.productId))
           if (overItem) {
             const prod = this.products.find(p => p.id === overItem.productId)
-            const avail = this.inventoryMap[overItem.productId] || 0
-            this.$message.error(`商品「${prod ? prod.name : overItem.productId}」库存仅剩 ${avail} 件，出库数量不能超过库存`)
+            const avail = this.maxQty(overItem.productId)
+            const unit = this.isBoxMode ? '箱' : '件'
+            this.$message.error(`商品「${prod ? prod.name : overItem.productId}」库存仅剩 ${avail} ${unit}，出库数量不能超过库存`)
             return
           }
         }
