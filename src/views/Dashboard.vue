@@ -140,12 +140,27 @@
         </el-col>
       </el-row>
 
-      <el-card>
-        <div slot="header">快捷入口</div>
-        <el-button type="primary" icon="el-icon-download" @click="$router.push('/in-orders/create')">新建入库单</el-button>
-        <el-button type="success" icon="el-icon-upload2" style="margin-left:12px;" @click="$router.push('/out-orders/create')">新建出库单</el-button>
-        <el-button type="warning" icon="el-icon-document-checked" style="margin-left:12px;" @click="$router.push('/inventory/check')">库存盘点</el-button>
-      </el-card>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-card>
+            <div slot="header">快捷入口</div>
+            <el-button type="primary" icon="el-icon-download" @click="$router.push('/in-orders/create')">新建入库单</el-button>
+            <el-button type="success" icon="el-icon-upload2" style="margin-left:12px;" @click="$router.push('/out-orders/create')">新建出库单</el-button>
+            <el-button type="warning" icon="el-icon-document-checked" style="margin-left:12px;" @click="$router.push('/inventory/check')">库存盘点</el-button>
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card>
+            <div slot="header" style="display:flex;justify-content:space-between;">
+              <span>库存预警 · {{ selectedWarehouseName }}<span v-if="alertChartData.length" style="color:#E6A23C;margin-left:6px;">{{ alertChartData.length }}</span></span>
+              <el-link type="primary" @click="$router.push('/inventory/alerts')">查看全部</el-link>
+            </div>
+            <inventory-bar-chart v-if="alertChartData.length" :chart-data="alertChartData" title="" :unit="displayUnit"
+              :height="Math.max(200, alertChartData.length * 40) + 'px'" :horizontal="true" />
+            <el-empty v-else description="当前没有库存预警" :image-size="60" />
+          </el-card>
+        </el-col>
+      </el-row>
     </template>
 
     <!-- ── 移动端 ── -->
@@ -288,6 +303,7 @@ export default {
       selectedWarehouseId: 0,   // 0 = 全部仓库（保持 falsy，模板判断不变；发请求经 whParam 转 null）
       warehouseList: [],
       warehouseInvList: [],
+      invRows: [],   // 全量库存行（含 alertQty），预警面板按仓库前端过滤
       warehouseInvLoading: false,
       statsData: { totalQty: 0, totalBoxCount: 0, looseCount: 0, totalValue: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseBoxQty: 0, maxWarehouseId: null },
       kpi: { todayOutQty: 0, monthSalesAmount: 0 },
@@ -322,6 +338,8 @@ export default {
       getInReport({ startDate, endDate }).catch(() => ({ data: [] })),
       getOutReport({ startDate, endDate }).catch(() => ({ data: [] }))
     ])
+    getInventory({ current: 1, size: 10000 })
+      .then(r => { this.invRows = r.data.records || [] }).catch(() => {})
     const prodItems = prodRes.data.records || prodRes.data || []
     this.productMap = Object.fromEntries(prodItems.map(p => [p.id, p]))
     this.cards[0].value = inRes.data.total  || 0
@@ -382,6 +400,21 @@ export default {
     chartTitle() {
       if (this.selectedWarehouseId) return `${this.selectedWarehouseName} 库存分布`
       return this.activeChart === 'total' ? '全部库存分布' : `${this.statsData.maxWarehouseName} 库存分布`
+    },
+    alertChartData() {
+      const multiWh = !this.selectedWarehouseId && this.warehouseList.length > 1
+      return this.invRows
+        .filter(r => (!this.selectedWarehouseId || r.warehouseId === this.selectedWarehouseId) &&
+                     r.alertQty > 0 && r.qty < r.alertQty)
+        .map(r => {
+          const p = this.productMap[r.productId]
+          let name = p ? p.name : `商品#${r.productId}`
+          if (multiWh) {
+            const w = this.warehouseList.find(w => w.id === r.warehouseId)
+            if (w) name += `（${w.name}）`
+          }
+          return { productName: name, qty: r.qty, alertQty: r.alertQty, isLow: true, qtyPerBox: p?.qtyPerBox || 0 }
+        })
     },
   },
   methods: {
@@ -456,6 +489,8 @@ export default {
         this.warehouseInvList = []
       }
       this.loadOrderCounts()
+      getInventory({ current: 1, size: 10000 })
+        .then(r => { this.invRows = r.data.records || [] }).catch(() => {})
       // 选中具体仓库后"主仓库"卡片隐藏，图表回到该仓库的总分布
       if (this.selectedWarehouseId && this.activeChart === 'max') this.activeChart = 'total'
       await this.loadChartData()
