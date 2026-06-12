@@ -179,10 +179,12 @@ export default {
     productMap() {
       return Object.fromEntries(this.products.map(p => [p.id, p]))
     },
-    // BOX 仓且非损坏出库时，数量按"箱"录入（与后端扣库存逻辑一致）
+    // BOX 仓且非损坏/补发出库时，数量按"箱"录入（与后端扣库存逻辑一致：
+    // DAMAGE_OUT/REPLACEMENT_OUT 的数量后端按"个"处理，不做箱换算）
     isBoxMode() {
       const w = this.warehouses.find(wh => wh.id === this.form.warehouseId)
-      return !!w && w.type === 'BOX' && this.form.type !== 'DAMAGE_OUT'
+      return !!w && w.type === 'BOX'
+        && this.form.type !== 'DAMAGE_OUT' && this.form.type !== 'REPLACEMENT_OUT'
     }
   },
   created() {
