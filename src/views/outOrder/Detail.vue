@@ -28,15 +28,25 @@
           <span v-if="row.skuCode" style="color:#909399;font-size:12px;"> ({{ row.skuCode }})</span>
         </template>
       </el-table-column>
-      <el-table-column prop="qty" label="计划数量" width="110" />
-      <el-table-column prop="actualQty" label="实际数量" width="110" />
+      <el-table-column prop="qty" :label="qtyIsBox ? '计划数量(箱)' : '计划数量'" width="110" />
+      <el-table-column prop="actualQty" :label="qtyIsBox ? '实际数量(箱)' : '实际数量'" width="110" />
       <el-table-column label="单价" width="100"><template slot-scope="{row}">KSh {{ row.price }}</template></el-table-column>
+      <el-table-column label="重量" width="100">
+        <template slot-scope="{row}">{{ formatWeight(rowWeight(row)) }}</template>
+      </el-table-column>
       <el-table-column label="小计">
         <template slot-scope="{row}">
           KSh {{ subtotal(row) }}
         </template>
       </el-table-column>
     </el-table>
+
+    <div style="margin-top:12px;text-align:right;font-size:14px;">
+      <span v-if="qtyIsBox" style="margin-right:16px;">总箱数：<strong>{{ totals.boxes }}</strong> 箱</span>
+      <span style="margin-right:16px;">总件数：<strong>{{ totals.pieces != null ? totals.pieces + ' 个' : '—' }}</strong></span>
+      <span style="margin-right:16px;">总重量：<strong>{{ totals.weight != null ? totals.weight.toFixed(1) + ' kg' : '—' }}</strong></span>
+      <span>合计金额：<strong>KSh {{ totals.amount.toFixed(2) }}</strong></span>
+    </div>
 
     <div style="margin-top:16px;display:flex;gap:10px;">
       <el-button v-if="order.status==='DRAFT'" type="danger" @click="openConfirmDialog">确认出库</el-button>
@@ -69,6 +79,7 @@
 <script>
 import { getOutOrder, confirmOutOrder, getOutOrderItems } from '../../api/outOrder'
 import { getWarehouses } from '../../api/warehouse'
+import { lineWeightKg, formatWeight } from '../../utils/unit'
 export default {
   data() {
     return {
@@ -83,6 +94,34 @@ export default {
       if (!this.order.warehouseId) return '—'
       const w = this.warehouses.find(w => w.id === this.order.warehouseId)
       return w ? w.name : this.order.warehouseId
+    },
+    // 与后端确认逻辑一致：BOX 仓数量按箱，损坏/补发出库的数量按个
+    qtyIsBox() {
+      const w = this.warehouses.find(w => w.id === this.order.warehouseId)
+      return !!w && w.type === 'BOX'
+        && this.order.type !== 'DAMAGE_OUT' && this.order.type !== 'REPLACEMENT_OUT'
+    },
+    totals() {
+      let boxes = 0, piecesSum = 0, piecesOk = true, weight = 0, hasWeight = false, amount = 0
+      this.items.forEach(r => {
+        const qty = this.effectiveQty(r)
+        amount += qty * Number(r.price || 0)
+        if (this.qtyIsBox) {
+          boxes += qty
+          if (r.qtyPerBox > 0) piecesSum += qty * r.qtyPerBox
+          else piecesOk = false
+        } else {
+          piecesSum += qty
+        }
+        const w = this.rowWeight(r)
+        if (w != null) { weight += w; hasWeight = true }
+      })
+      return {
+        boxes,
+        pieces: piecesOk ? piecesSum : null,
+        weight: hasWeight ? weight : null,
+        amount: Math.round(amount * 100) / 100
+      }
     }
   },
   created() { this.loadData() },
@@ -98,9 +137,15 @@ export default {
       return status === 'CONFIRMED' ? '已确认' : status === 'VOIDED' ? '已作废' : '草稿'
     },
     subtotal(row) {
-      // 已确认/已作废单按实际数量计算，草稿按计划数量
-      const qty = this.order.status === 'DRAFT' ? (row.qty || 0) : (row.actualQty || 0)
-      return (Math.round(qty * Number(row.price || 0) * 100) / 100).toFixed(2)
+      return (Math.round(this.effectiveQty(row) * Number(row.price || 0) * 100) / 100).toFixed(2)
+    },
+    // 已确认/已作废单按实际数量计算，草稿按计划数量
+    effectiveQty(row) {
+      return this.order.status === 'DRAFT' ? (row.qty || 0) : (row.actualQty || 0)
+    },
+    formatWeight,
+    rowWeight(row) {
+      return lineWeightKg(this.effectiveQty(row), row.weightPerBox, row.qtyPerBox, this.qtyIsBox)
     },
     async loadData() {
       this.loading = true
@@ -127,18 +172,18 @@ export default {
     },
     printOrder() {
       const typeMap = { SALE: '销售出库', TRANSFER: '调拨出库', DAMAGE_OUT: '损坏出库', REPLACEMENT_OUT: '补发出库' }
-      const total = this.items.reduce((s, r) => {
-        const qty = this.order.status === 'DRAFT' ? (r.qty || 0) : (r.actualQty || 0)
-        return s + qty * Number(r.price || 0)
-      }, 0)
+      const totals = this.totals
+      const boxSuffix = this.qtyIsBox ? '(箱)' : ''
       const rows = this.items.map(r => {
-        const qty = this.order.status === 'DRAFT' ? (r.qty || 0) : (r.actualQty || 0)
+        const qty = this.effectiveQty(r)
         const sub = (qty * Number(r.price || 0)).toFixed(2)
+        const w = this.rowWeight(r)
         return `<tr>
           <td>${r.productName || r.productId}${r.skuCode ? '<br><small style="color:#888">' + r.skuCode + '</small>' : ''}</td>
           <td style="text-align:center">${r.qty}</td>
           <td style="text-align:center">${r.actualQty ?? '—'}</td>
           <td style="text-align:right">KSh ${Number(r.price || 0).toFixed(2)}</td>
+          <td style="text-align:right">${w != null ? w.toFixed(1) + ' kg' : '—'}</td>
           <td style="text-align:right">KSh ${sub}</td>
         </tr>`
       }).join('')
@@ -167,10 +212,10 @@ export default {
           <span>确认时间<b>${this.order.confirmTime || '—'}</b></span>
         </div>
         <table>
-          <thead><tr><th>商品</th><th style="text-align:center">计划数量</th><th style="text-align:center">实际数量</th><th style="text-align:right">单价</th><th style="text-align:right">小计</th></tr></thead>
+          <thead><tr><th>商品</th><th style="text-align:center">计划数量${boxSuffix}</th><th style="text-align:center">实际数量${boxSuffix}</th><th style="text-align:right">单价</th><th style="text-align:right">重量</th><th style="text-align:right">小计</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
-        <div class="total">合计金额：KSh ${total.toFixed(2)}</div>
+        <div class="total">${this.qtyIsBox ? '总箱数：' + totals.boxes + ' 箱&nbsp;&nbsp;' : ''}总件数：${totals.pieces != null ? totals.pieces + ' 个' : '—'}&nbsp;&nbsp;总重量：${totals.weight != null ? totals.weight.toFixed(1) + ' kg' : '—'}&nbsp;&nbsp;合计金额：KSh ${totals.amount.toFixed(2)}</div>
         <div class="footer">
           <span>备注：${this.order.remark || '无'}</span>
           <span>打印时间：${new Date().toLocaleString('zh-CN', { timeZone: 'Africa/Nairobi' })}</span>

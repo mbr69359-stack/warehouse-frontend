@@ -37,11 +37,9 @@
       <el-table-column label="单价" width="130">
         <template slot-scope="{row}"><el-input-number v-model="row.price" :min="0" :precision="2" size="small" style="width:100%;" /></template>
       </el-table-column>
-      <el-table-column label="预计总重量" width="110">
+      <el-table-column label="预计重量" width="110">
         <template slot-scope="{row}">
-          <span v-if="productMap[row.productId] && productMap[row.productId].weightPerBox">
-            {{ ((row.planQty || 0) * productMap[row.productId].weightPerBox).toFixed(1) }} kg
-          </span>
+          <span v-if="rowWeight(row) != null">{{ formatWeight(rowWeight(row)) }}</span>
           <span v-else style="color:#c0c4cc;">—</span>
         </template>
       </el-table-column>
@@ -57,7 +55,7 @@
       </el-table-column>
     </el-table>
     <div v-if="totalWeight > 0" style="margin-top:10px;text-align:right;color:#606266;font-size:13px;">
-      预计入库总重量：<strong>{{ totalWeight }} kg</strong>
+      预计入库总重量：<strong>{{ totalWeight.toFixed(1) }} kg</strong>
     </div>
     <div style="margin-top:20px;">
       <el-button type="primary" :loading="saving" @click="handleSave">保存草稿</el-button>
@@ -71,6 +69,7 @@ import { createInOrder } from '../../api/inOrder'
 import { getWarehouses } from '../../api/warehouse'
 import { getSuppliers } from '../../api/supplier'
 import { getProducts } from '../../api/product'
+import { lineWeightKg, formatWeight } from '../../utils/unit'
 export default {
   computed: {
     productMap() {
@@ -82,9 +81,9 @@ export default {
     },
     totalWeight() {
       return this.form.items.reduce((sum, row) => {
-        const p = this.productMap[row.productId]
-        return p && p.weightPerBox ? sum + (row.planQty || 0) * p.weightPerBox : sum
-      }, 0).toFixed(1)
+        const w = this.rowWeight(row)
+        return w != null ? sum + w : sum
+      }, 0)
     }
   },
   data() {
@@ -114,6 +113,14 @@ export default {
       if (this.selectedWarehouseType !== 'BOX') return false
       const p = this.productMap[row.productId]
       return p && (!p.qtyPerBox || p.qtyPerBox <= 0)
+    },
+    formatWeight,
+    // BOX 仓数量按箱、PIECE 仓按个换算重量；未选仓库时无法判定单位，不显示
+    rowWeight(row) {
+      if (!this.selectedWarehouseType) return null
+      const p = this.productMap[row.productId]
+      if (!p) return null
+      return lineWeightKg(row.planQty, p.weightPerBox, p.qtyPerBox, this.selectedWarehouseType === 'BOX')
     },
     addItem() { this.form.items.push({ productId: null, planQty: 0, price: 0 }) },
     handleSave() {

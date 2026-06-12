@@ -17,3 +17,23 @@ export function formatBoxQty(qty, qtyPerBox) {
     : `${sign}${rem}个`
   return { value: Number((qty / qpb).toFixed(2)), text, converted: true }
 }
+
+/**
+ * 单行重量(kg)。qtyIsBox 为 true 时 qty 按"箱"计：qty × weightPerBox；
+ * 否则 qty 按"个"计，需 qtyPerBox 换算单个重量：qty × weightPerBox ÷ qtyPerBox。
+ * 缺少必要箱规（weightPerBox，或按个计时的 qtyPerBox）无法计算，返回 null。
+ */
+export function lineWeightKg(qty, weightPerBox, qtyPerBox, qtyIsBox) {
+  qty = Number(qty) || 0
+  const wpb = Number(weightPerBox) || 0
+  if (wpb <= 0) return null
+  if (qtyIsBox) return qty * wpb
+  const qpb = Number(qtyPerBox) || 0
+  if (qpb <= 0) return null
+  return qty * wpb / qpb
+}
+
+/** 重量展示文本：null → '—'，否则保留1位小数 + kg */
+export function formatWeight(kg) {
+  return kg == null ? '—' : `${kg.toFixed(1)} kg`
+}

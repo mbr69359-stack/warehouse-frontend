@@ -23,15 +23,25 @@
           <span v-if="row.skuCode" style="color:#909399;font-size:12px;"> ({{ row.skuCode }})</span>
         </template>
       </el-table-column>
-      <el-table-column prop="planQty" label="计划数量" width="110" />
-      <el-table-column prop="actualQty" label="实际数量" width="110" />
+      <el-table-column prop="planQty" :label="qtyIsBox ? '计划数量(箱)' : '计划数量'" width="110" />
+      <el-table-column prop="actualQty" :label="qtyIsBox ? '实际数量(箱)' : '实际数量'" width="110" />
       <el-table-column label="单价" width="100"><template slot-scope="{row}">KSh {{ row.price }}</template></el-table-column>
+      <el-table-column label="重量" width="100">
+        <template slot-scope="{row}">{{ formatWeight(rowWeight(row)) }}</template>
+      </el-table-column>
       <el-table-column label="小计">
         <template slot-scope="{row}">
           KSh {{ subtotal(row) }}
         </template>
       </el-table-column>
     </el-table>
+
+    <div style="margin-top:12px;text-align:right;font-size:14px;">
+      <span v-if="qtyIsBox" style="margin-right:16px;">总箱数：<strong>{{ totals.boxes }}</strong> 箱</span>
+      <span style="margin-right:16px;">总件数：<strong>{{ totals.pieces != null ? totals.pieces + ' 个' : '—' }}</strong></span>
+      <span style="margin-right:16px;">总重量：<strong>{{ totals.weight != null ? totals.weight.toFixed(1) + ' kg' : '—' }}</strong></span>
+      <span>合计金额：<strong>KSh {{ totals.amount.toFixed(2) }}</strong></span>
+    </div>
 
     <div style="margin-top:16px;" v-if="order.status==='DRAFT'">
       <el-button type="success" @click="openConfirmDialog">确认入库</el-button>
@@ -63,6 +73,7 @@
 <script>
 import { getInOrder, confirmInOrder, getInOrderItems } from '../../api/inOrder'
 import { getWarehouses } from '../../api/warehouse'
+import { lineWeightKg, formatWeight } from '../../utils/unit'
 export default {
   data() {
     return {
@@ -77,6 +88,33 @@ export default {
       if (!this.order.warehouseId) return '—'
       const w = this.warehouses.find(w => w.id === this.order.warehouseId)
       return w ? w.name : this.order.warehouseId
+    },
+    // 与后端确认逻辑一致：BOX 仓入库数量按箱记
+    qtyIsBox() {
+      const w = this.warehouses.find(w => w.id === this.order.warehouseId)
+      return !!w && w.type === 'BOX'
+    },
+    totals() {
+      let boxes = 0, piecesSum = 0, piecesOk = true, weight = 0, hasWeight = false, amount = 0
+      this.items.forEach(r => {
+        const qty = this.effectiveQty(r)
+        amount += qty * Number(r.price || 0)
+        if (this.qtyIsBox) {
+          boxes += qty
+          if (r.qtyPerBox > 0) piecesSum += qty * r.qtyPerBox
+          else piecesOk = false
+        } else {
+          piecesSum += qty
+        }
+        const w = this.rowWeight(r)
+        if (w != null) { weight += w; hasWeight = true }
+      })
+      return {
+        boxes,
+        pieces: piecesOk ? piecesSum : null,
+        weight: hasWeight ? weight : null,
+        amount: Math.round(amount * 100) / 100
+      }
     }
   },
   created() { this.loadData() },
@@ -88,9 +126,15 @@ export default {
       return status === 'CONFIRMED' ? '已确认' : status === 'VOIDED' ? '已作废' : '草稿'
     },
     subtotal(row) {
-      // 已确认/已作废单按实际数量计算，草稿按计划数量
-      const qty = this.order.status === 'DRAFT' ? (row.planQty || 0) : (row.actualQty || 0)
-      return (Math.round(qty * Number(row.price || 0) * 100) / 100).toFixed(2)
+      return (Math.round(this.effectiveQty(row) * Number(row.price || 0) * 100) / 100).toFixed(2)
+    },
+    // 已确认/已作废单按实际数量计算，草稿按计划数量
+    effectiveQty(row) {
+      return this.order.status === 'DRAFT' ? (row.planQty || 0) : (row.actualQty || 0)
+    },
+    formatWeight,
+    rowWeight(row) {
+      return lineWeightKg(this.effectiveQty(row), row.weightPerBox, row.qtyPerBox, this.qtyIsBox)
     },
     async loadData() {
       this.loading = true

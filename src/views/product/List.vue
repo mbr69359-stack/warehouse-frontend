@@ -76,7 +76,10 @@
         <el-form-item label="条码"><el-input v-model="form.barcode" placeholder="EAN/UPC" /></el-form-item>
         <el-form-item label="单位" prop="unit"><el-input v-model="form.unit" /></el-form-item>
         <el-form-item label="价格" prop="price"><el-input-number v-model="form.price" :precision="2" :min="0" style="width:100%;" /></el-form-item>
-        <el-form-item label="成本价"><el-input-number v-model="form.costPrice" :precision="2" :min="0" style="width:100%;" /></el-form-item>
+        <el-form-item label="成本价">
+          <span>KSh {{ form.costPrice || '0.00' }}</span>
+          <span style="color:#909399;font-size:12px;margin-left:8px;">由采购入库加权平均自动计算，不可手动修改</span>
+        </el-form-item>
         <el-form-item label="每箱重量(kg)"><el-input-number v-model="form.weightPerBox" :precision="2" :min="0" :placeholder="null" style="width:100%;" /></el-form-item>
         <el-form-item label="每箱个数"><el-input-number v-model="form.qtyPerBox" :min="0" :precision="0" :placeholder="null" style="width:100%;" /></el-form-item>
         <el-form-item label="状态">

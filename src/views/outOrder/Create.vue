@@ -114,12 +114,21 @@
             <div v-if="row._lastPriceTip" style="font-size:11px;color:#909399;margin-top:2px;">{{ row._lastPriceTip }}</div>
           </template>
         </el-table-column>
+        <el-table-column label="预计重量" width="110">
+          <template slot-scope="{row}">
+            <span v-if="rowWeight(row) != null">{{ formatWeight(rowWeight(row)) }}</span>
+            <span v-else style="color:#c0c4cc;">—</span>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="70">
           <template slot-scope="{$index}">
             <el-button type="danger" size="mini" icon="el-icon-delete" circle @click="form.items.splice($index, 1)" />
           </template>
         </el-table-column>
       </el-table>
+      <div v-if="totalWeight > 0" style="margin-top:10px;text-align:right;color:#606266;font-size:13px;">
+        预计出库总重量：<strong>{{ totalWeight.toFixed(1) }} kg</strong>
+      </div>
     </template>
 
     <div style="margin-top:20px;">
@@ -136,6 +145,7 @@ import { getProducts } from '../../api/product'
 import { getInventory } from '../../api/inventory'
 import { getPendingDamageRecords, getPendingCount } from '../../api/damageRecord'
 import { getCustomers, getLastPrice } from '../../api/customer'
+import { lineWeightKg, formatWeight } from '../../utils/unit'
 
 export default {
   data() {
@@ -185,6 +195,12 @@ export default {
       const w = this.warehouses.find(wh => wh.id === this.form.warehouseId)
       return !!w && w.type === 'BOX'
         && this.form.type !== 'DAMAGE_OUT' && this.form.type !== 'REPLACEMENT_OUT'
+    },
+    totalWeight() {
+      return this.form.items.reduce((sum, row) => {
+        const w = this.rowWeight(row)
+        return w != null ? sum + w : sum
+      }, 0)
     }
   },
   created() {
@@ -282,6 +298,14 @@ export default {
       return `${p.name}(${p.skuCode}) — 库存:${stock}件`
     },
     addItem() { this.form.items.push({ productId: null, qty: 1, price: 0, _lastPriceTip: null }) },
+    formatWeight,
+    // isBoxMode 时数量按箱计重，否则按个换算（含补发出库、PIECE 仓）；未选仓库时不显示
+    rowWeight(row) {
+      if (!this.form.warehouseId) return null
+      const p = this.productMap[row.productId]
+      if (!p) return null
+      return lineWeightKg(row.qty, p.weightPerBox, p.qtyPerBox, this.isBoxMode)
+    },
     onProductChange(row) {
       const max = this.maxQty(row.productId)
       if (row.qty > max) row.qty = max
