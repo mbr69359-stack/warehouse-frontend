@@ -5,7 +5,7 @@
     <el-card v-if="!isMobile">
       <div style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
         <el-select v-model="query.status" placeholder="状态" clearable style="width:130px;" @change="loadData">
-          <el-option label="草稿" value="DRAFT" /><el-option label="已确认" value="CONFIRMED" />
+          <el-option label="草稿" value="DRAFT" /><el-option label="已确认" value="CONFIRMED" /><el-option label="已作废" value="VOIDED" />
         </el-select>
         <el-date-picker v-model="dateRange" type="daterange" range-separator="至"
           start-placeholder="开始日期" end-placeholder="结束日期" value-format="yyyy-MM-dd"
@@ -20,7 +20,7 @@
         </el-table-column>
         <el-table-column prop="status" label="状态" width="90">
           <template slot-scope="{row}">
-            <el-tag :type="row.status==='CONFIRMED'?'success':'warning'">{{ row.status==='CONFIRMED'?'已确认':'草稿' }}</el-tag>
+            <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" />
@@ -28,7 +28,7 @@
           <template slot-scope="{row}">
             <el-button size="mini" @click="$router.push('/in-orders/'+row.id)">详情</el-button>
             <el-button size="mini" type="success" v-if="row.status==='DRAFT'" @click="openConfirmDialog(row.id)">确认实际数量</el-button>
-            <el-button size="mini" type="danger" @click="handleDelete(row.id, row.status)">删除</el-button>
+            <el-button size="mini" type="danger" v-if="row.status!=='VOIDED'" @click="handleDelete(row.id, row.status)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -71,8 +71,8 @@
               <div class="m-order-no">{{ row.orderNo }}</div>
               <div class="m-order-meta">{{ row.type==='PURCHASE'?'采购入库':'退货入库' }}</div>
             </div>
-            <span class="m-status-badge" :class="row.status==='CONFIRMED'?'success':'pending'">
-              {{ row.status==='CONFIRMED'?'已确认':'待收货' }}
+            <span class="m-status-badge" :class="row.status==='CONFIRMED'?'success':row.status==='VOIDED'?'pending':'warning'">
+              {{ row.status==='CONFIRMED'?'已确认':row.status==='VOIDED'?'已作废':'待收货' }}
             </span>
           </div>
           <div class="m-order-footer">
@@ -88,7 +88,7 @@
                 <span class="material-symbols-outlined" style="font-size:15px;">visibility</span>
                 查看详情
               </button>
-              <button class="m-action-btn danger" @click.stop="handleDelete(row.id, row.status)">
+              <button v-if="row.status!=='VOIDED'" class="m-action-btn danger" @click.stop="handleDelete(row.id, row.status)">
                 <span class="material-symbols-outlined" style="font-size:15px;">delete</span>
                 删除
               </button>
@@ -155,7 +155,8 @@ export default {
       statusTabs: [
         { label: '全部',   value: null },
         { label: '待收货', value: 'DRAFT' },
-        { label: '已确认', value: 'CONFIRMED' }
+        { label: '已确认', value: 'CONFIRMED' },
+        { label: '已作废', value: 'VOIDED' }
       ],
       dialogVisible: false, dialogLoading: false, confirming: false,
       currentOrderId: null, confirmItems: []
@@ -170,6 +171,12 @@ export default {
   },
   created() { this.loadData() },
   methods: {
+    statusTagType(status) {
+      return status === 'CONFIRMED' ? 'success' : status === 'VOIDED' ? 'info' : 'warning'
+    },
+    statusLabel(status) {
+      return status === 'CONFIRMED' ? '已确认' : status === 'VOIDED' ? '已作废' : '草稿'
+    },
     async loadData() {
       this.loading = true
       const r = await getInOrders(this.query).finally(() => { this.loading = false })
@@ -214,11 +221,11 @@ export default {
     },
     async handleDelete(id, status) {
       const msg = status === 'CONFIRMED'
-        ? '删除已确认入库单将回滚对应库存，是否继续？'
+        ? '作废后将冲销库存，单据保留可查，确认作废？'
         : '确认删除该草稿入库单？'
       await this.$confirm(msg, '警告', { type: 'warning' })
       await deleteInOrder(id)
-      this.$message.success('删除成功')
+      this.$message.success(status === 'CONFIRMED' ? '单据已作废' : '删除成功')
       this.loadData()
     }
   }

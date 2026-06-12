@@ -3,8 +3,8 @@
     <div slot="header" style="display:flex;align-items:center;gap:8px;">
       <el-button icon="el-icon-arrow-left" @click="$router.back()" circle size="mini" />
       <span>入库单详情 — {{ order.orderNo }}</span>
-      <el-tag v-if="order.status" :type="order.status==='CONFIRMED'?'success':'warning'" style="margin-left:8px;">
-        {{ order.status==='CONFIRMED'?'已确认':'草稿' }}
+      <el-tag v-if="order.status" :type="statusTagType(order.status)" style="margin-left:8px;">
+        {{ statusLabel(order.status) }}
       </el-tag>
     </div>
 
@@ -81,8 +81,15 @@ export default {
   },
   created() { this.loadData() },
   methods: {
+    statusTagType(status) {
+      return status === 'CONFIRMED' ? 'success' : status === 'VOIDED' ? 'info' : 'warning'
+    },
+    statusLabel(status) {
+      return status === 'CONFIRMED' ? '已确认' : status === 'VOIDED' ? '已作废' : '草稿'
+    },
     subtotal(row) {
-      const qty = this.order.status === 'CONFIRMED' ? (row.actualQty || 0) : (row.planQty || 0)
+      // 已确认/已作废单按实际数量计算，草稿按计划数量
+      const qty = this.order.status === 'DRAFT' ? (row.planQty || 0) : (row.actualQty || 0)
       return (Math.round(qty * Number(row.price || 0) * 100) / 100).toFixed(2)
     },
     async loadData() {
