@@ -51,6 +51,7 @@
       <el-menu-item index="/report/product-profit">商品毛利分析</el-menu-item>
       <el-menu-item index="/report/damage">破损损耗报表</el-menu-item>
       <el-menu-item index="/report/cost-history">成本价历史</el-menu-item>
+      <el-menu-item v-if="isAdmin" index="/report/audit">库存对账</el-menu-item>
     </el-submenu>
 
     <el-menu-item index="/expenses"><i class="el-icon-money"></i><span slot="title">费用管理</span></el-menu-item>

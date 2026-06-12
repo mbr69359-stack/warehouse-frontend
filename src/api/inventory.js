@@ -4,6 +4,8 @@ export const getAlerts = params => request.get('/inventory/alerts', { params })
 export const submitCheck = data => request.post('/inventory/check', data)
 export const setAlertQty = data => request.put('/inventory/alert', data)
 export const getInventoryStats = () => request.get('/inventory/stats')
+export const getInventoryAudit = () => request.get('/inventory/audit')
+export const rebuildInventoryAudit = () => request.post('/inventory/audit/rebuild')
 export const getInventoryChart = params => request.get('/inventory/chart', { params })
 export const importInventory = file => {
   const form = new FormData()
