@@ -3,8 +3,8 @@
     <div slot="header" style="display:flex;align-items:center;gap:8px;">
       <el-button icon="el-icon-arrow-left" @click="$router.back()" circle size="mini" />
       <span>出库单详情 — {{ order.orderNo }}</span>
-      <el-tag v-if="order.status" :type="order.status==='CONFIRMED'?'success':'warning'" style="margin-left:8px;">
-        {{ order.status==='CONFIRMED'?'已确认':'草稿' }}
+      <el-tag v-if="order.status" :type="statusTagType(order.status)" style="margin-left:8px;">
+        {{ statusLabel(order.status) }}
       </el-tag>
     </div>
     <el-descriptions :column="3" border style="margin-bottom:16px;">
@@ -91,8 +91,15 @@ export default {
       const map = { SALE: '销售出库', TRANSFER: '调拨出库', DAMAGE_OUT: '损坏出库', REPLACEMENT_OUT: '补发出库' }
       return map[type] || type || '—'
     },
+    statusTagType(status) {
+      return status === 'CONFIRMED' ? 'success' : status === 'VOIDED' ? 'info' : 'warning'
+    },
+    statusLabel(status) {
+      return status === 'CONFIRMED' ? '已确认' : status === 'VOIDED' ? '已作废' : '草稿'
+    },
     subtotal(row) {
-      const qty = this.order.status === 'CONFIRMED' ? (row.actualQty || 0) : (row.qty || 0)
+      // 已确认/已作废单按实际数量计算，草稿按计划数量
+      const qty = this.order.status === 'DRAFT' ? (row.qty || 0) : (row.actualQty || 0)
       return (Math.round(qty * Number(row.price || 0) * 100) / 100).toFixed(2)
     },
     async loadData() {
@@ -121,11 +128,11 @@ export default {
     printOrder() {
       const typeMap = { SALE: '销售出库', TRANSFER: '调拨出库', DAMAGE_OUT: '损坏出库', REPLACEMENT_OUT: '补发出库' }
       const total = this.items.reduce((s, r) => {
-        const qty = this.order.status === 'CONFIRMED' ? (r.actualQty || 0) : (r.qty || 0)
+        const qty = this.order.status === 'DRAFT' ? (r.qty || 0) : (r.actualQty || 0)
         return s + qty * Number(r.price || 0)
       }, 0)
       const rows = this.items.map(r => {
-        const qty = this.order.status === 'CONFIRMED' ? (r.actualQty || 0) : (r.qty || 0)
+        const qty = this.order.status === 'DRAFT' ? (r.qty || 0) : (r.actualQty || 0)
         const sub = (qty * Number(r.price || 0)).toFixed(2)
         return `<tr>
           <td>${r.productName || r.productId}${r.skuCode ? '<br><small style="color:#888">' + r.skuCode + '</small>' : ''}</td>
@@ -152,7 +159,7 @@ export default {
         </style></head><body>
         <h2>出库单</h2>
         <div style="font-size:13px;color:#555;">单号：<b style="color:#222">${this.order.orderNo}</b>
-          &nbsp;&nbsp;状态：<b style="color:#222">${this.order.status === 'CONFIRMED' ? '已确认' : '草稿'}</b></div>
+          &nbsp;&nbsp;状态：<b style="color:#222">${this.statusLabel(this.order.status)}</b></div>
         <div class="meta">
           <span>仓库<b>${this.warehouseName}</b></span>
           <span>出库类型<b>${typeMap[this.order.type] || this.order.type || '—'}</b></span>
