@@ -20,7 +20,7 @@
       <el-table-column label="箱规" width="140" show-overflow-tooltip>
         <template slot-scope="{row}">
           <span v-if="row.weightPerBox || row.qtyPerBox">
-            {{ row.weightPerBox ? row.weightPerBox + 'kg' : '—' }} / {{ row.qtyPerBox ? row.qtyPerBox + '片' : '—' }}
+            {{ row.weightPerBox ? row.weightPerBox + 'kg' : '—' }} / {{ row.qtyPerBox ? row.qtyPerBox + '个' : '—' }}
           </span>
           <span v-else style="color:#c0c4cc;">未设置</span>
         </template>
@@ -78,7 +78,7 @@
         <el-form-item label="价格" prop="price"><el-input-number v-model="form.price" :precision="2" :min="0" style="width:100%;" /></el-form-item>
         <el-form-item label="成本价"><el-input-number v-model="form.costPrice" :precision="2" :min="0" style="width:100%;" /></el-form-item>
         <el-form-item label="每箱重量(kg)"><el-input-number v-model="form.weightPerBox" :precision="2" :min="0" :placeholder="null" style="width:100%;" /></el-form-item>
-        <el-form-item label="每箱片数"><el-input-number v-model="form.qtyPerBox" :min="0" :precision="0" :placeholder="null" style="width:100%;" /></el-form-item>
+        <el-form-item label="每箱个数"><el-input-number v-model="form.qtyPerBox" :min="0" :precision="0" :placeholder="null" style="width:100%;" /></el-form-item>
         <el-form-item label="状态">
           <el-radio-group v-model="form.status"><el-radio :label="1">上架</el-radio><el-radio :label="0">下架</el-radio></el-radio-group>
         </el-form-item>
@@ -125,7 +125,7 @@ export default {
         if (!valid) return
         if (this.form.id && this.originalQtyPerBox > 0 && this.form.qtyPerBox > 0 && this.form.qtyPerBox !== this.originalQtyPerBox) {
           try {
-            await this.$confirm('每箱片数已修改，历史库存不会自动换算，如有偏差请通过盘点调整。确认保存？', '提示', { type: 'warning' })
+            await this.$confirm('每箱个数已修改，历史库存不会自动换算，如有偏差请通过盘点调整。确认保存？', '提示', { type: 'warning' })
           } catch {
             return
           }

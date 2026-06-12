@@ -158,7 +158,7 @@
         <el-col :span="16">
           <el-card>
             <div slot="header">本月入库 vs 出库趋势</div>
-            <trend-chart :in-data="trendIn" :out-data="trendOut" />
+            <trend-chart :in-data="trendIn" :out-data="trendOut" :unit="displayUnit" />
           </el-card>
         </el-col>
         <el-col :span="8">
@@ -395,12 +395,13 @@ export default {
       pendingDamageCount: 0, pendingOutOrderCount: 0,
       selectedWarehouseId: null,
       warehouseList: [],
-      warehouseSummary: { totalQty: 0, totalBoxCount: 0, totalSkus: 0, alertCount: 0 },
+      warehouseSummary: { totalQty: 0, totalBoxCount: 0, looseCount: 0, totalSkus: 0, alertCount: 0 },
       warehouseInvList: [],
       warehouseInvLoading: false,
-      statsData: { totalQty: 0, totalBoxCount: 0, totalValue: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseBoxQty: 0, maxWarehouseId: null },
+      statsData: { totalQty: 0, totalBoxCount: 0, looseCount: 0, totalValue: 0, maxWarehouseName: '', maxWarehouseQty: 0, maxWarehouseBoxQty: 0, maxWarehouseId: null },
       kpi: { todayOutQty: 0, monthSalesAmount: 0 },
       trendIn: [], trendOut: [],
+      trendRange: { startDate: '', endDate: '' },
       activeChart: null,
       chartData: [],
       chartLoading: false,
@@ -417,6 +418,7 @@ export default {
     const { firstDayOfMonthKe, todayKe } = await import('../utils/time')
     const startDate = firstDayOfMonthKe()
     const endDate = todayKe()
+    this.trendRange = { startDate, endDate }
     getPendingCount().then(r => { this.pendingDamageCount = r.data || 0 }).catch(() => {})
     getDraftOutOrderCount().then(n => { this.pendingOutOrderCount = n })
     getWarehouses().then(r => { this.warehouseList = r.data || [] })
@@ -439,6 +441,7 @@ export default {
     this.statsData = {
       totalQty:           d.totalQty           || 0,
       totalBoxCount:      d.totalBoxCount       || 0,
+      looseCount:         d.looseCount          || 0,
       totalValue:         d.totalValue          || 0,
       maxWarehouseName:   d.maxWarehouseName    || '',
       maxWarehouseQty:    d.maxWarehouseQty     || 0,
@@ -465,7 +468,11 @@ export default {
       return w?.type || null
     },
     formattedTotalQty() {
-      if (this.displayUnit === 'box') return `${this.statsData.totalBoxCount || 0} 箱`
+      if (this.displayUnit === 'box') {
+        const boxes = this.statsData.totalBoxCount || 0
+        const loose = this.statsData.looseCount || 0
+        return loose > 0 ? `${boxes}箱 ${loose}个` : `${boxes} 箱`
+      }
       return `${this.statsData.totalQty || 0} 个`
     },
     formattedMaxWhQty() {
@@ -473,8 +480,11 @@ export default {
       return `${this.statsData.maxWarehouseQty || 0} 个`
     },
     formattedWarehouseTotalQty() {
-      if (this.displayUnit === 'box' && this.selectedWarehouseType === 'BOX')
-        return `${this.warehouseSummary.totalBoxCount || 0} 箱`
+      if (this.displayUnit === 'box') {
+        const boxes = this.warehouseSummary.totalBoxCount || 0
+        const loose = this.warehouseSummary.looseCount || 0
+        return loose > 0 ? `${boxes}箱 ${loose}个` : `${boxes} 箱`
+      }
       return `${this.warehouseSummary.totalQty || 0} 个`
     },
   },
@@ -484,12 +494,9 @@ export default {
       const prod = this.productMap[row.productId]
       const qpb = prod?.qtyPerBox || 48
       if (this.displayUnit === 'piece') return `${qty} 个`
-      if (this.selectedWarehouseType === 'BOX') {
-        const boxes = Math.floor(qty / qpb)
-        const loose = qty % qpb
-        return loose > 0 ? `${boxes}箱 ${loose}个` : `${boxes}箱`
-      }
-      return `${qty} 个`
+      const boxes = Math.floor(qty / qpb)
+      const loose = qty % qpb
+      return loose > 0 ? `${boxes}箱 ${loose}个` : `${boxes}箱`
     },
     formatAmount(val) {
       return (Number(val) || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -514,6 +521,7 @@ export default {
       this.statsData = {
         totalQty:           d.totalQty           || 0,
         totalBoxCount:      d.totalBoxCount       || 0,
+        looseCount:         d.looseCount          || 0,
         totalValue:         d.totalValue          || 0,
         maxWarehouseName:   d.maxWarehouseName    || '',
         maxWarehouseQty:    d.maxWarehouseQty     || 0,
@@ -521,9 +529,16 @@ export default {
         maxWarehouseId:     d.maxWarehouseId      || null
       }
       this.kpi = { todayOutQty: d.todayOutQty || 0, monthSalesAmount: d.monthSalesAmount || 0 }
+      const { startDate, endDate } = this.trendRange
+      const trendWhId = this.selectedWarehouseId || undefined
+      getInReport({ startDate, endDate, warehouseId: trendWhId })
+        .then(r => { this.trendIn = r.data || [] }).catch(() => {})
+      getOutReport({ startDate, endDate, warehouseId: trendWhId })
+        .then(r => { this.trendOut = r.data || [] }).catch(() => {})
       if (this.selectedWarehouseId) {
         this.warehouseSummary = {
           totalQty: d.totalQty || 0, totalBoxCount: d.totalBoxCount || 0,
+          looseCount: d.looseCount || 0,
           totalSkus: d.productCount || 0, alertCount: d.alertCount || 0
         }
         this.warehouseInvLoading = true
