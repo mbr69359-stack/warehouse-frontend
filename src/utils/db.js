@@ -20,12 +20,21 @@ function openDB() {
   })
 }
 
+// 全局唯一幂等键：多设备 localId 会撞号，同步去重必须用 uuid
+export function generateUuid() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`
+}
+
 export async function addPendingLog(entry) {
   const db = await openDB()
   return new Promise((resolve, reject) => {
     const tx = db.transaction('pending_logs', 'readwrite')
     const req = tx.objectStore('pending_logs').add({
       ...entry,
+      uuid: entry.uuid || generateUuid(),
       status: 'PENDING',
       createdAt: new Date().toISOString()
     })
@@ -54,6 +63,22 @@ export async function updateLogStatus(id, status, rejectReason) {
       const record = e.target.result
       record.status = status
       if (rejectReason !== undefined) record.rejectReason = rejectReason
+      store.put(record)
+      tx.oncomplete = resolve
+    }
+    getReq.onerror = e => reject(e.target.error)
+  })
+}
+
+export async function updateLogUuid(id, uuid) {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('pending_logs', 'readwrite')
+    const store = tx.objectStore('pending_logs')
+    const getReq = store.get(id)
+    getReq.onsuccess = e => {
+      const record = e.target.result
+      record.uuid = uuid
       store.put(record)
       tx.oncomplete = resolve
     }

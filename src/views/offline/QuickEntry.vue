@@ -63,7 +63,7 @@
 
 <script>
 import { networkState, refreshCache } from '../../utils/sync'
-import { addPendingLog, getCache } from '../../utils/db'
+import { addPendingLog, getCache, generateUuid } from '../../utils/db'
 import { batchSync } from '../../api/syncApi'
 import { getProducts } from '../../api/product'
 import { getWarehouses } from '../../api/warehouse'
@@ -148,6 +148,7 @@ export default {
         this.saving = true
         try {
           const entry = {
+            uuid: generateUuid(),
             type: this.form.type,
             warehouseId: this.form.warehouseId,
             productId: this.form.productId,

@@ -7,6 +7,23 @@ import { getWarehouses } from '../api/warehouse'
 import { getInventory } from '../api/inventory'
 
 const INV_SYNC_TIME_KEY = 'inv_sync_time'
+const CLIENT_ID_KEY = 'warehouse_sync_client_id'
+
+function createClientId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`
+}
+
+export function getSyncClientId() {
+  let clientId = localStorage.getItem(CLIENT_ID_KEY)
+  if (!clientId) {
+    clientId = createClientId()
+    localStorage.setItem(CLIENT_ID_KEY, clientId)
+  }
+  return clientId
+}
 
 function mergeInventory(existing, delta) {
   const map = new Map((existing || []).map(item => [`${item.warehouseId}-${item.productId}`, item]))
@@ -31,15 +48,22 @@ export async function syncPendingLogs() {
   const pending = logs.filter(l => l.status === 'PENDING')
   if (!pending.length) return { synced: 0, rejected: 0 }
 
+  const clientId = getSyncClientId()
   const payload = pending.map(({ id, type, warehouseId, productId, qty, remark, createdAt }) => ({
-    localId: id, type, warehouseId, productId, qty, remark, createdAt
+    clientId, localId: id, type, warehouseId, productId, qty, remark, createdAt
   }))
 
   const res = await batchSync(payload)
   let synced = 0
   let rejected = 0
-  for (const result of res.data) {
-    const log = pending[result.index]
+  const pendingByLocalId = new Map(pending.map(log => [String(log.id), log]))
+  const handledLogIds = new Set()
+  for (const [fallbackIndex, result] of (res.data || []).entries()) {
+    const hasLocalId = result.localId !== undefined && result.localId !== null
+    const fallbackResultIndex = result.index !== undefined && result.index !== null ? result.index : fallbackIndex
+    const log = hasLocalId ? pendingByLocalId.get(String(result.localId)) : pending[fallbackResultIndex]
+    if (!log || handledLogIds.has(log.id)) continue
+    handledLogIds.add(log.id)
     if (result.success) {
       await updateLogStatus(log.id, 'SYNCED', undefined)
       synced++
