@@ -77,7 +77,9 @@
         <el-table-column label="当前库存" width="130" align="center">
           <template slot-scope="{row}">{{ formatQty(row) }}</template>
         </el-table-column>
-        <el-table-column prop="alertQty" label="预警值" width="100" align="center" />
+        <el-table-column label="预警值" width="110" align="center">
+          <template slot-scope="{row}">{{ formatAlert(row) }}</template>
+        </el-table-column>
         <el-table-column label="状态" width="100" align="center">
           <template slot-scope="{row}">
             <el-tag v-if="row.alertQty > 0 && row.qty < row.alertQty" type="danger">库存不足</el-tag>
@@ -96,8 +98,17 @@
           <el-form-item label="商品">
             <el-input :value="productMap[alertForm.productId]?.name || alertForm.productId" disabled />
           </el-form-item>
-          <el-form-item label="预警库存">
+          <el-form-item label="单位">
+            <el-radio-group v-model="alertUnit" size="small" @change="onAlertUnitChange">
+              <el-radio-button label="piece">按个</el-radio-button>
+              <el-radio-button label="box" :disabled="!alertBoxAllowed">按箱</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item :label="alertUnit === 'box' ? '预警箱数' : '预警库存'">
             <el-input-number v-model="alertForm.alertQty" :min="0" style="width:100%;" />
+            <div v-if="alertUnit === 'box'" style="font-size:12px;color:#909399;line-height:1.6;">
+              = {{ (alertForm.alertQty || 0) * alertQtyPerBox }} 个（每箱 {{ alertQtyPerBox }} 个）
+            </div>
           </el-form-item>
         </el-form>
         <div slot="footer">
@@ -164,7 +175,7 @@
             </div>
             <div class="m-inv-detail-row">
               <span class="m-inv-detail-key">预警值</span>
-              <span class="m-inv-detail-val">{{ row.alertQty || '未设置' }}</span>
+              <span class="m-inv-detail-val">{{ formatAlert(row) }}</span>
             </div>
             <div class="m-inv-detail-row">
               <span class="m-inv-detail-key">更新时间</span>
@@ -201,8 +212,17 @@
           <el-form-item label="商品">
             <el-input :value="productMap[alertForm.productId]?.name || alertForm.productId" disabled />
           </el-form-item>
-          <el-form-item label="预警库存">
+          <el-form-item label="单位">
+            <el-radio-group v-model="alertUnit" size="small" @change="onAlertUnitChange">
+              <el-radio-button label="piece">按个</el-radio-button>
+              <el-radio-button label="box" :disabled="!alertBoxAllowed">按箱</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item :label="alertUnit === 'box' ? '预警箱数' : '预警库存'">
             <el-input-number v-model="alertForm.alertQty" :min="0" style="width:100%;" />
+            <div v-if="alertUnit === 'box'" style="font-size:12px;color:#909399;line-height:1.6;">
+              = {{ (alertForm.alertQty || 0) * alertQtyPerBox }} 个（每箱 {{ alertQtyPerBox }} 个）
+            </div>
           </el-form-item>
         </el-form>
         <div slot="footer">
@@ -230,6 +250,7 @@ export default {
       warehouses: [], warehouseMap: {},
       productMap: {},
       alertDialog: false, alertForm: {},
+      alertUnit: 'piece', alertQtyPerBox: 0, alertBoxAllowed: false,
       query: { current: 1, size: 10, warehouseId: null },
       mobileSearch: '',
       filterChip: null,
@@ -329,6 +350,17 @@ export default {
       const loose = qty % qtyPerBox
       return loose > 0 ? `${boxes}箱 ${loose}个` : `${boxes}箱`
     },
+    formatAlert(row) {
+      const qty = Number(row.alertQty) || 0
+      if (!qty) return '未设置'
+      const wh = this.warehouseMap[row.warehouseId]
+      const qtyPerBox = this.productMap[row.productId]?.qtyPerBox
+      if (this.displayMode === 'piece' || wh?.type === 'PIECE' || !qtyPerBox) return `${qty} 个`
+      const boxes = Math.floor(qty / qtyPerBox)
+      const loose = qty % qtyPerBox
+      if (!boxes) return `${qty} 个`
+      return loose > 0 ? `${boxes}箱 ${loose}个` : `${boxes}箱`
+    },
     onFilter() { this.query.current = 1; this.loadData() },
     prevPage()  { this.query.current--; this.loadData() },
     nextPage()  { this.query.current++; this.loadData() },
@@ -339,11 +371,31 @@ export default {
       this.expandedKey = this.expandedKey === k ? null : k
     },
     setAlert(row) {
-      this.alertForm = { warehouseId: row.warehouseId, productId: row.productId, alertQty: row.alertQty }
+      const wh = this.warehouseMap[row.warehouseId]
+      const qpb = Number(this.productMap[row.productId]?.qtyPerBox) || 0
+      this.alertQtyPerBox = qpb
+      this.alertBoxAllowed = qpb > 0 && wh?.type !== 'PIECE'
+      const cur = Number(row.alertQty) || 0
+      // 按箱查看模式下且现有预警值为整箱时，默认按箱编辑
+      const useBox = this.alertBoxAllowed && this.displayMode === 'box' && cur % qpb === 0
+      this.alertUnit = useBox ? 'box' : 'piece'
+      this.alertForm = {
+        warehouseId: row.warehouseId,
+        productId: row.productId,
+        alertQty: useBox ? cur / qpb : cur
+      }
       this.alertDialog = true
     },
+    onAlertUnitChange(unit) {
+      const qpb = this.alertQtyPerBox
+      if (!qpb) return
+      const v = Number(this.alertForm.alertQty) || 0
+      this.alertForm.alertQty = unit === 'box' ? Math.floor(v / qpb) : v * qpb
+    },
     async saveAlert() {
-      await setAlertQty(this.alertForm)
+      const v = Number(this.alertForm.alertQty) || 0
+      const pieces = this.alertUnit === 'box' ? v * this.alertQtyPerBox : v
+      await setAlertQty({ ...this.alertForm, alertQty: pieces })
       this.$message.success('预警值已更新')
       this.alertDialog = false
       this.loadData()
