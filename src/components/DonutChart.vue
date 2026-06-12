@@ -4,15 +4,18 @@
 
 <script>
 import * as echarts from 'echarts'
+import { formatBoxQty } from '../utils/unit'
 const PALETTE = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452','#9a60b4']
 export default {
   name: 'DonutChart',
   props: {
-    chartData: { type: Array, default: () => [] }
+    chartData: { type: Array, default: () => [] },
+    unit: { type: String, default: 'piece' }
   },
   data() { return { chart: null } },
   watch: {
-    chartData() { this.render() }
+    chartData() { this.render() },
+    unit() { this.render() }
   },
   mounted() {
     this.chart = echarts.init(this.$refs.chartDom)
@@ -27,13 +30,27 @@ export default {
     onResize() { this.chart && this.chart.resize() },
     render() {
       if (!this.chart || !this.chartData.length) return
+      const isBox = this.unit === 'box'
       const sorted = [...this.chartData].sort((a, b) => (b.qty || 0) - (a.qty || 0))
       const top  = sorted.slice(0, 7)
       const rest = sorted.slice(7)
-      const series = top.map(d => ({ name: d.productName, value: d.qty }))
-      if (rest.length) series.push({ name: '其他', value: rest.reduce((s, d) => s + (d.qty || 0), 0) })
+      const series = top.map(d => {
+        const f = isBox ? formatBoxQty(d.qty || 0, d.qtyPerBox) : { value: d.qty || 0, text: `${d.qty || 0}个` }
+        return { name: d.productName, value: f.value, text: f.text }
+      })
+      if (rest.length) {
+        const restValue = rest.reduce((s, d) => {
+          const f = isBox ? formatBoxQty(d.qty || 0, d.qtyPerBox) : { value: d.qty || 0 }
+          return s + f.value
+        }, 0)
+        series.push({
+          name: '其他',
+          value: Number(restValue.toFixed(1)),
+          text: isBox ? `约${restValue.toFixed(1)}箱` : `${restValue}个`
+        })
+      }
       this.chart.setOption({
-        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        tooltip: { trigger: 'item', formatter: p => `${p.name}: ${p.data.text} (${p.percent}%)` },
         legend: {
           orient: 'vertical', right: '4%', top: 'center',
           formatter: n => n.length > 7 ? n.slice(0, 7) + '…' : n,

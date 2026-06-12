@@ -56,7 +56,8 @@
         </el-tabs>
         <div v-loading="chartLoading">
           <inventory-bar-chart
-            :chart-data="chartData"
+            :chart-data="enrichedChartData"
+            :unit="displayMode"
             :title="chartTab === 'all' ? '全部商品库存' : ''"
             :warehouses="warehouses"
             :show-warehouse-select="chartTab === 'warehouse'"
@@ -249,6 +250,12 @@ export default {
     displayMode: {
       get() { return this.$store.state.displayUnit },
       set(v) { this.$store.commit('SET_DISPLAY_UNIT', v) }
+    },
+    enrichedChartData() {
+      return (this.chartData || []).map(d => ({
+        ...d,
+        qtyPerBox: this.productMap[d.productId]?.qtyPerBox || 0
+      }))
     },
     filteredList() {
       let arr = this.list

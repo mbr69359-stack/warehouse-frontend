@@ -12,6 +12,7 @@
 
 <script>
 import * as echarts from 'echarts'
+import { formatBoxQty } from '../utils/unit'
 
 const PALETTE = ['#dde3ff', '#c8f5ec', '#ffe0d6', '#f0d9f8', '#ffe8c2', '#b3e9ff']
 const LOW_COLOR = '#ffd6d6'
@@ -25,14 +26,16 @@ export default {
     warehouses: { type: Array, default: () => [] },
     showWarehouseSelect: { type: Boolean, default: false },
     height: { type: String, default: '320px' },
-    horizontal: { type: Boolean, default: false }
+    horizontal: { type: Boolean, default: false },
+    unit: { type: String, default: 'piece' }
   },
   emits: ['warehouse-change'],
   data() {
     return { selectedWarehouseId: null, chart: null }
   },
   watch: {
-    chartData() { this.renderChart() }
+    chartData() { this.renderChart() },
+    unit() { this.renderChart() }
   },
   mounted() {
     this.chart = echarts.init(this.$refs.chartDom)
@@ -48,28 +51,34 @@ export default {
     onWarehouseChange(val) { this.$emit('warehouse-change', val) },
     renderChart() {
       if (!this.chart || !this.chartData.length) return
-      const data = this.chartData
-      const maxQty = Math.max(...data.map(d => d.qty || 0))
+      const isBox = this.unit === 'box'
+      const data = this.chartData.map(d => {
+        const f = isBox ? formatBoxQty(d.qty || 0, d.qtyPerBox) : { value: d.qty || 0, text: String(d.qty || 0) }
+        return { ...d, value: f.value, text: f.text }
+      })
+      const maxQty = Math.max(...data.map(d => d.value || 0))
       const names = data.map(d => d.isLow ? `⚠ ${d.productName}` : d.productName)
       const values = data.map((d, i) => ({
-        value: d.qty,
+        value: d.value,
         itemStyle: {
           color: d.isLow ? LOW_COLOR : PALETTE[i % PALETTE.length],
           barBorderRadius: this.horizontal ? [0, 6, 6, 0] : [6, 6, 0, 0]
         },
         label: {
           position: this.horizontal
-            ? (maxQty > 0 && d.qty / maxQty < 0.1 ? 'right' : 'inside')
-            : (maxQty > 0 && d.qty / maxQty < 0.1 ? 'top' : 'inside'),
+            ? (maxQty > 0 && d.value / maxQty < 0.1 ? 'right' : 'inside')
+            : (maxQty > 0 && d.value / maxQty < 0.1 ? 'top' : 'inside'),
           color: LABEL_COLOR
         }
       }))
+      const labelFmt = p => data[p.dataIndex].text
+      const tooltipFmt = ps => ps.map(p => `${p.marker}${p.name}: ${data[p.dataIndex].text}`).join('<br/>')
 
       const option = this.horizontal ? {
         title: this.title ? { text: this.title, left: 'center', textStyle: { fontSize: 14 } } : undefined,
-        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFmt },
         grid: { left: '2%', right: '8%', top: '4%', bottom: '4%', containLabel: true },
-        xAxis: { type: 'value', name: '数量' },
+        xAxis: { type: 'value', name: isBox ? '数量(箱)' : '数量' },
         yAxis: {
           type: 'category',
           data: names,
@@ -83,7 +92,7 @@ export default {
         series: [{
           type: 'bar',
           data: values,
-          label: { show: true, formatter: p => p.value, fontWeight: 700 },
+          label: { show: true, formatter: labelFmt, fontWeight: 700 },
           animationType: 'scale',
           animationEasing: 'elasticOut',
           animationDuration: 800,
@@ -91,7 +100,7 @@ export default {
         }]
       } : {
         title: this.title ? { text: this.title, left: 'center', textStyle: { fontSize: 14 } } : undefined,
-        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: tooltipFmt },
         grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
         xAxis: {
           type: 'category',
@@ -103,11 +112,11 @@ export default {
             formatter: v => v
           }
         },
-        yAxis: { type: 'value', name: '数量' },
+        yAxis: { type: 'value', name: isBox ? '数量(箱)' : '数量' },
         series: [{
           type: 'bar',
           data: values,
-          label: { show: true, formatter: p => p.value, fontWeight: 700 },
+          label: { show: true, formatter: labelFmt, fontWeight: 700 },
           animationType: 'scale',
           animationEasing: 'elasticOut',
           animationDuration: 800,

@@ -115,9 +115,8 @@ export default {
     formatChangeQty(row) {
       const qty = Number(row.changeQty) || 0
       const qtyUnit = row.qtyUnit || 'PIECE'
-      const wh = this.warehouseMap[row.warehouseId]
-      const prod = this.productMap[row.productId]
-      const qtyPerBox = prod?.qtyPerBox
+      const whType = row.warehouseType || this.warehouseMap[row.warehouseId]?.type
+      const qtyPerBox = Number(row.qtyPerBox || this.productMap[row.productId]?.qtyPerBox) || 0
       const sign = qty >= 0 ? '+' : ''
       if (this.displayMode === 'piece') {
         if (qtyUnit === 'BOX') {
@@ -126,14 +125,15 @@ export default {
         }
         return `${sign}${qty} 个`
       } else {
-        if (wh?.type === 'PIECE') return `${sign}${qty} 个`
+        if (whType === 'PIECE') return `${sign}${qty} 个`
         if (qtyUnit === 'BOX') return `${sign}${qty} 箱`
         if (!qtyPerBox) return `${sign}${qty} 个⚠️`
         const abs = Math.abs(qty)
         const prefix = qty < 0 ? '-' : '+'
         const boxes = Math.floor(abs / qtyPerBox)
         const loose = abs % qtyPerBox
-        return loose > 0 ? `${prefix}${boxes}箱 ${loose}个` : `${prefix}${boxes}箱`
+        if (boxes === 0) return `${prefix}${loose} 个`
+        return loose > 0 ? `${prefix}${boxes}箱零${loose}个` : `${prefix}${boxes}箱`
       }
     },
     handleExport() {

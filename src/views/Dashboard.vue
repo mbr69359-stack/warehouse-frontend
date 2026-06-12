@@ -149,7 +149,7 @@
       <!-- 展开图表区（带过渡动画） -->
       <transition name="chart-slide" mode="out-in">
         <el-card v-if="activeChart" :key="activeChart" style="margin-bottom:20px;" v-loading="chartLoading">
-          <inventory-bar-chart :chart-data="chartData" :horizontal="true"
+          <inventory-bar-chart :chart-data="enrichedChartData" :horizontal="true" :unit="displayUnit"
             :title="activeChart === 'total' ? '全部库存分布' : statsData.maxWarehouseName + ' 库存分布'" />
         </el-card>
       </transition>
@@ -164,7 +164,7 @@
         <el-col :span="8">
           <el-card>
             <div slot="header">库存商品占比</div>
-            <donut-chart :chart-data="chartData" />
+            <donut-chart :chart-data="enrichedChartData" :unit="displayUnit" />
           </el-card>
         </el-col>
       </el-row>
@@ -463,6 +463,12 @@ export default {
       return w ? w.name : '仓库'
     },
     displayUnit() { return this.$store.state.displayUnit },
+    enrichedChartData() {
+      return (this.chartData || []).map(d => ({
+        ...d,
+        qtyPerBox: this.productMap[d.productId]?.qtyPerBox || 0
+      }))
+    },
     selectedWarehouseType() {
       const w = this.warehouseList.find(w => w.id === this.selectedWarehouseId)
       return w?.type || null

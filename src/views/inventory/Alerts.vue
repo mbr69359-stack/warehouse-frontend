@@ -23,7 +23,7 @@
 
     <!-- 图表视图 -->
     <div v-if="viewMode === 'chart'" v-loading="loading">
-      <inventory-bar-chart v-if="alertChartData.length" :chart-data="alertChartData" title="库存预警商品" height="360px" />
+      <inventory-bar-chart v-if="alertChartData.length" :chart-data="alertChartData" :unit="displayMode" title="库存预警商品" height="360px" />
       <el-empty v-else-if="!loading" description="当前没有库存预警" />
     </div>
 
@@ -103,6 +103,7 @@ export default {
         productId: row.productId,
         productName: this.productMap[row.productId]?.name || `商品#${row.productId}`,
         qty: row.qty,
+        qtyPerBox: this.productMap[row.productId]?.qtyPerBox || 0,
         alertQty: row.alertQty,
         isLow: true
       }))
