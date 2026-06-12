@@ -14,9 +14,11 @@
         </template>
       </el-table-column>
       <el-table-column prop="createdAt" label="创建时间" width="170" />
-      <el-table-column label="操作" width="220" align="center">
+      <el-table-column label="操作" width="300" align="center">
         <template slot-scope="{row}">
           <el-button size="mini" type="primary" plain @click="openDetail(row)">查看明细</el-button>
+          <el-button v-if="row.status === 'DRAFT'" size="mini" type="danger" plain
+            @click="handleDelete(row)">删除草稿</el-button>
           <!-- 步骤一：退货未入库 -->
           <el-button v-if="row.status === 'DRAFT'" size="mini" type="warning"
             @click="openInbound(row)">确认退货入库</el-button>
@@ -164,7 +166,8 @@ import {
   getCustomerReturnItems,
   getCustomerReturnInOrderItems,
   confirmCustomerReturnInbound,
-  confirmCustomerReturn
+  confirmCustomerReturn,
+  deleteCustomerReturn
 } from '../../api/customerReturn'
 import { getOutOrderItems } from '../../api/outOrder'
 import { getInventory } from '../../api/inventory'
@@ -225,6 +228,20 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+    async handleDelete(row) {
+      try {
+        await this.$confirm(
+          `确认删除退换货草稿 ${row.exchangeNo}？关联的退货入库草稿和补发出库草稿也会一起删除。`,
+          '删除确认',
+          { type: 'warning' }
+        )
+      } catch {
+        return
+      }
+      await deleteCustomerReturn(row.id)
+      this.$message.success('草稿已删除')
+      this.loadData()
     },
 
     // 新建

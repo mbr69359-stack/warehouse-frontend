@@ -5,3 +5,4 @@ export const getCustomerReturnItems = id => request.get(`/customer-returns/${id}
 export const getCustomerReturnInOrderItems = id => request.get(`/customer-returns/${id}/in-order-items`)
 export const confirmCustomerReturnInbound = (id, items) => request.post(`/customer-returns/${id}/confirm-inbound`, items)
 export const confirmCustomerReturn = (id, items) => request.post(`/customer-returns/${id}/confirm`, items)
+export const deleteCustomerReturn = id => request.delete(`/customer-returns/${id}`)
