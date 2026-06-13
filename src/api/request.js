@@ -25,6 +25,10 @@ function handleUnauthorized() {
 
 request.interceptors.response.use(
   res => {
+    // 文件下载等二进制响应：直接返回完整响应，跳过 JSON 业务码校验
+    if (res.config.responseType === 'blob' || res.data instanceof Blob) {
+      return res
+    }
     const data = res.data
     if (data.code === 401) {
       handleUnauthorized()
