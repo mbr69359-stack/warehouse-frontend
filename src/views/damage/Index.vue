@@ -29,7 +29,7 @@
       <el-table-column label="成本核销" width="110" align="right">
         <template slot-scope="{row}">
           <span v-if="row.costDeduction != null" style="color:#F56C6C;">
-            ¥{{ Number(row.costDeduction).toFixed(2) }}
+            KSh {{ Number(row.costDeduction).toFixed(2) }}
           </span>
           <span v-else style="color:#C0C4CC;">—</span>
         </template>
@@ -42,7 +42,7 @@
       </el-table-column>
       <el-table-column label="零售定价" width="100" align="right">
         <template slot-scope="{row}">
-          <span v-if="row.transferPrice != null">¥{{ Number(row.transferPrice).toFixed(2) }}</span>
+          <span v-if="row.transferPrice != null">KSh {{ Number(row.transferPrice).toFixed(2) }}</span>
           <span v-else style="color:#C0C4CC;">—</span>
         </template>
       </el-table-column>
@@ -132,9 +132,9 @@
         <template v-if="transferRow.productQtyPerBox">
           <div>
             成本核销：<span style="color:#F56C6C;">
-              ¥{{ (transferRow.qty * (transferRow.productCostPrice || 0)).toFixed(2) }}
+              KSh {{ (transferRow.qty * (transferRow.productCostPrice || 0)).toFixed(2) }}
             </span>
-            （{{ transferRow.qty }} 个 × ¥{{ Number(transferRow.productCostPrice || 0).toFixed(2) }}）
+            （{{ transferRow.qty }} 个 × KSh {{ Number(transferRow.productCostPrice || 0).toFixed(2) }}）
           </div>
           <div>
             好货数量：<span style="color:#67C23A;">{{ transferRow.productQtyPerBox - transferRow.qty }} 个</span>
@@ -333,7 +333,7 @@ export default {
       const cost = Number(row.productCostPrice || 0)
       const loss = (row.qty * cost).toFixed(2)
       await this.$confirm(
-        `确认将「${row.productName}」按损坏报废出库 ${this.fmtQty(row.qty, row.warehouseId, row.productId)}？损耗 ¥${loss}，此操作不可撤销。`,
+        `确认将「${row.productName}」按损坏报废出库 ${this.fmtQty(row.qty, row.warehouseId, row.productId)}？损耗 KSh ${loss}，此操作不可撤销。`,
         '损坏出库', { type: 'warning' })
       await writeOffDamageRecord(row.id)
       this.$message.success('损坏出库成功')

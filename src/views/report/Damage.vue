@@ -28,11 +28,11 @@
           </template>
         </el-table-column>
         <el-table-column label="成本价" width="90" align="right">
-          <template slot-scope="{row}">¥{{ fmt(row.costPrice) }}</template>
+          <template slot-scope="{row}">KSh {{ fmt(row.costPrice) }}</template>
         </el-table-column>
         <el-table-column label="损耗金额" width="100" align="right">
           <template slot-scope="{row}">
-            <span style="color:#F56C6C;">¥{{ fmt(row.costDeduction) }}</span>
+            <span style="color:#F56C6C;">KSh {{ fmt(row.costDeduction) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="好货调拨" width="90" align="right">
@@ -46,7 +46,7 @@
         </el-table-column>
         <el-table-column label="零售定价" width="90" align="right">
           <template slot-scope="{row}">
-            <span v-if="row.transferPrice">¥{{ fmt(row.transferPrice) }}</span>
+            <span v-if="row.transferPrice">KSh {{ fmt(row.transferPrice) }}</span>
             <span v-else style="color:#999;">—</span>
           </template>
         </el-table-column>
@@ -98,7 +98,7 @@ export default {
         const sumMap = { 3: 'damagedQty', 5: 'costDeduction', 6: 'goodQty' }
         if (!sumMap[i]) return ''
         const sum = data.reduce((s, r) => s + Number(r[sumMap[i]] || 0), 0)
-        return i === 5 ? '¥' + sum.toFixed(2) : sum
+        return i === 5 ? 'KSh ' + sum.toFixed(2) : sum
       })
     },
     handleExport() {
