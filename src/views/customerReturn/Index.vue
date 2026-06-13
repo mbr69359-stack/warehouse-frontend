@@ -14,10 +14,12 @@
         </template>
       </el-table-column>
       <el-table-column prop="createdAt" label="创建时间" width="170" />
-      <el-table-column label="操作" width="300" align="center">
+      <el-table-column label="操作" width="360" align="center">
         <template slot-scope="{row}">
           <div class="customer-return-actions">
             <el-button size="mini" type="primary" plain @click="openDetail(row)">查看明细</el-button>
+            <el-button v-if="row.status === 'DRAFT'" size="mini" type="primary"
+              @click="openEdit(row)">编辑</el-button>
             <el-button v-if="row.status === 'DRAFT'" size="mini" type="danger" plain
               @click="handleDelete(row)">删除草稿</el-button>
             <!-- 步骤一：退货未入库 -->
@@ -37,7 +39,7 @@
       @current-change="loadData" />
 
     <!-- 新建退换货弹窗 -->
-    <el-dialog title="新建退换货" :visible.sync="createVisible" width="640px" @close="resetCreateForm">
+    <el-dialog :title="editId ? '编辑退换货' : '新建退换货'" :visible.sync="createVisible" width="640px" @close="resetCreateForm">
       <el-form :model="createForm" :rules="createRules" ref="createForm" label-width="80px">
         <el-form-item label="仓库" prop="warehouseId">
           <el-select v-model="createForm.warehouseId" placeholder="请选择仓库" style="width:100%;">
@@ -75,7 +77,7 @@
 
       <div slot="footer">
         <el-button @click="createVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="handleCreate">提交</el-button>
+        <el-button type="primary" :loading="saving" @click="handleCreate">{{ editId ? '保存修改' : '提交' }}</el-button>
       </div>
     </el-dialog>
 
@@ -165,6 +167,7 @@
 import {
   getCustomerReturns,
   createCustomerReturn,
+  updateCustomerReturn,
   getCustomerReturnItems,
   getCustomerReturnInOrderItems,
   confirmCustomerReturnInbound,
@@ -186,6 +189,7 @@ export default {
       // 新建
       createVisible: false,
       saving: false,
+      editId: null,
       createForm: { warehouseId: null, items: [] },
       createRules: {
         warehouseId: [{ required: true, message: '请选择仓库', trigger: 'change' }]
@@ -248,8 +252,21 @@ export default {
 
     // 新建
     openCreate() {
-      this.createForm = { warehouseId: null, items: [] }
+      this.editId = null
+      this.createForm = { warehouseId: null, remark: '', items: [] }
       this.products = []
+      this.createVisible = true
+    },
+    async openEdit(row) {
+      this.editId = row.id
+      const pr = await getProducts({ current: 1, size: 1000 })
+      this.products = pr.data.records || []
+      const r = await getCustomerReturnItems(row.id)
+      this.createForm = {
+        warehouseId: row.warehouseId,
+        remark: row.remark || '',
+        items: (r.data || []).map(it => ({ productId: it.productId, qty: it.qty }))
+      }
       this.createVisible = true
     },
     resetCreateForm() {
@@ -282,8 +299,13 @@ export default {
         }
         this.saving = true
         try {
-          await createCustomerReturn(this.createForm)
-          this.$message.success('退换货单创建成功，请确认退货入库')
+          if (this.editId) {
+            await updateCustomerReturn(this.editId, this.createForm)
+            this.$message.success('退换货单修改成功')
+          } else {
+            await createCustomerReturn(this.createForm)
+            this.$message.success('退换货单创建成功，请确认退货入库')
+          }
           this.createVisible = false
           this.loadData()
         } finally {
