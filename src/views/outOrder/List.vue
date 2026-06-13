@@ -41,9 +41,12 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="170" />
-        <el-table-column label="操作" width="260">
+        <el-table-column label="操作" width="320">
           <template slot-scope="{row}">
             <el-button size="mini" @click="$router.push('/out-orders/'+row.id)">详情</el-button>
+            <el-button size="mini" type="primary"
+              v-if="row.status==='DRAFT' && (row.type==='SALE' || row.type==='TRANSFER')"
+              @click="$router.push('/out-orders/edit/'+row.id)">编辑</el-button>
             <el-button size="mini" type="danger" v-if="row.status==='DRAFT'" @click="openConfirmDialog(row.id)">确认实际数量</el-button>
             <el-button size="mini" type="danger" v-if="row.status!=='VOIDED'" @click="handleDelete(row.id, row.status)">删除</el-button>
           </template>

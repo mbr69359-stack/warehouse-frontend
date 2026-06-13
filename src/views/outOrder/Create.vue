@@ -2,7 +2,7 @@
   <el-card>
     <div slot="header" style="display:flex;align-items:center;gap:8px;">
       <el-button icon="el-icon-arrow-left" @click="$router.back()" circle size="mini" />
-      <span>新建出库单</span>
+      <span>{{ editId ? '编辑出库单' : '新建出库单' }}</span>
     </div>
 
     <el-alert v-if="pendingCount > 0"
@@ -132,14 +132,14 @@
     </template>
 
     <div style="margin-top:20px;">
-      <el-button type="primary" :loading="saving" @click="handleSave">保存草稿</el-button>
+      <el-button type="primary" :loading="saving" @click="handleSave">{{ editId ? '保存修改' : '保存草稿' }}</el-button>
       <el-button @click="$router.back()">取消</el-button>
     </div>
   </el-card>
 </template>
 
 <script>
-import { createOutOrder } from '../../api/outOrder'
+import { createOutOrder, getOutOrder, getOutOrderItems, updateOutOrder } from '../../api/outOrder'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 import { getInventory } from '../../api/inventory'
@@ -151,6 +151,7 @@ export default {
   data() {
     return {
       saving: false,
+      editId: null,
       // 客户列表（用于下拉选择）
       customers: [],
       customersLoading: false,
@@ -205,8 +206,9 @@ export default {
   },
   created() {
     getWarehouses().then(r => { this.warehouses = r.data })
-    // 预加载客户列表（最多200条）
     getCustomers({ current: 1, size: 200 }).then(r => { this.customers = r.data.records || [] })
+    const id = this.$route.params.id
+    if (id) { this.editId = Number(id); this.loadForEdit(this.editId) }
   },
   methods: {
     searchProducts(query) {
@@ -324,6 +326,24 @@ export default {
         row._lastPriceTip = null
       }
     },
+    async loadForEdit(id) {
+      // 预载商品列表，保证明细里已选商品能在远程下拉中显示名称/库存/箱规
+      const pr = await getProducts({ current: 1, size: 1000 })
+      this.products = pr.data.records || []
+      const r = await getOutOrder(id)
+      const o = r.data
+      this.form.warehouseId = o.warehouseId
+      this.form.type = o.type
+      this.form.saleChannel = o.saleChannel || null
+      this.form.targetWarehouseId = o.targetWarehouseId || null
+      this.form.remark = o.remark || ''
+      this.form.customerId = o.customerId || null
+      await this.loadAllInventory(o.warehouseId)
+      const ir = await getOutOrderItems(id)
+      this.form.items = (ir.data || []).map(it => ({
+        productId: it.productId, qty: it.qty, price: it.price, _lastPriceTip: null
+      }))
+    },
     handleSave() {
       this.$refs.form.validate(async valid => {
         if (!valid) return
@@ -365,8 +385,13 @@ export default {
         }
         this.saving = true
         try {
-          await createOutOrder(this.form)
-          this.$message.success('出库单创建成功')
+          if (this.editId) {
+            await updateOutOrder(this.editId, this.form)
+            this.$message.success('出库单修改成功')
+          } else {
+            await createOutOrder(this.form)
+            this.$message.success('出库单创建成功')
+          }
           this.$router.push('/out-orders')
         } finally {
           this.saving = false

@@ -23,6 +23,7 @@ const routes = [
       { path: 'in-orders/:id', component: () => import('../views/inOrder/Detail.vue') },
       { path: 'out-orders', component: () => import('../views/outOrder/List.vue') },
       { path: 'out-orders/create', component: () => import('../views/outOrder/Create.vue') },
+      { path: 'out-orders/edit/:id', component: () => import('../views/outOrder/Create.vue') },
       { path: 'out-orders/:id', component: () => import('../views/outOrder/Detail.vue') },
       { path: 'inventory', component: () => import('../views/inventory/List.vue') },
       { path: 'inventory/alerts', component: () => import('../views/inventory/Alerts.vue') },
