@@ -80,6 +80,7 @@
 import { getOutOrder, confirmOutOrder, getOutOrderItems } from '../../api/outOrder'
 import { getWarehouses } from '../../api/warehouse'
 import { lineWeightKg, formatWeight } from '../../utils/unit'
+import { printOrderDocument } from '../../utils/printOrder'
 export default {
   data() {
     return {
@@ -172,59 +173,25 @@ export default {
     },
     printOrder() {
       const typeMap = { SALE: '销售出库', TRANSFER: '调拨出库', DAMAGE_OUT: '损坏出库', REPLACEMENT_OUT: '补发出库' }
-      const totals = this.totals
-      const boxSuffix = this.qtyIsBox ? '(箱)' : ''
-      const rows = this.items.map(r => {
-        const qty = this.effectiveQty(r)
-        const sub = (qty * Number(r.price || 0)).toFixed(2)
-        const w = this.rowWeight(r)
-        return `<tr>
-          <td>${r.productName || r.productId}${r.skuCode ? '<br><small style="color:#888">' + r.skuCode + '</small>' : ''}</td>
-          <td style="text-align:center">${r.qty}</td>
-          <td style="text-align:center">${r.actualQty ?? '—'}</td>
-          <td style="text-align:right">KSh ${Number(r.price || 0).toFixed(2)}</td>
-          <td style="text-align:right">${w != null ? w.toFixed(1) + ' kg' : '—'}</td>
-          <td style="text-align:right">KSh ${sub}</td>
-        </tr>`
-      }).join('')
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
-        <title>出库单 ${this.order.orderNo}</title>
-        <style>
-          body { font-family: "Microsoft YaHei", sans-serif; padding: 32px; color: #222; }
-          h2 { margin: 0 0 4px; font-size: 20px; }
-          .meta { display: flex; gap: 40px; margin: 16px 0; font-size: 13px; color: #555; }
-          .meta span { display: flex; flex-direction: column; }
-          .meta b { font-size: 14px; color: #222; margin-top: 2px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
-          th { background: #f5f5f5; padding: 8px 10px; border: 1px solid #ddd; text-align: left; }
-          td { padding: 8px 10px; border: 1px solid #ddd; }
-          .total { text-align: right; margin-top: 12px; font-size: 15px; font-weight: bold; }
-          .footer { margin-top: 40px; display: flex; justify-content: space-between; font-size: 12px; color: #888; }
-          @media print { @page { margin: 15mm; } }
-        </style></head><body>
-        <h2>出库单</h2>
-        <div style="font-size:13px;color:#555;">单号：<b style="color:#222">${this.order.orderNo}</b>
-          &nbsp;&nbsp;状态：<b style="color:#222">${this.statusLabel(this.order.status)}</b></div>
-        <div class="meta">
-          <span>仓库<b>${this.warehouseName}</b></span>
-          <span>出库类型<b>${typeMap[this.order.type] || this.order.type || '—'}</b></span>
-          <span>创建时间<b>${this.order.createTime || '—'}</b></span>
-          <span>确认时间<b>${this.order.confirmTime || '—'}</b></span>
-        </div>
-        <table>
-          <thead><tr><th>商品</th><th style="text-align:center">计划数量${boxSuffix}</th><th style="text-align:center">实际数量${boxSuffix}</th><th style="text-align:right">单价</th><th style="text-align:right">重量</th><th style="text-align:right">小计</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-        <div class="total">${this.qtyIsBox ? '总箱数：' + totals.boxes + ' 箱&nbsp;&nbsp;' : ''}总件数：${totals.pieces != null ? totals.pieces + ' 个' : '—'}&nbsp;&nbsp;总重量：${totals.weight != null ? totals.weight.toFixed(1) + ' kg' : '—'}&nbsp;&nbsp;合计金额：KSh ${totals.amount.toFixed(2)}</div>
-        <div class="footer">
-          <span>备注：${this.order.remark || '无'}</span>
-          <span>打印时间：${new Date().toLocaleString('zh-CN', { timeZone: 'Africa/Nairobi' })}</span>
-        </div>
-        <script>window.onload=()=>{window.print();}<\/script>
-      </body></html>`
-      const w = window.open('', '_blank', 'width=800,height=600')
-      w.document.write(html)
-      w.document.close()
+      printOrderDocument({
+        docLabel: '出库单',
+        typeFieldLabel: '出库类型',
+        typeText: typeMap[this.order.type] || this.order.type || '—',
+        statusText: this.statusLabel(this.order.status),
+        warehouseName: this.warehouseName,
+        qtyIsBox: this.qtyIsBox,
+        order: this.order,
+        totals: this.totals,
+        rows: this.items.map(r => ({
+          name: r.productName || r.productId,
+          sku: r.skuCode,
+          planQty: r.qty,
+          actualQty: r.actualQty,
+          price: Number(r.price || 0),
+          weightKg: this.rowWeight(r),
+          subtotal: this.effectiveQty(r) * Number(r.price || 0)
+        }))
+      })
     },
     async submitConfirm() {
       this.confirming = true
