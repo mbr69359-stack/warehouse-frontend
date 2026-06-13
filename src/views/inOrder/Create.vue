@@ -2,7 +2,7 @@
   <el-card>
     <div slot="header" style="display:flex;align-items:center;gap:8px;">
       <el-button icon="el-icon-arrow-left" @click="$router.back()" circle size="mini" />
-      <span>新建入库单</span>
+      <span>{{ editId ? '编辑入库单' : '新建入库单' }}</span>
     </div>
     <el-form :model="form" :rules="rules" ref="form" label-width="100px" style="max-width:600px;">
       <el-form-item label="仓库" prop="warehouseId">
@@ -58,14 +58,14 @@
       预计入库总重量：<strong>{{ totalWeight.toFixed(1) }} kg</strong>
     </div>
     <div style="margin-top:20px;">
-      <el-button type="primary" :loading="saving" @click="handleSave">保存草稿</el-button>
+      <el-button type="primary" :loading="saving" @click="handleSave">{{ editId ? '保存修改' : '保存草稿' }}</el-button>
       <el-button @click="$router.back()">取消</el-button>
     </div>
   </el-card>
 </template>
 
 <script>
-import { createInOrder } from '../../api/inOrder'
+import { createInOrder, getInOrder, getInOrderItems, updateInOrder } from '../../api/inOrder'
 import { getWarehouses } from '../../api/warehouse'
 import { getSuppliers } from '../../api/supplier'
 import { getProducts } from '../../api/product'
@@ -88,7 +88,7 @@ export default {
   },
   data() {
     return {
-      saving: false, warehouses: [], suppliers: [], products: [], productLoading: false,
+      saving: false, warehouses: [], suppliers: [], products: [], productLoading: false, editId: null,
       form: { warehouseId: null, supplierId: null, type: 'PURCHASE', remark: '', items: [] },
       rules: { warehouseId: [{ required: true, message: '请选择仓库' }], type: [{ required: true, message: '请选择类型' }] }
     }
@@ -96,6 +96,8 @@ export default {
   created() {
     getWarehouses().then(r => { this.warehouses = r.data })
     getSuppliers({ current: 1, size: 100 }).then(r => { this.suppliers = r.data.records })
+    const id = this.$route.params.id
+    if (id) { this.editId = Number(id); this.loadForEdit(this.editId) }
   },
   methods: {
     searchProducts(query) {
@@ -123,6 +125,20 @@ export default {
       return lineWeightKg(row.planQty, p.weightPerBox, p.qtyPerBox, this.selectedWarehouseType === 'BOX')
     },
     addItem() { this.form.items.push({ productId: null, planQty: 0, price: 0 }) },
+    async loadForEdit(id) {
+      const pr = await getProducts({ current: 1, size: 1000 })
+      this.products = pr.data.records || []
+      const r = await getInOrder(id)
+      const o = r.data
+      this.form.warehouseId = o.warehouseId
+      this.form.supplierId = o.supplierId || null
+      this.form.type = o.type
+      this.form.remark = o.remark || ''
+      const ir = await getInOrderItems(id)
+      this.form.items = (ir.data || []).map(it => ({
+        productId: it.productId, planQty: it.planQty, price: it.price
+      }))
+    },
     handleSave() {
       this.$refs.form.validate(async valid => {
         if (!valid) return
@@ -136,8 +152,16 @@ export default {
           return
         }
         this.saving = true
-        try { await createInOrder(this.form); this.$message.success('入库单创建成功'); this.$router.push('/in-orders') }
-        finally { this.saving = false }
+        try {
+          if (this.editId) {
+            await updateInOrder(this.editId, this.form)
+            this.$message.success('入库单修改成功')
+          } else {
+            await createInOrder(this.form)
+            this.$message.success('入库单创建成功')
+          }
+          this.$router.push('/in-orders')
+        } finally { this.saving = false }
       })
     }
   }

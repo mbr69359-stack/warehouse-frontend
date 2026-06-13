@@ -20,6 +20,7 @@ const routes = [
       { path: 'customers/:id', component: () => import('../views/customer/Detail.vue') },
       { path: 'in-orders', component: () => import('../views/inOrder/List.vue') },
       { path: 'in-orders/create', component: () => import('../views/inOrder/Create.vue') },
+      { path: 'in-orders/edit/:id', component: () => import('../views/inOrder/Create.vue') },
       { path: 'in-orders/:id', component: () => import('../views/inOrder/Detail.vue') },
       { path: 'out-orders', component: () => import('../views/outOrder/List.vue') },
       { path: 'out-orders/create', component: () => import('../views/outOrder/Create.vue') },
