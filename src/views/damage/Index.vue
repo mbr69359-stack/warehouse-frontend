@@ -55,10 +55,11 @@
       </el-table-column>
       <el-table-column prop="remark" label="备注" min-width="100" show-overflow-tooltip />
       <el-table-column prop="createdAt" label="登记时间" width="160" />
-      <el-table-column label="操作" width="130" align="center">
+      <el-table-column label="操作" width="210" align="center">
         <template slot-scope="{row}">
           <template v-if="row.status === 'PENDING'">
             <el-button size="mini" type="primary" @click="openTransfer(row)">调拨</el-button>
+            <el-button size="mini" type="warning" @click="handleWriteOff(row)">损坏出库</el-button>
             <el-button size="mini" type="danger" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </template>
@@ -98,8 +99,18 @@
               :value="p.id" />
           </el-select>
         </el-form-item>
+        <el-form-item label="登记单位" v-if="createBoxSelectable">
+          <el-radio-group v-model="form.unit" size="small">
+            <el-radio-button label="PIECE">按个</el-radio-button>
+            <el-radio-button label="BOX">按箱</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item label="数量" prop="qty">
           <el-input-number v-model="form.qty" :min="1" style="width:100%;" />
+          <span v-if="createBoxSelectable && form.unit === 'BOX'"
+            style="color:#909399;font-size:12px;margin-left:4px;">
+            = {{ (form.qty || 0) * (createProduct.qtyPerBox || 0) }} 个
+          </span>
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="form.remark" type="textarea" :rows="2" />
@@ -173,7 +184,7 @@
 </template>
 
 <script>
-import { getDamageRecords, createDamageRecord, deleteDamageRecord, transferDamageRecord } from '../../api/damageRecord'
+import { getDamageRecords, createDamageRecord, deleteDamageRecord, transferDamageRecord, writeOffDamageRecord } from '../../api/damageRecord'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 
@@ -186,6 +197,15 @@ export default {
     },
     pieceWarehouses() {
       return this.warehouses.filter(w => w.type === 'PIECE')
+    },
+    createWarehouse() {
+      return this.warehouses.find(w => w.id === this.form.warehouseId)
+    },
+    createProduct() {
+      return this.products.find(p => p.id === this.form.productId) || this.allProductsMap[this.form.productId] || {}
+    },
+    createBoxSelectable() {
+      return this.createWarehouse && this.createWarehouse.type === 'BOX' && this.createProduct.qtyPerBox > 0
     }
   },
   data() {
@@ -198,7 +218,7 @@ export default {
       allProductsMap: {},
       dialogVisible: false,
       saving: false,
-      form: { warehouseId: null, productId: null, qty: 1, remark: '' },
+      form: { warehouseId: null, productId: null, qty: 1, unit: 'PIECE', remark: '' },
       products: [],
       productLoading: false,
       rules: {
@@ -251,7 +271,7 @@ export default {
       this.total = r.data.total
     },
     openCreate() {
-      this.form = { warehouseId: null, productId: null, qty: 1, remark: '' }
+      this.form = { warehouseId: null, productId: null, qty: 1, unit: 'PIECE', remark: '' }
       this.products = []
       this.dialogVisible = true
     },
@@ -273,7 +293,8 @@ export default {
       this.$refs.form.validate(async valid => {
         if (!valid) return
         this.saving = true
-        await createDamageRecord(this.form).finally(() => { this.saving = false })
+        const payload = { ...this.form, unit: this.createBoxSelectable ? this.form.unit : 'PIECE' }
+        await createDamageRecord(payload).finally(() => { this.saving = false })
         this.$message.success('创建成功')
         this.dialogVisible = false
         this.loadData()
@@ -307,6 +328,16 @@ export default {
           this.transferSaving = false
         }
       })
+    },
+    async handleWriteOff(row) {
+      const cost = Number(row.productCostPrice || 0)
+      const loss = (row.qty * cost).toFixed(2)
+      await this.$confirm(
+        `确认将「${row.productName}」按损坏报废出库 ${this.fmtQty(row.qty, row.warehouseId, row.productId)}？损耗 ¥${loss}，此操作不可撤销。`,
+        '损坏出库', { type: 'warning' })
+      await writeOffDamageRecord(row.id)
+      this.$message.success('损坏出库成功')
+      this.loadData()
     }
   }
 }
