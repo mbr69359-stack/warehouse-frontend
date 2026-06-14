@@ -58,14 +58,17 @@
 
 <script>
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../../api/customer'
+import crudList from '../../mixins/crudList'
 
 export default {
+  mixins: [crudList],
   data() {
     return {
       list: [],
       total: 0,
       loading: false,
       dialogVisible: false,
+      deleteConfirmText: '确认删除该客户？',
       // 分页查询参数
       query: { current: 1, size: 10, name: '' },
       // 表单数据
@@ -90,34 +93,13 @@ export default {
         this.loading = false
       }
     },
-    // 打开新增或编辑弹窗
-    openForm(row) {
-      this.form = row
-        ? { ...row }
-        : { id: null, name: '', contact: '', phone: '', address: '', remark: '', status: 1 }
-      this.dialogVisible = true
+    // 空表单工厂（供 crudList mixin 的 openForm 使用）
+    emptyForm() {
+      return { id: null, name: '', contact: '', phone: '', address: '', remark: '', status: 1 }
     },
-    // 保存客户（新增或更新）
-    handleSave() {
-      this.$refs.form.validate(async valid => {
-        if (!valid) return
-        if (this.form.id) {
-          await updateCustomer(this.form.id, this.form)
-        } else {
-          await createCustomer(this.form)
-        }
-        this.$message.success('保存成功')
-        this.dialogVisible = false
-        this.loadData()
-      })
-    },
-    // 删除客户（二次确认）
-    async handleDelete(id) {
-      await this.$confirm('确认删除该客户？', '提示', { type: 'warning' })
-      await deleteCustomer(id)
-      this.$message.success('删除成功')
-      this.loadData()
-    }
+    createItem: createCustomer,
+    updateItem: updateCustomer,
+    deleteItem: deleteCustomer
   }
 }
 </script>
