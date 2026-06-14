@@ -178,9 +178,11 @@ import { getOutOrderItems } from '../../api/outOrder'
 import { getInventory } from '../../api/inventory'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
+import productSearch from '../../mixins/productSearch'
 
 export default {
   name: 'CustomerReturnIndex',
+  mixins: [productSearch],
   data() {
     return {
       list: [], loading: false, total: 0,
@@ -274,17 +276,6 @@ export default {
     },
     addCreateItem() {
       this.createForm.items.push({ productId: null, qty: 1 })
-    },
-    searchProducts(query) {
-      if (!query) return
-      this.productLoading = true
-      getProducts({ current: 1, size: 20, name: query })
-        .then(r => {
-          const incoming = r.data.records
-          const seen = new Set(this.products.map(p => p.id))
-          this.products = [...this.products, ...incoming.filter(p => !seen.has(p.id))]
-        })
-        .finally(() => { this.productLoading = false })
     },
     handleCreate() {
       this.$refs.createForm.validate(async valid => {

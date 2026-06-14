@@ -187,9 +187,11 @@
 import { getDamageRecords, createDamageRecord, deleteDamageRecord, transferDamageRecord, writeOffDamageRecord } from '../../api/damageRecord'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
+import productSearch from '../../mixins/productSearch'
 
 export default {
   name: 'DamageIndex',
+  mixins: [productSearch],
   computed: {
     displayMode: {
       get() { return this.$store.state.displayUnit },
@@ -277,17 +279,6 @@ export default {
     },
     resetForm() {
       this.$refs.form && this.$refs.form.clearValidate()
-    },
-    searchProducts(query) {
-      if (!query) return
-      this.productLoading = true
-      getProducts({ current: 1, size: 20, name: query })
-        .then(r => {
-          const incoming = r.data.records
-          const seen = new Set(this.products.map(p => p.id))
-          this.products = [...this.products, ...incoming.filter(p => !seen.has(p.id))]
-        })
-        .finally(() => { this.productLoading = false })
     },
     handleCreate() {
       this.$refs.form.validate(async valid => {
