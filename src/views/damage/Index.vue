@@ -54,7 +54,9 @@
         </template>
       </el-table-column>
       <el-table-column prop="remark" label="备注" min-width="100" show-overflow-tooltip />
-      <el-table-column prop="createdAt" label="登记时间" width="160" />
+      <el-table-column label="登记时间" width="160">
+        <template slot-scope="{row}">{{ formatDateTime(row.createdAt) }}</template>
+      </el-table-column>
       <el-table-column label="操作" width="210" align="center">
         <template slot-scope="{row}">
           <template v-if="row.status === 'PENDING'">
@@ -187,9 +189,12 @@
 import { getDamageRecords, createDamageRecord, deleteDamageRecord, transferDamageRecord, writeOffDamageRecord } from '../../api/damageRecord'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
+import productSearch from '../../mixins/productSearch'
+import { formatDateTime } from '../../utils/time'
 
 export default {
   name: 'DamageIndex',
+  mixins: [productSearch],
   computed: {
     displayMode: {
       get() { return this.$store.state.displayUnit },
@@ -249,6 +254,7 @@ export default {
     this.loadData()
   },
   methods: {
+    formatDateTime,
     fmtQty(qty, warehouseId, productId) {
       const wh = this.warehouses.find(w => w.id === warehouseId)
       const prod = this.allProductsMap[productId]
@@ -277,17 +283,6 @@ export default {
     },
     resetForm() {
       this.$refs.form && this.$refs.form.clearValidate()
-    },
-    searchProducts(query) {
-      if (!query) return
-      this.productLoading = true
-      getProducts({ current: 1, size: 20, name: query })
-        .then(r => {
-          const incoming = r.data.records
-          const seen = new Set(this.products.map(p => p.id))
-          this.products = [...this.products, ...incoming.filter(p => !seen.has(p.id))]
-        })
-        .finally(() => { this.productLoading = false })
     },
     handleCreate() {
       this.$refs.form.validate(async valid => {

@@ -40,7 +40,9 @@
             <span v-else style="color:#c0c4cc;">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="170" />
+        <el-table-column label="创建时间" width="170">
+          <template slot-scope="{row}">{{ formatDateTime(row.createTime) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="320">
           <template slot-scope="{row}">
             <el-button size="mini" @click="$router.push('/out-orders/'+row.id)">详情</el-button>
@@ -118,7 +120,7 @@
             </span>
           </div>
           <div class="m-order-footer">
-            <span class="m-order-time">{{ row.createTime }}</span>
+            <span class="m-order-time">{{ formatDateTime(row.createTime) }}</span>
             <div style="display:flex;gap:6px;">
               <button v-if="row.status==='DRAFT'" class="m-action-btn danger"
                 @click.stop="openConfirmDialog(row.id)">
@@ -161,24 +163,11 @@
       </button>
     </div>
 
-    <!-- 确认出库弹窗 -->
-    <el-dialog title="填写实际出库数量" :visible.sync="dialogVisible" width="560px" :close-on-click-modal="false">
-      <div v-loading="dialogLoading">
-        <el-table :data="confirmItems" border>
-          <el-table-column prop="productId" label="商品ID" width="100" />
-          <el-table-column prop="planQty" label="计划数量" width="110" />
-          <el-table-column label="实际出库数量">
-            <template slot-scope="{row}">
-              <el-input-number v-model="row.actualQty" :min="0" size="small" style="width:140px;" />
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-      <div slot="footer">
-        <el-button @click="dialogVisible=false">取消</el-button>
-        <el-button type="danger" :loading="confirming" @click="submitConfirm">确认实际数量</el-button>
-      </div>
-    </el-dialog>
+    <confirm-qty-dialog ref="confirmDialog"
+      title="填写实际出库数量" qty-label="实际出库数量"
+      button-type="danger" success-msg="出库确认成功"
+      :fetch-items="getOutOrderItems" :confirm-fn="confirmOutOrder"
+      plan-field="qty" @confirmed="onConfirmed" />
 
   </div>
 </template>
@@ -186,8 +175,11 @@
 <script>
 import { getOutOrders, confirmOutOrder, deleteOutOrder, getOutOrderItems, getDraftOutOrderCount } from '../../api/outOrder'
 import mobileMixin from '../../mixins/mobile'
+import { formatDateTime } from '../../utils/time'
+import ConfirmQtyDialog from '../../components/order/ConfirmQtyDialog.vue'
 export default {
   mixins: [mobileMixin],
+  components: { ConfirmQtyDialog },
   data() {
     return {
       list: [], total: 0, loading: false, totalDraftCount: 0,
@@ -199,9 +191,7 @@ export default {
         { label: '待出库', value: 'DRAFT' },
         { label: '已确认', value: 'CONFIRMED' },
         { label: '已作废', value: 'VOIDED' }
-      ],
-      dialogVisible: false, dialogLoading: false, confirming: false,
-      currentOrderId: null, confirmItems: []
+      ]
     }
   },
   computed: {
@@ -245,33 +235,9 @@ export default {
     switchTab(val) { this.query.status = val; this.query.current = 1; this.loadData() },
     prevPage() { this.query.current--; this.loadData() },
     nextPage() { this.query.current++; this.loadData() },
-    async openConfirmDialog(id) {
-      this.currentOrderId = id
-      this.dialogVisible = true
-      this.dialogLoading = true
-      try {
-        const r = await getOutOrderItems(id)
-        this.confirmItems = (r.data || []).map(i => ({
-          id: i.id, productId: i.productId,
-          planQty: i.qty, actualQty: i.qty || 0
-        }))
-      } finally {
-        this.dialogLoading = false
-      }
-    },
-    async submitConfirm() {
-      this.confirming = true
-      try {
-        const payload = this.confirmItems.map(i => ({ itemId: i.id, actualQty: i.actualQty || 0 }))
-        await confirmOutOrder(this.currentOrderId, payload)
-        this.$message.success('出库确认成功')
-        this.dialogVisible = false
-        this.loadData()
-        this.refreshDraftCount()
-      } finally {
-        this.confirming = false
-      }
-    },
+    getOutOrderItems, confirmOutOrder, formatDateTime,
+    openConfirmDialog(id) { this.$refs.confirmDialog.open(id) },
+    onConfirmed() { this.loadData(); this.refreshDraftCount() },
     async handleDelete(id, status) {
       const msg = status === 'CONFIRMED'
         ? '作废后将冲销库存，单据保留可查，确认作废？'

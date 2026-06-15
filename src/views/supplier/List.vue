@@ -44,7 +44,9 @@
 
 <script>
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '../../api/supplier'
+import crudList from '../../mixins/crudList'
 export default {
+  mixins: [crudList],
   data() {
     return { list: [], total: 0, loading: false, dialogVisible: false,
       query: { current: 1, size: 10, name: '' },
@@ -54,16 +56,10 @@ export default {
   created() { this.loadData() },
   methods: {
     async loadData() { this.loading = true; const r = await getSuppliers(this.query).finally(() => { this.loading = false }); this.list = r.data.records; this.total = r.data.total },
-    openForm(row) { this.form = row ? { ...row } : { id: null, name: '', contact: '', phone: '', email: '', address: '', status: 1 }; this.dialogVisible = true },
-    handleSave() {
-      this.$refs.form.validate(async valid => {
-        if (!valid) return
-        if (this.form.id) await updateSupplier(this.form.id, this.form)
-        else await createSupplier(this.form)
-        this.$message.success('保存成功'); this.dialogVisible = false; this.loadData()
-      })
-    },
-    async handleDelete(id) { await this.$confirm('确认删除？', '提示', { type: 'warning' }); await deleteSupplier(id); this.$message.success('删除成功'); this.loadData() }
+    emptyForm() { return { id: null, name: '', contact: '', phone: '', email: '', address: '', status: 1 } },
+    createItem: createSupplier,
+    updateItem: updateSupplier,
+    deleteItem: deleteSupplier
   }
 }
 </script>

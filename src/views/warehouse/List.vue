@@ -47,7 +47,9 @@
 
 <script>
 import { getWarehouses, createWarehouse, updateWarehouse, deleteWarehouse } from '../../api/warehouse'
+import crudList from '../../mixins/crudList'
 export default {
+  mixins: [crudList],
   data() {
     return { list: [], loading: false, dialogVisible: false,
       form: { id: null, name: '', address: '', remark: '', status: 1, type: 'BOX' },
@@ -56,16 +58,10 @@ export default {
   created() { this.loadData() },
   methods: {
     async loadData() { this.loading = true; const r = await getWarehouses().finally(() => { this.loading = false }); this.list = r.data },
-    openForm(row) { this.form = row ? { ...row } : { id: null, name: '', address: '', remark: '', status: 1, type: 'BOX' }; this.dialogVisible = true },
-    handleSave() {
-      this.$refs.form.validate(async valid => {
-        if (!valid) return
-        if (this.form.id) await updateWarehouse(this.form.id, this.form)
-        else await createWarehouse(this.form)
-        this.$message.success('保存成功'); this.dialogVisible = false; this.loadData()
-      })
-    },
-    async handleDelete(id) { await this.$confirm('确认删除？', '提示', { type: 'warning' }); await deleteWarehouse(id); this.$message.success('删除成功'); this.loadData() }
+    emptyForm() { return { id: null, name: '', address: '', remark: '', status: 1, type: 'BOX' } },
+    createItem: createWarehouse,
+    updateItem: updateWarehouse,
+    deleteItem: deleteWarehouse
   }
 }
 </script>

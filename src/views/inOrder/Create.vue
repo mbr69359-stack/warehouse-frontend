@@ -70,7 +70,9 @@ import { getWarehouses } from '../../api/warehouse'
 import { getSuppliers } from '../../api/supplier'
 import { getProducts } from '../../api/product'
 import { lineWeightKg, formatWeight } from '../../utils/unit'
+import productSearch from '../../mixins/productSearch'
 export default {
+  mixins: [productSearch],
   computed: {
     productMap() {
       return Object.fromEntries(this.products.map(p => [p.id, p]))
@@ -100,17 +102,6 @@ export default {
     if (id) { this.editId = Number(id); this.loadForEdit(this.editId) }
   },
   methods: {
-    searchProducts(query) {
-      if (!query) return
-      this.productLoading = true
-      getProducts({ current: 1, size: 20, name: query })
-        .then(r => {
-          const incoming = r.data.records
-          const seen = new Set(this.products.map(p => p.id))
-          this.products = [...this.products, ...incoming.filter(p => !seen.has(p.id))]
-        })
-        .finally(() => { this.productLoading = false })
-    },
     showQtyPerBoxWarn(row) {
       if (this.selectedWarehouseType !== 'BOX') return false
       const p = this.productMap[row.productId]
