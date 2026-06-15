@@ -68,6 +68,7 @@
 
 <script>
 import { getProducts, getProductCostHistory } from '../../api/product'
+import { money } from '../../utils/format'
 
 export default {
   data() {
@@ -110,7 +111,7 @@ export default {
       }
     },
 
-    fmt(v) { return Number(v || 0).toFixed(2) },
+    fmt: money,
 
     fmtTime(v) {
       if (!v) return '-'

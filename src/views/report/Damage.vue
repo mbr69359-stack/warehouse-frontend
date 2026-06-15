@@ -61,6 +61,7 @@ import { getDamageReport } from '../../api/report'
 import { getWarehouses } from '../../api/warehouse'
 import mobileMixin from '../../mixins/mobile'
 import { exportCSV } from '../../utils/export'
+import { money } from '../../utils/format'
 
 export default {
   mixins: [mobileMixin],
@@ -77,7 +78,7 @@ export default {
     this.loadData()
   },
   methods: {
-    fmt(v) { return Number(v || 0).toFixed(2) },
+    fmt: money,
     async loadData() {
       if (!this.dateRange || !this.dateRange[0]) return
       this.loading = true

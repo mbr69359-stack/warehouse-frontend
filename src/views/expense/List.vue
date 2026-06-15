@@ -86,6 +86,7 @@
 import { getExpenses, createExpense, updateExpense, deleteExpense, EXPENSE_TYPES, expenseTypeLabel } from '../../api/expense'
 import { getWarehouses } from '../../api/warehouse'
 import { todayKe, monthsAgoKe } from '../../utils/time'
+import { money } from '../../utils/format'
 
 const emptyForm = () => ({ expenseDate: '', warehouseId: null, type: '', amount: 0, note: '' })
 
@@ -120,7 +121,7 @@ export default {
     this.loadData()
   },
   methods: {
-    fmt(v) { return Number(v || 0).toFixed(2) },
+    fmt: money,
     warehouseName(id) {
       return this.warehouses.find(w => w.id === id)?.name || id
     },

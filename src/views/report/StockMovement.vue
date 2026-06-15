@@ -56,6 +56,7 @@ import { todayKe, monthsAgoKe } from '../../utils/time'
 import { getStockMovementReport } from '../../api/report'
 import mobileMixin from '../../mixins/mobile'
 import { exportCSV } from '../../utils/export'
+import { money } from '../../utils/format'
 
 export default {
   mixins: [mobileMixin],
@@ -74,7 +75,7 @@ export default {
   },
   beforeDestroy() { this.chart && this.chart.dispose() },
   methods: {
-    fmt(v) { return Number(v || 0).toFixed(2) },
+    fmt: money,
     fmtQty(qty, qtyPerBox, signed) {
       qty = Number(qty || 0)
       if (this.displayMode === 'box' && qtyPerBox > 0) {

@@ -119,6 +119,7 @@ import { todayKe, monthsAgoKe } from '../../utils/time'
 import { getGrossProfitReport } from '../../api/report'
 import { getWarehouses } from '../../api/warehouse'
 import { exportCSV } from '../../utils/export'
+import { money } from '../../utils/format'
 
 export default {
   data() {
@@ -190,7 +191,7 @@ export default {
       })
     },
 
-    fmt(v) { return Number(v || 0).toFixed(2) },
+    fmt: money,
 
     calcGross(row) {
       return Number(row.revenue || 0) - Number(row.cogs || 0)
