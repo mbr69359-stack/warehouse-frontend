@@ -23,7 +23,9 @@
             <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="170" />
+        <el-table-column label="创建时间" width="170">
+          <template slot-scope="{row}">{{ formatDateTime(row.createTime) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="320">
           <template slot-scope="{row}">
             <el-button size="mini" @click="$router.push('/in-orders/'+row.id)">详情</el-button>
@@ -79,7 +81,7 @@
             </span>
           </div>
           <div class="m-order-footer">
-            <span class="m-order-time">{{ row.createTime }}</span>
+            <span class="m-order-time">{{ formatDateTime(row.createTime) }}</span>
             <div style="display:flex;gap:6px;">
               <button v-if="row.status==='DRAFT'" class="m-action-btn primary"
                 @click.stop="openConfirmDialog(row.id)">
@@ -134,6 +136,7 @@
 <script>
 import { getInOrders, confirmInOrder, deleteInOrder, getInOrderItems } from '../../api/inOrder'
 import mobileMixin from '../../mixins/mobile'
+import { formatDateTime } from '../../utils/time'
 import ConfirmQtyDialog from '../../components/order/ConfirmQtyDialog.vue'
 export default {
   mixins: [mobileMixin],
@@ -182,7 +185,7 @@ export default {
     switchTab(val) { this.query.status = val; this.query.current = 1; this.loadData() },
     prevPage() { this.query.current--; this.loadData() },
     nextPage() { this.query.current++; this.loadData() },
-    getInOrderItems, confirmInOrder,
+    getInOrderItems, confirmInOrder, formatDateTime,
     openConfirmDialog(id) { this.$refs.confirmDialog.open(id) },
     async handleDelete(id, status) {
       const msg = status === 'CONFIRMED'

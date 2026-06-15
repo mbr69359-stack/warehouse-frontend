@@ -17,8 +17,8 @@
       <el-descriptions :column="3" border style="margin-bottom:16px;">
         <el-descriptions-item label="仓库">{{ warehouseName }}</el-descriptions-item>
         <el-descriptions-item label="出库类型">{{ typeLabel(order.type) }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ order.createTime }}</el-descriptions-item>
-        <el-descriptions-item label="确认时间">{{ order.confirmTime || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ formatDateTime(order.createTime) }}</el-descriptions-item>
+        <el-descriptions-item label="确认时间">{{ formatDateTime(order.confirmTime) || '—' }}</el-descriptions-item>
         <el-descriptions-item label="客户">{{ order.customerName || '—' }}</el-descriptions-item>
         <el-descriptions-item v-if="order.type==='SALE'" label="销售渠道">
           <el-tag size="mini" :type="order.saleChannel==='RETAIL'?'':'success'">
@@ -34,13 +34,14 @@
 <script>
 import OrderDetailView from '../../components/order/OrderDetailView.vue'
 import { getOutOrder, confirmOutOrder, getOutOrderItems } from '../../api/outOrder'
+import { formatDateTime } from '../../utils/time'
 export default {
   components: { OrderDetailView },
   data() {
     return { printTypeMap: { SALE: '销售出库', TRANSFER: '调拨出库', DAMAGE_OUT: '损坏出库', REPLACEMENT_OUT: '补发出库' } }
   },
   methods: {
-    getOutOrder, getOutOrderItems, confirmOutOrder,
+    getOutOrder, getOutOrderItems, confirmOutOrder, formatDateTime,
     typeLabel(type) {
       const map = { SALE: '销售出库', TRANSFER: '调拨出库', DAMAGE_OUT: '损坏出库', REPLACEMENT_OUT: '补发出库' }
       return map[type] || type || '—'

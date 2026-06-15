@@ -16,8 +16,8 @@
       <el-descriptions :column="3" border style="margin-bottom:16px;">
         <el-descriptions-item label="仓库">{{ warehouseName }}</el-descriptions-item>
         <el-descriptions-item label="入库类型">{{ order.type==='PURCHASE'?'采购入库':'退货入库' }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ order.createTime }}</el-descriptions-item>
-        <el-descriptions-item label="确认时间">{{ order.confirmTime || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ formatDateTime(order.createTime) }}</el-descriptions-item>
+        <el-descriptions-item label="确认时间">{{ formatDateTime(order.confirmTime) || '—' }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="2">{{ order.remark || '—' }}</el-descriptions-item>
       </el-descriptions>
     </template>
@@ -27,11 +27,12 @@
 <script>
 import OrderDetailView from '../../components/order/OrderDetailView.vue'
 import { getInOrder, confirmInOrder, getInOrderItems } from '../../api/inOrder'
+import { formatDateTime } from '../../utils/time'
 export default {
   components: { OrderDetailView },
   data() {
     return { printTypeMap: { PURCHASE: '采购入库', RETURN: '退货入库' } }
   },
-  methods: { getInOrder, getInOrderItems, confirmInOrder }
+  methods: { getInOrder, getInOrderItems, confirmInOrder, formatDateTime }
 }
 </script>
