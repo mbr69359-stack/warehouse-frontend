@@ -1,58 +1,50 @@
 <template>
-  <div>
-    <div v-if="isMobile" class="m-page m-empty" style="padding-top:60px;">
-      <span class="material-symbols-outlined" style="font-size:56px;color:#c4c5d5;">broken_image</span>
-      <p style="font-size:16px;font-weight:600;color:#444653;margin:12px 0 4px;">破损损耗报表</p>
-      <p style="font-size:13px;color:#757684;">请在电脑端查看</p>
-    </div>
-    <el-card v-else v-loading="loading">
-      <div slot="header" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <span style="font-weight:600;">破损损耗明细表</span>
-        <el-date-picker v-model="dateRange" type="daterange" range-separator="至"
-          start-placeholder="开始日期" end-placeholder="结束日期" value-format="yyyy-MM-dd"
-          @change="loadData" style="width:240px;" />
-        <el-select v-model="warehouseId" placeholder="全部仓库" clearable style="width:150px;" @change="loadData">
-          <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
-        </el-select>
-        <el-button icon="el-icon-download" @click="handleExport" :disabled="!tableData.length">导出 Excel</el-button>
-        <span style="color:#999;font-size:12px;">共 {{ tableData.length }} 条</span>
-      </div>
+  <report-shell mobile-icon="broken_image" title="破损损耗明细表" mobile-title="破损损耗报表" :loading="loading">
+    <template #toolbar>
+      <el-date-picker v-model="dateRange" type="daterange" range-separator="至"
+        start-placeholder="开始日期" end-placeholder="结束日期" value-format="yyyy-MM-dd"
+        @change="loadData" style="width:240px;" />
+      <el-select v-model="warehouseId" placeholder="全部仓库" clearable style="width:150px;" @change="loadData">
+        <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
+      </el-select>
+      <el-button icon="el-icon-download" @click="handleExport" :disabled="!tableData.length">导出 Excel</el-button>
+      <span style="color:#999;font-size:12px;">共 {{ tableData.length }} 条</span>
+    </template>
 
-      <el-table :data="tableData" border stripe size="small" show-summary :summary-method="getSummary">
-        <el-table-column prop="date" label="日期" width="70" />
-        <el-table-column prop="productName" label="商品" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="warehouseName" label="仓库" width="110" />
-        <el-table-column label="破损数" width="90" align="right">
-          <template slot-scope="{row}">
-            <span style="color:#F56C6C;font-weight:600;">{{ row.damagedQty }}{{ row.unit }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="成本价" width="90" align="right">
-          <template slot-scope="{row}">KSh {{ fmt(row.costPrice) }}</template>
-        </el-table-column>
-        <el-table-column label="损耗金额" width="100" align="right">
-          <template slot-scope="{row}">
-            <span style="color:#F56C6C;">KSh {{ fmt(row.costDeduction) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="好货调拨" width="90" align="right">
-          <template slot-scope="{row}">
-            <span v-if="row.goodQty" style="color:#67C23A;">{{ row.goodQty }}{{ row.unit }}</span>
-            <span v-else style="color:#999;">—</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="transferWarehouseName" label="调拨仓库" width="110">
-          <template slot-scope="{row}">{{ row.transferWarehouseName || '—' }}</template>
-        </el-table-column>
-        <el-table-column label="零售定价" width="90" align="right">
-          <template slot-scope="{row}">
-            <span v-if="row.transferPrice">KSh {{ fmt(row.transferPrice) }}</span>
-            <span v-else style="color:#999;">—</span>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
-  </div>
+    <el-table :data="tableData" border stripe size="small" show-summary :summary-method="getSummary">
+      <el-table-column prop="date" label="日期" width="70" />
+      <el-table-column prop="productName" label="商品" min-width="150" show-overflow-tooltip />
+      <el-table-column prop="warehouseName" label="仓库" width="110" />
+      <el-table-column label="破损数" width="90" align="right">
+        <template slot-scope="{row}">
+          <span style="color:#F56C6C;font-weight:600;">{{ row.damagedQty }}{{ row.unit }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="成本价" width="90" align="right">
+        <template slot-scope="{row}">KSh {{ fmt(row.costPrice) }}</template>
+      </el-table-column>
+      <el-table-column label="损耗金额" width="100" align="right">
+        <template slot-scope="{row}">
+          <span style="color:#F56C6C;">KSh {{ fmt(row.costDeduction) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="好货调拨" width="90" align="right">
+        <template slot-scope="{row}">
+          <span v-if="row.goodQty" style="color:#67C23A;">{{ row.goodQty }}{{ row.unit }}</span>
+          <span v-else style="color:#999;">—</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="transferWarehouseName" label="调拨仓库" width="110">
+        <template slot-scope="{row}">{{ row.transferWarehouseName || '—' }}</template>
+      </el-table-column>
+      <el-table-column label="零售定价" width="90" align="right">
+        <template slot-scope="{row}">
+          <span v-if="row.transferPrice">KSh {{ fmt(row.transferPrice) }}</span>
+          <span v-else style="color:#999;">—</span>
+        </template>
+      </el-table-column>
+    </el-table>
+  </report-shell>
 </template>
 
 <script>
@@ -62,9 +54,11 @@ import { getWarehouses } from '../../api/warehouse'
 import mobileMixin from '../../mixins/mobile'
 import { exportCSV } from '../../utils/export'
 import { money } from '../../utils/format'
+import ReportShell from '../../components/report/ReportShell.vue'
 
 export default {
   mixins: [mobileMixin],
+  components: { ReportShell },
   data() {
     return {
       tableData: [], warehouses: [],
