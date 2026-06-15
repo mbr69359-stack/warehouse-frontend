@@ -1,13 +1,6 @@
 <template>
-  <div>
-    <div v-if="isMobile" class="m-page m-empty" style="padding-top:60px;">
-      <span class="material-symbols-outlined" style="font-size:56px;color:#c4c5d5;">receipt_long</span>
-      <p style="font-size:16px;font-weight:600;color:#444653;margin:12px 0 4px;">流水报表</p>
-      <p style="font-size:13px;color:#757684;">请在电脑端查看</p>
-    </div>
-    <el-card v-else>
-      <div slot="header" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <span style="font-weight:600;">流水报表</span>
+  <report-shell mobile-icon="receipt_long" title="流水报表">
+    <template #toolbar>
         <el-date-picker v-model="dateRange" type="daterange" range-separator="至"
           start-placeholder="开始日期" end-placeholder="结束日期" value-format="yyyy-MM-dd"
           @change="loadData" style="width:240px;" />
@@ -23,8 +16,8 @@
         </el-radio-group>
         <el-button icon="el-icon-download" @click="handleExport" :disabled="!tableData.length">导出 Excel</el-button>
         <span style="color:#999;font-size:12px;">共 {{ tableData.length }} 条</span>
-      </div>
-      <el-table :data="tableData" border stripe size="small" style="width:100%;">
+    </template>
+    <el-table :data="tableData" border stripe size="small" style="width:100%;">
         <el-table-column prop="occurredAt" label="时间" width="135" />
         <el-table-column prop="warehouseName" label="仓库" width="100" />
         <el-table-column prop="productName" label="商品名称" min-width="160" show-overflow-tooltip />
@@ -52,8 +45,7 @@
         <el-table-column prop="operator" label="操作人" width="90" />
         <el-table-column prop="note" label="备注" min-width="120" show-overflow-tooltip />
       </el-table>
-    </el-card>
-  </div>
+  </report-shell>
 </template>
 
 <script>
@@ -63,6 +55,7 @@ import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 import mobileMixin from '../../mixins/mobile'
 import { exportCSV } from '../../utils/export'
+import ReportShell from '../../components/report/ReportShell.vue'
 
 const TYPE_LABEL = {
   inbound: '入库', outbound: '出库', adjust: '库存调整',
@@ -77,6 +70,7 @@ const TYPE_TAG = {
 
 export default {
   mixins: [mobileMixin],
+  components: { ReportShell },
   computed: {
     displayMode: {
       get() { return this.$store.state.displayUnit },
