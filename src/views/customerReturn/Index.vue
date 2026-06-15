@@ -13,7 +13,9 @@
           <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="创建时间" width="170" />
+      <el-table-column label="创建时间" width="170">
+        <template slot-scope="{row}">{{ formatDateTime(row.createdAt) }}</template>
+      </el-table-column>
       <el-table-column label="操作" width="360" align="center">
         <template slot-scope="{row}">
           <div class="customer-return-actions">
@@ -179,6 +181,7 @@ import { getInventory } from '../../api/inventory'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 import productSearch from '../../mixins/productSearch'
+import { formatDateTime } from '../../utils/time'
 
 export default {
   name: 'CustomerReturnIndex',
@@ -219,6 +222,7 @@ export default {
     this.loadData()
   },
   methods: {
+    formatDateTime,
     // 状态显示
     statusLabel(status) {
       return { DRAFT: '待退货入库', INBOUND_DONE: '待补发出库', COMPLETED: '已完成' }[status] || status

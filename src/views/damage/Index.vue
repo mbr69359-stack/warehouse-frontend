@@ -54,7 +54,9 @@
         </template>
       </el-table-column>
       <el-table-column prop="remark" label="备注" min-width="100" show-overflow-tooltip />
-      <el-table-column prop="createdAt" label="登记时间" width="160" />
+      <el-table-column label="登记时间" width="160">
+        <template slot-scope="{row}">{{ formatDateTime(row.createdAt) }}</template>
+      </el-table-column>
       <el-table-column label="操作" width="210" align="center">
         <template slot-scope="{row}">
           <template v-if="row.status === 'PENDING'">
@@ -188,6 +190,7 @@ import { getDamageRecords, createDamageRecord, deleteDamageRecord, transferDamag
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 import productSearch from '../../mixins/productSearch'
+import { formatDateTime } from '../../utils/time'
 
 export default {
   name: 'DamageIndex',
@@ -251,6 +254,7 @@ export default {
     this.loadData()
   },
   methods: {
+    formatDateTime,
     fmtQty(qty, warehouseId, productId) {
       const wh = this.warehouses.find(w => w.id === warehouseId)
       const prod = this.allProductsMap[productId]
