@@ -14,3 +14,4 @@ export const importInventory = file => {
 }
 export const downloadImportTemplate = () =>
   request.get('/inventory/import/template', { responseType: 'blob' })
+export const exportInventory = params => request.get('/inventory/export', { params, responseType: 'blob' })

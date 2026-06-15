@@ -3,7 +3,7 @@
 
     <!-- ── 桌面端 ── -->
     <el-card v-if="!isMobile">
-      <div style="margin-bottom:16px;display:flex;gap:12px;align-items:center;">
+      <div class="no-print" style="margin-bottom:16px;display:flex;gap:12px;align-items:center;">
         <template v-if="viewMode === 'list'">
           <el-select v-model="query.warehouseId" placeholder="全部仓库" clearable style="width:150px;" @change="onFilter">
             <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
@@ -15,6 +15,8 @@
           </el-radio-group>
         </template>
         <div style="margin-left:auto;display:flex;gap:8px;">
+          <el-button v-if="viewMode === 'list'" type="success" icon="el-icon-download" :loading="exporting" @click="handleExport">导出 Excel</el-button>
+          <el-button v-if="viewMode === 'list'" icon="el-icon-printer" @click="handlePrint">打印</el-button>
           <el-button icon="el-icon-upload2" @click="importDialog=true">导入期初库存</el-button>
           <el-button-group>
             <el-button :type="viewMode==='list'?'primary':''" icon="el-icon-menu" @click="switchViewMode('list')">列表</el-button>
@@ -67,7 +69,7 @@
       </div>
 
       <!-- 列表视图 -->
-      <el-table v-if="viewMode === 'list'" :data="list" v-loading="loading" border stripe>
+      <el-table v-if="viewMode === 'list'" class="no-print" :data="list" v-loading="loading" border stripe>
         <el-table-column label="仓库" min-width="120">
           <template slot-scope="{row}">{{ warehouseMap[row.warehouseId]?.name || row.warehouseId }}</template>
         </el-table-column>
@@ -91,8 +93,33 @@
           <template slot-scope="{row}"><el-button size="mini" @click="setAlert(row)">设置预警值</el-button></template>
         </el-table-column>
       </el-table>
-      <el-pagination v-if="viewMode === 'list'" style="margin-top:16px;text-align:right;" background layout="total, prev, pager, next"
+      <el-pagination v-if="viewMode === 'list'" class="no-print" style="margin-top:16px;text-align:right;" background layout="total, prev, pager, next"
         :total="total" :current-page="query.current" @current-change="p=>{query.current=p;loadData()}" />
+
+      <!-- 打印区域：屏幕隐藏，仅打印时显示，渲染全量库存 -->
+      <div class="print-only">
+        <h2 style="text-align:center;margin:0 0 4px;">库存报表</h2>
+        <p style="text-align:center;margin:0 0 12px;font-size:13px;color:#555;">
+          仓库：{{ printWarehouseName }} &nbsp;&nbsp; 日期：{{ todayStr }}
+        </p>
+        <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr>
+              <th>仓库</th><th>商品</th><th>当前库存</th><th>预警值</th><th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in printList" :key="row.productId+'_'+row.warehouseId">
+              <td>{{ warehouseMap[row.warehouseId] && warehouseMap[row.warehouseId].name || row.warehouseId }}</td>
+              <td>{{ productMap[row.productId] && productMap[row.productId].name || row.productId }}</td>
+              <td>{{ formatQty(row) }}</td>
+              <td>{{ formatAlert(row) }}</td>
+              <td>{{ row.alertQty > 0 && row.qty < row.alertQty ? '库存不足' : '正常' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <el-dialog title="设置预警值" :visible.sync="alertDialog" width="360px">
         <el-form label-width="90px">
           <el-form-item label="商品">
@@ -236,7 +263,7 @@
 </template>
 
 <script>
-import { getInventory, setAlertQty, getInventoryChart, importInventory, downloadImportTemplate } from '../../api/inventory'
+import { getInventory, setAlertQty, getInventoryChart, importInventory, downloadImportTemplate, exportInventory } from '../../api/inventory'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 import mobileMixin from '../../mixins/mobile'
@@ -264,7 +291,9 @@ export default {
       importing: false,
       importFile: null,
       fileList: [],
-      importResult: null
+      importResult: null,
+      exporting: false,
+      printList: []
     }
   },
   computed: {
@@ -277,6 +306,12 @@ export default {
         ...d,
         qtyPerBox: this.productMap[d.productId]?.qtyPerBox || 0
       }))
+    },
+    todayStr() { return new Date().toISOString().slice(0, 10) },
+    printWarehouseName() {
+      if (!this.query.warehouseId) return '全部仓库'
+      const w = this.warehouseMap[this.query.warehouseId]
+      return (w && w.name) || this.query.warehouseId
     },
     filteredList() {
       let arr = this.list
@@ -310,6 +345,27 @@ export default {
       const r = await getInventory(this.query).finally(() => { this.loading = false })
       this.list  = r.data.records
       this.total = r.data.total
+    },
+    async handleExport() {
+      this.exporting = true
+      try {
+        const res = await exportInventory({ warehouseId: this.query.warehouseId })
+        const url = window.URL.createObjectURL(new Blob([res.data]))
+        const a = document.createElement('a')
+        a.href = url
+        a.download = '库存报表_' + new Date().toISOString().slice(0, 10) + '.xlsx'
+        a.click()
+        window.URL.revokeObjectURL(url)
+      } catch {
+        this.$message.error('导出失败，请稍后重试')
+      } finally {
+        this.exporting = false
+      }
+    },
+    async handlePrint() {
+      const r = await getInventory({ current: 1, size: 10000, warehouseId: this.query.warehouseId })
+      this.printList = r.data.records || []
+      this.$nextTick(() => window.print())
     },
     async switchViewMode(mode) {
       this.viewMode = mode
@@ -457,5 +513,14 @@ export default {
   background: #00288e;
   color: #fff;
   border-color: #00288e;
+}
+</style>
+
+<style>
+.print-only { display: none; }
+@media print {
+  .el-aside, .el-header, .el-card__header { display: none !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
 }
 </style>

@@ -6,7 +6,7 @@
     <p style="font-size:13px;color:#757684;">功能建设中，请在电脑端查看</p>
   </div>
   <div v-else>
-    <el-row :gutter="20" style="margin-bottom:20px;">
+    <el-row class="no-print" :gutter="20" style="margin-bottom:20px;">
       <el-col :span="8"><el-card shadow="hover" style="text-align:center;">
         <div style="font-size:36px;font-weight:bold;color:#409EFF;">{{ summary.totalSkus||0 }}</div>
         <div style="color:#909399;margin-top:8px;">商品种类（SKU）</div>
@@ -30,8 +30,10 @@
           <el-radio-button label="piece">按个</el-radio-button>
           <el-radio-button label="box">按箱</el-radio-button>
         </el-radio-group>
+        <el-button type="success" icon="el-icon-download" :loading="exporting" @click="handleExport">导出 Excel</el-button>
+        <el-button icon="el-icon-printer" @click="handlePrint">打印</el-button>
       </div>
-      <el-table :data="list" v-loading="loading" border stripe>
+      <el-table class="no-print" :data="list" v-loading="loading" border stripe>
         <el-table-column label="仓库" min-width="120">
           <template slot-scope="{row}">{{ (warehouseMap[row.warehouseId] && warehouseMap[row.warehouseId].name) || row.warehouseId }}</template>
         </el-table-column>
@@ -49,13 +51,37 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 打印区域：屏幕隐藏，仅打印时显示，渲染全量库存 -->
+      <div class="print-only">
+        <h2 style="text-align:center;margin:0 0 4px;">库存报表</h2>
+        <p style="text-align:center;margin:0 0 12px;font-size:13px;color:#555;">
+          仓库：{{ printWarehouseName }} &nbsp;&nbsp; 日期：{{ todayStr }}
+        </p>
+        <table border="1" cellspacing="0" cellpadding="6" style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr>
+              <th>仓库</th><th>商品</th><th>当前库存</th><th>预警值</th><th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in printList" :key="row.productId+'_'+row.warehouseId">
+              <td>{{ (warehouseMap[row.warehouseId] && warehouseMap[row.warehouseId].name) || row.warehouseId }}</td>
+              <td>{{ (productMap[row.productId] && productMap[row.productId].name) || row.productId }}</td>
+              <td>{{ fmtQty(row) }}</td>
+              <td>{{ row.alertQty }}</td>
+              <td>{{ row.alertQty > 0 && row.qty < row.alertQty ? '预警' : '正常' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </el-card>
   </div>
   </div>
 </template>
 
 <script>
-import { getInventory } from '../../api/inventory'
+import { getInventory, exportInventory } from '../../api/inventory'
 import { getInventorySummary } from '../../api/report'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
@@ -67,10 +93,17 @@ export default {
       summary: {}, list: [], loading: false,
       warehouses: [], warehouseId: null,
       warehouseMap: {}, productMap: {},
-      displayMode: 'piece'
+      displayMode: 'piece',
+      exporting: false, printList: []
     }
   },
   computed: {
+    todayStr() { return new Date().toISOString().slice(0, 10) },
+    printWarehouseName() {
+      if (!this.warehouseId) return '全部仓库'
+      const w = this.warehouseMap[this.warehouseId]
+      return (w && w.name) || this.warehouseId
+    },
     summaryBoxDisplay() {
       const boxes = Number(this.summary.totalBoxCount || 0)
       const loose = Number(this.summary.looseCount || 0)
@@ -100,6 +133,27 @@ export default {
       this.summary = sumRes.data || {}
       this.list = invRes.data.records || []
     },
+    async handleExport() {
+      this.exporting = true
+      try {
+        const res = await exportInventory({ warehouseId: this.warehouseId })
+        const url = window.URL.createObjectURL(new Blob([res.data]))
+        const a = document.createElement('a')
+        a.href = url
+        a.download = '库存报表_' + new Date().toISOString().slice(0, 10) + '.xlsx'
+        a.click()
+        window.URL.revokeObjectURL(url)
+      } catch {
+        this.$message.error('导出失败，请稍后重试')
+      } finally {
+        this.exporting = false
+      }
+    },
+    async handlePrint() {
+      const r = await getInventory({ current: 1, size: 10000, warehouseId: this.warehouseId })
+      this.printList = r.data.records || []
+      this.$nextTick(() => window.print())
+    },
     fmtQty(row) {
       const qty = Number(row.qty || 0)
       if (this.displayMode === 'piece') return qty + '个'
@@ -115,3 +169,12 @@ export default {
   }
 }
 </script>
+
+<style>
+.print-only { display: none; }
+@media print {
+  .el-aside, .el-header, .el-card__header { display: none !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+}
+</style>
