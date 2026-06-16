@@ -100,7 +100,7 @@ export default {
         { key: 'inorder',   label: '入库',   icon: 'input',       routes: ['/in-orders'] },
         { key: 'quick',     label: '快速',   icon: 'bolt',        routes: ['/quick-entry'] },
         { key: 'outorder',  label: '出库',   icon: 'output',      routes: ['/out-orders'] },
-        { key: 'inventory', label: '库存',   icon: 'inventory_2', routes: ['/inventory'] },
+        { key: 'inventory', label: '库存',   icon: 'inventory_2', routes: ['/report/inventory'] },
         { key: 'mine',      label: '我的',   icon: 'person',      routes: [] }
       ]
     }
