@@ -14,7 +14,8 @@
           <el-radio-button label="box">按箱</el-radio-button>
           <el-radio-button label="piece">按个</el-radio-button>
         </el-radio-group>
-        <el-button icon="el-icon-download" @click="handleExport" :disabled="!tableData.length">导出 Excel</el-button>
+        <el-button icon="el-icon-download" :loading="exporting" @click="handleExport" :disabled="!tableData.length">导出 Excel</el-button>
+        <el-button v-if="isAdmin" type="warning" icon="el-icon-refresh-left" :loading="rebuilding" @click="handleRebuild">重算快照</el-button>
         <span style="color:#999;font-size:12px;">共 {{ tableData.length }} 条</span>
     </template>
     <el-table :data="tableData" border stripe size="small" style="width:100%;">
@@ -51,27 +52,30 @@
 <script>
 import { todayKe, daysAgoKe } from '../../utils/time'
 import { getLedgerReport } from '../../api/report'
+import { rebuildSnapshot, exportLedger } from '../../api/ledger'
 import { getWarehouses } from '../../api/warehouse'
 import { getProducts } from '../../api/product'
 import mobileMixin from '../../mixins/mobile'
-import { exportCSV } from '../../utils/export'
 import ReportShell from '../../components/report/ReportShell.vue'
 
 const TYPE_LABEL = {
   inbound: '入库', outbound: '出库', adjust: '库存调整',
   transfer: '调拨(出)', transfer_in: '调拨(入)', opening: '期初',
-  inbound_cancel: '入库撤销', outbound_cancel: '出库撤销', transfer_cancel: '调拨撤销'
+  inbound_cancel: '入库撤销', outbound_cancel: '出库撤销', transfer_cancel: '调拨撤销',
+  damage_out: '损坏出库', replacement_out: '补发出库'
 }
 const TYPE_TAG = {
   inbound: 'success', outbound: 'danger', adjust: 'warning',
   transfer: '', transfer_in: 'success', opening: 'info',
-  inbound_cancel: 'info', outbound_cancel: 'info', transfer_cancel: 'info'
+  inbound_cancel: 'info', outbound_cancel: 'info', transfer_cancel: 'info',
+  damage_out: 'warning', replacement_out: 'danger'
 }
 
 export default {
   mixins: [mobileMixin],
   components: { ReportShell },
   computed: {
+    isAdmin() { return this.$store.getters.isAdmin },
     displayMode: {
       get() { return this.$store.state.displayUnit },
       set(v) { this.$store.commit('SET_DISPLAY_UNIT', v) }
@@ -82,6 +86,7 @@ export default {
       tableData: [], warehouses: [], productMap: {}, warehouseMap: {},
       dateRange: [daysAgoKe(29), todayKe()],
       filterType: '', filterWarehouse: null,
+      rebuilding: false, exporting: false,
       typeLabelMap: TYPE_LABEL, typeTagMap: TYPE_TAG,
       typeOptions: Object.entries(TYPE_LABEL).map(([value, label]) => ({ value, label }))
     }
@@ -130,17 +135,35 @@ export default {
         return loose > 0 ? `${prefix}${boxes}箱零${loose}个` : `${prefix}${boxes}箱`
       }
     },
-    handleExport() {
-      const filename = `流水报表_${this.dateRange[0]}_${this.dateRange[1]}.csv`
-      exportCSV(
-        ['时间', '仓库', '商品名称', 'SKU', '记账单位', '类型', '变动数量', '单据号', '操作人', '备注'],
-        this.tableData.map(r => [
-          r.occurredAt, r.warehouseName, r.productName, r.skuCode,
-          (r.qtyUnit || 'PIECE') === 'BOX' ? '箱' : '个',
-          TYPE_LABEL[r.type] || r.type, this.formatChangeQty(r), r.documentNo || '', r.operator || '', r.note || ''
-        ]),
-        filename
-      )
+    async handleExport() {
+      this.exporting = true
+      try {
+        const params = { startDate: this.dateRange[0], endDate: this.dateRange[1] }
+        if (this.filterType) params.type = this.filterType
+        if (this.filterWarehouse) params.locationId = this.filterWarehouse
+        const res = await exportLedger(params)
+        const url = window.URL.createObjectURL(new Blob([res.data]))
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `流水报表_${this.dateRange[0]}_${this.dateRange[1]}.xlsx`
+        a.click()
+        window.URL.revokeObjectURL(url)
+      } catch {
+        this.$message.error('导出失败，请稍后重试')
+      } finally {
+        this.exporting = false
+      }
+    },
+    async handleRebuild() {
+      await this.$confirm('将从流水重算所有快照，确认执行？', '提示', { type: 'warning' })
+      this.rebuilding = true
+      try {
+        await rebuildSnapshot()
+        this.$message.success('快照重算完成')
+        this.loadData()
+      } finally {
+        this.rebuilding = false
+      }
     }
   }
 }

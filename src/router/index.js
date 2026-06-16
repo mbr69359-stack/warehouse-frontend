@@ -29,7 +29,6 @@ const routes = [
       { path: 'inventory', redirect: '/report/inventory' },
       { path: 'inventory/alerts', component: () => import('../views/inventory/Alerts.vue') },
       { path: 'inventory/check', component: () => import('../views/inventory/Check.vue') },
-      { path: 'inventory/ledger', component: () => import('../views/inventory/Ledger.vue') },
       { path: 'report/in', component: () => import('../views/report/In.vue') },
       { path: 'report/out', component: () => import('../views/report/Out.vue') },
       { path: 'report/inventory', component: () => import('../views/report/Inventory.vue') },
