@@ -48,6 +48,7 @@ import { todayKe, monthsAgoKe } from '../../utils/time'
 import { getStockMovementReport } from '../../api/report'
 import mobileMixin from '../../mixins/mobile'
 import { exportCSV } from '../../utils/export'
+import { formatBoxQty } from '../../utils/unit'
 import { money } from '../../utils/format'
 import ReportShell from '../../components/report/ReportShell.vue'
 
@@ -130,11 +131,19 @@ export default {
     },
     handleExport() {
       exportCSV(
-        ['商品名称', 'SKU', '分类', '单位', '入库数量', '入库金额', '出库数量', '出库金额', '净变动'],
-        this.tableData.map(r => [
-          r.productName, r.skuCode, r.categoryName, r.unit,
-          r.inQty, this.fmt(r.inAmount), r.outQty, this.fmt(r.outAmount), r.inQty - r.outQty
-        ]),
+        ['商品名称', 'SKU', '分类',
+         '入库数量(个)', '入库数量(箱/个)', '入库金额',
+         '出库数量(个)', '出库数量(箱/个)', '出库金额',
+         '净变动(个)', '净变动(箱/个)'],
+        this.tableData.map(r => {
+          const net = Number(r.inQty || 0) - Number(r.outQty || 0)
+          return [
+            r.productName, r.skuCode, r.categoryName,
+            r.inQty, formatBoxQty(r.inQty, r.qtyPerBox).text, this.fmt(r.inAmount),
+            r.outQty, formatBoxQty(r.outQty, r.qtyPerBox).text, this.fmt(r.outAmount),
+            net, formatBoxQty(net, r.qtyPerBox).text
+          ]
+        }),
         `库存进出报表_${this.dateRange[0]}_${this.dateRange[1]}.csv`
       )
     }

@@ -18,14 +18,18 @@
       </div>
 
       <el-table :data="tableData" border stripe show-summary :summary-method="getSummary">
-        <el-table-column :prop="nameProp" :label="nameLabel" min-width="180" />
-        <el-table-column prop="contact" label="联系人" width="100" />
-        <el-table-column prop="phone" label="联系电话" width="130" />
-        <el-table-column prop="orderCount" :label="countLabel" width="90" align="right" />
-        <el-table-column :label="qtyLabel" width="100" align="right">
+        <el-table-column :prop="nameProp" :label="nameLabel" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="contact" label="联系人" width="90" />
+        <el-table-column prop="phone" label="联系电话" width="120" />
+        <el-table-column prop="productName" label="商品" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="skuCode" label="SKU" width="110" />
+        <el-table-column :label="`${qtyLabel}(个)`" width="100" align="right">
           <template slot-scope="{row}">{{ row.totalQty }}</template>
         </el-table-column>
-        <el-table-column :label="amountLabel" width="130" align="right">
+        <el-table-column :label="`${qtyLabel}(箱/个)`" width="110" align="right">
+          <template slot-scope="{row}">{{ boxText(row) }}</template>
+        </el-table-column>
+        <el-table-column :label="amountLabel" width="120" align="right">
           <template slot-scope="{row}">
             <span :style="{ fontWeight: 600, color: amountColor }">KSh {{ fmt(row.totalAmount) }}</span>
           </template>
@@ -39,6 +43,7 @@
 import { todayKe, monthsAgoKe } from '../../utils/time'
 import mobileMixin from '../../mixins/mobile'
 import { exportCSV } from '../../utils/export'
+import { formatBoxQty } from '../../utils/unit'
 import { money } from '../../utils/format'
 
 export default {
@@ -53,7 +58,7 @@ export default {
     fetchFn: { type: Function, required: true },        // 对账单数据获取函数
     nameProp: { type: String, required: true },         // 名称列字段，如 supplierName
     nameLabel: { type: String, required: true },        // 名称列标题，如「供应商」
-    countLabel: { type: String, required: true },       // 单数列标题，如「入库单数」
+    countLabel: { type: String, default: '' },          // 单数列标题（已不展示，保留兼容父组件传参）
     qtyLabel: { type: String, required: true },         // 总量列标题
     amountLabel: { type: String, required: true },      // 金额列标题
     amountColor: { type: String, default: '#409EFF' }
@@ -77,19 +82,24 @@ export default {
       const res = await this.fetchFn(params)
       this.tableData = res.data || []
     },
+    boxText(row) { return formatBoxQty(row.totalQty, row.qtyPerBox).text },
     getSummary({ columns, data }) {
+      // 列顺序：0名称 1联系人 2电话 3商品 4SKU 5总量(个) 6总量(箱/个) 7金额
       return columns.map((col, i) => {
         if (i === 0) return '合计'
-        if (i === 3) return data.reduce((s, r) => s + Number(r.orderCount || 0), 0)
-        if (i === 4) return data.reduce((s, r) => s + Number(r.totalQty || 0), 0)
-        if (i === 5) return 'KSh ' + data.reduce((s, r) => s + Number(r.totalAmount || 0), 0).toFixed(2)
+        if (i === 5) return data.reduce((s, r) => s + Number(r.totalQty || 0), 0)
+        if (i === 7) return 'KSh ' + data.reduce((s, r) => s + Number(r.totalAmount || 0), 0).toFixed(2)
         return ''
       })
     },
     handleExport() {
       exportCSV(
-        [this.nameLabel, '联系人', '联系电话', this.countLabel, this.qtyLabel, `${this.amountLabel}(元)`],
-        this.tableData.map(r => [r[this.nameProp], r.contact || '', r.phone || '', r.orderCount, r.totalQty, this.fmt(r.totalAmount)]),
+        [this.nameLabel, '联系人', '联系电话', '商品', 'SKU', `${this.qtyLabel}(个)`, `${this.qtyLabel}(箱/个)`, `${this.amountLabel}(元)`],
+        this.tableData.map(r => [
+          r[this.nameProp], r.contact || '', r.phone || '',
+          r.productName, r.skuCode,
+          r.totalQty, formatBoxQty(r.totalQty, r.qtyPerBox).text, this.fmt(r.totalAmount)
+        ]),
         `${this.title}_${this.dateRange[0]}_${this.dateRange[1]}.csv`
       )
     }
