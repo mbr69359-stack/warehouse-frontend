@@ -10,6 +10,7 @@
     confirm-qty-label="实际入库数量"
     confirm-success-msg="入库确认成功"
     plan-field="planQty"
+    price-label="成本价"
     print-type-field-label="入库类型"
     :print-type-map="printTypeMap">
     <template #descriptions="{ order, warehouseName }">

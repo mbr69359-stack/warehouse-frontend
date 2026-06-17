@@ -14,7 +14,8 @@
 //   totals         合计对象 { boxes, pieces, weight, amount }
 //   rows           行数组，每行 { name, sku, planQty, actualQty, price:Number, weightKg:Number|null, subtotal:Number }
 export function printOrderDocument({
-  docLabel, typeFieldLabel, typeText, statusText, warehouseName, qtyIsBox, order, totals, rows
+  docLabel, typeFieldLabel, typeText, statusText, warehouseName, qtyIsBox, order, totals, rows,
+  priceLabel = '单价'
 }) {
   const boxSuffix = qtyIsBox ? '(箱)' : ''
   const rowsHtml = rows.map(r => `<tr>
@@ -51,7 +52,7 @@ export function printOrderDocument({
           <span>确认时间<b>${order.confirmTime || '—'}</b></span>
         </div>
         <table>
-          <thead><tr><th>商品</th><th style="text-align:center">计划数量${boxSuffix}</th><th style="text-align:center">实际数量${boxSuffix}</th><th style="text-align:right">单价</th><th style="text-align:right">重量</th><th style="text-align:right">小计</th></tr></thead>
+          <thead><tr><th>商品</th><th style="text-align:center">计划数量${boxSuffix}</th><th style="text-align:center">实际数量${boxSuffix}</th><th style="text-align:right">${priceLabel}</th><th style="text-align:right">重量</th><th style="text-align:right">小计</th></tr></thead>
           <tbody>${rowsHtml}</tbody>
         </table>
         <div class="total">${qtyIsBox ? '总箱数：' + totals.boxes + ' 箱&nbsp;&nbsp;' : ''}总件数：${totals.pieces != null ? totals.pieces + ' 个' : '—'}&nbsp;&nbsp;总重量：${totals.weight != null ? totals.weight.toFixed(1) + ' kg' : '—'}&nbsp;&nbsp;合计金额：KSh ${totals.amount.toFixed(2)}</div>

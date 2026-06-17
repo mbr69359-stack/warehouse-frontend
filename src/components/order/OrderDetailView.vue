@@ -20,7 +20,7 @@
       </el-table-column>
       <el-table-column :prop="planField" :label="qtyIsBox ? '计划数量(箱)' : '计划数量'" width="110" />
       <el-table-column prop="actualQty" :label="qtyIsBox ? '实际数量(箱)' : '实际数量'" width="110" />
-      <el-table-column label="单价" width="100"><template slot-scope="{row}">KSh {{ row.price }}</template></el-table-column>
+      <el-table-column :label="priceLabel" width="100"><template slot-scope="{row}">KSh {{ row.price }}</template></el-table-column>
       <el-table-column label="重量" width="100">
         <template slot-scope="{row}">{{ formatWeight(rowWeight(row)) }}</template>
       </el-table-column>
@@ -90,7 +90,8 @@ export default {
     boxModeExcludeTypes: { type: Array, default: () => [] }, // 不按箱计的单据类型
     // 打印
     printTypeFieldLabel: { type: String, required: true }, // 入库类型 / 出库类型
-    printTypeMap: { type: Object, required: true }     // 打印小票里类型显示映射
+    printTypeMap: { type: Object, required: true },    // 打印小票里类型显示映射
+    priceLabel: { type: String, default: '单价' }      // 价格列表头：入库单为「成本价」，出库单为「单价」
   },
   data() {
     return {
@@ -189,6 +190,7 @@ export default {
         qtyIsBox: this.qtyIsBox,
         order: this.order,
         totals: this.totals,
+        priceLabel: this.priceLabel,
         rows: this.items.map(r => ({
           name: r.productName || r.productId,
           sku: r.skuCode,
