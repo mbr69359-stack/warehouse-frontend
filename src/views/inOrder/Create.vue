@@ -27,7 +27,7 @@
         <template slot-scope="{row}">
           <el-select v-model="row.productId" placeholder="输入名称搜索商品" filterable remote
             :remote-method="searchProducts" :loading="productLoading" style="width:100%;">
-            <el-option v-for="p in products" :key="p.id" :label="p.name+'('+p.skuCode+')'" :value="p.id" />
+            <el-option v-for="p in products" :key="p.id" :label="productLabel(p)" :value="p.id" />
           </el-select>
         </template>
       </el-table-column>

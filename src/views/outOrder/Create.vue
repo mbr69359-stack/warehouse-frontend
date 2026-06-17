@@ -281,14 +281,15 @@ export default {
       return qpb ? Math.floor(qty / qpb) : qty
     },
     productLabel(p) {
+      const title = this.productTitle(p)
       const raw = this.inventoryMap[p.id]
       if (this.isBoxMode && raw !== undefined) {
         const qpb = p.qtyPerBox > 0 ? p.qtyPerBox : null
-        if (!qpb) return `${p.name}(${p.skuCode}) — 库存:${raw}箱⚠️`
-        return `${p.name}(${p.skuCode}) — 库存:${Math.floor(raw / qpb)}箱(${raw}个)`
+        if (!qpb) return `${title} — 库存:${raw}箱⚠️`
+        return `${title} — 库存:${Math.floor(raw / qpb)}箱(${raw}个)`
       }
       const stock = raw !== undefined ? raw : '—'
-      return `${p.name}(${p.skuCode}) — 库存:${stock}件`
+      return `${title} — 库存:${stock}件`
     },
     addItem() { this.form.items.push({ productId: null, qty: 1, price: 0, _lastPriceTip: null }) },
     formatWeight,

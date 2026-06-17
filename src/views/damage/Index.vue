@@ -97,7 +97,7 @@
             <el-option
               v-for="p in products"
               :key="p.id"
-              :label="p.name + '(' + p.skuCode + ')'"
+              :label="productLabel(p)"
               :value="p.id" />
           </el-select>
         </el-form-item>

@@ -11,6 +11,12 @@
     <el-table :data="list" v-loading="loading" border stripe>
       <el-table-column prop="id" label="ID" width="70" />
       <el-table-column prop="name" label="商品名称" />
+      <el-table-column prop="categoryName" label="分类" width="110" show-overflow-tooltip>
+        <template slot-scope="{row}">
+          <span v-if="row.categoryName">{{ row.categoryName }}</span>
+          <span v-else style="color:#c0c4cc;">未分类</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="skuCode" label="SKU编码" width="140" />
       <el-table-column prop="spec" label="规格" width="120" show-overflow-tooltip />
       <el-table-column prop="barcode" label="条码" width="130" show-overflow-tooltip />

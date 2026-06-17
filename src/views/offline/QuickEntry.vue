@@ -25,7 +25,7 @@
           <el-option
             v-for="p in products"
             :key="p.id"
-            :label="p.name + ' (' + p.skuCode + ')'"
+            :label="productLabel(p)"
             :value="p.id"
           />
         </el-select>
@@ -67,11 +67,13 @@ import { addPendingLog, getCache, generateUuid } from '../../utils/db'
 import { batchSync } from '../../api/syncApi'
 import { getProducts } from '../../api/product'
 import { getWarehouses } from '../../api/warehouse'
+import productSearch from '../../mixins/productSearch'
 
 const LS_WAREHOUSE = 'qe_last_warehouseId'
 const LS_PRODUCT = 'qe_last_productId'
 
 export default {
+  mixins: [productSearch],
   data() {
     return {
       saving: false,
