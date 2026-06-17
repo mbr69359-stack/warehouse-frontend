@@ -74,7 +74,11 @@
         </el-form-item>
         <el-form-item label="规格"><el-input v-model="form.spec" placeholder="如：128GB/黑色" /></el-form-item>
         <el-form-item label="条码"><el-input v-model="form.barcode" placeholder="EAN/UPC" /></el-form-item>
-        <el-form-item label="单位" prop="unit"><el-input v-model="form.unit" /></el-form-item>
+        <el-form-item label="单位" prop="unit">
+          <el-select v-model="form.unit" filterable allow-create default-first-option placeholder="选择或输入新单位" style="width:100%;">
+            <el-option v-for="u in unitOptions" :key="u" :label="u" :value="u" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="价格" prop="price"><el-input-number v-model="form.price" :precision="2" :min="0" style="width:100%;" /></el-form-item>
         <el-form-item label="成本价">
           <span>KSh {{ form.costPrice || '0.00' }}</span>
@@ -102,10 +106,10 @@ export default {
   data() {
     return {
       list: [], total: 0, loading: false, saving: false, dialogVisible: false, categories: [],
-      originalQtyPerBox: null,
+      originalQtyPerBox: null, unitOptions: ['箱', '个'],
       historyVisible: false, historyLoading: false, historyList: [], historyProductName: '', historyChart: null,
       query: { current: 1, size: 10, name: '', categoryId: null },
-      form: { id: null, name: '', skuCode: '', categoryId: null, unit: '个', price: 0, costPrice: 0, spec: '', barcode: '', weightPerBox: null, qtyPerBox: null, status: 1 },
+      form: { id: null, name: '', skuCode: '', categoryId: null, unit: '箱', price: 0, costPrice: 0, spec: '', barcode: '', weightPerBox: null, qtyPerBox: null, status: 1 },
       rules: { name: [{ required: true, message: '请输入商品名称' }], skuCode: [{ required: true, message: '请输入SKU' }], unit: [{ required: true, message: '请输入单位' }] }
     }
   },
@@ -116,9 +120,11 @@ export default {
       this.loading = true
       const res = await getProducts(this.query).finally(() => { this.loading = false })
       this.list = res.data.records; this.total = res.data.total
+      const units = this.list.map(p => p.unit).filter(Boolean)
+      this.unitOptions = Array.from(new Set(['箱', '个', ...units]))
     },
     openForm(row) {
-      this.form = row ? { ...row } : { id: null, name: '', skuCode: '', categoryId: null, unit: '个', price: 0, costPrice: 0, spec: '', barcode: '', weightPerBox: null, qtyPerBox: null, status: 1 }
+      this.form = row ? { ...row } : { id: null, name: '', skuCode: '', categoryId: null, unit: '箱', price: 0, costPrice: 0, spec: '', barcode: '', weightPerBox: null, qtyPerBox: null, status: 1 }
       this.originalQtyPerBox = row ? row.qtyPerBox : null
       this.dialogVisible = true
       this.$nextTick(() => this.$refs.form && this.$refs.form.clearValidate())
