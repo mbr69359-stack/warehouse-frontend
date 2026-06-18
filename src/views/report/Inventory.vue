@@ -111,7 +111,7 @@
           </el-table-column>
         </el-table>
         <el-pagination v-if="viewMode === 'list'" class="no-print" style="margin-top:16px;text-align:right;" background layout="total, prev, pager, next"
-          :total="total" :current-page="query.current" @current-change="p=>{query.current=p;loadData()}" />
+          :total="total" :page-size="query.size" :current-page="query.current" @current-change="p=>{query.current=p;loadData()}" />
 
         <!-- 打印区域：屏幕隐藏，仅打印时显示，渲染全量库存 -->
         <div class="print-only">
@@ -298,7 +298,7 @@ export default {
       productMap: {},
       alertDialog: false, alertForm: {},
       alertUnit: 'piece', alertQtyPerBox: 0, alertBoxAllowed: false,
-      query: { current: 1, size: 10, warehouseId: null },
+      query: { current: 1, size: 100, warehouseId: null },
       mobileSearch: '',
       filterChip: null,
       expandedKey: null,

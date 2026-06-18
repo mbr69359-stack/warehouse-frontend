@@ -22,7 +22,7 @@
       </el-table-column>
     </el-table>
     <el-pagination style="margin-top:16px;text-align:right;" background layout="total, prev, pager, next"
-      :total="total" :current-page="query.current" @current-change="p=>{query.current=p;loadData()}" />
+      :total="total" :page-size="query.size" :current-page="query.current" @current-change="p=>{query.current=p;loadData()}" />
     <el-dialog :title="form.id?'编辑用户':'新增用户'" :visible.sync="dialogVisible" width="500px">
       <el-form :model="form" :rules="rules" ref="form" label-width="90px">
         <el-form-item label="用户名" prop="username"><el-input v-model="form.username" :disabled="!!form.id" /></el-form-item>
@@ -54,7 +54,7 @@ import { getUsers, createUser, updateUser, deleteUser, getRoles } from '../../ap
 export default {
   data() {
     return { list: [], total: 0, loading: false, dialogVisible: false, roles: [],
-      query: { current: 1, size: 10, username: '' },
+      query: { current: 1, size: 100, username: '' },
       form: { id: null, username: '', password: '', realName: '', phone: '', email: '', status: 1, roleIds: [] },
       rules: { username: [{ required: true, message: '请输入用户名' }], password: [{ required: true, message: '请输入密码' }] } }
   },

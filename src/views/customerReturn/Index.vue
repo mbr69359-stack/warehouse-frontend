@@ -189,7 +189,7 @@ export default {
   data() {
     return {
       list: [], loading: false, total: 0,
-      query: { current: 1, size: 20 },
+      query: { current: 1, size: 100 },
       warehouses: [],
       // 新建
       createVisible: false,

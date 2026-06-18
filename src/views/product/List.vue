@@ -114,7 +114,7 @@ export default {
       list: [], total: 0, loading: false, saving: false, dialogVisible: false, categories: [],
       originalQtyPerBox: null, unitOptions: ['箱', '个'],
       historyVisible: false, historyLoading: false, historyList: [], historyProductName: '', historyChart: null,
-      query: { current: 1, size: 10, name: '', categoryId: null },
+      query: { current: 1, size: 100, name: '', categoryId: null },
       form: { id: null, name: '', skuCode: '', categoryId: null, unit: '箱', price: 0, costPrice: 0, spec: '', barcode: '', weightPerBox: null, qtyPerBox: null, status: 1 },
       rules: { name: [{ required: true, message: '请输入商品名称' }], skuCode: [{ required: true, message: '请输入SKU' }], unit: [{ required: true, message: '请输入单位' }] }
     }

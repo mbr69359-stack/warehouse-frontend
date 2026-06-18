@@ -22,7 +22,7 @@
       </el-table-column>
     </el-table>
     <el-pagination style="margin-top:16px;text-align:right;" background layout="total, prev, pager, next"
-      :total="total" :current-page="query.current" @current-change="p=>{query.current=p;loadData()}" />
+      :total="total" :page-size="query.size" :current-page="query.current" @current-change="p=>{query.current=p;loadData()}" />
     <el-dialog :title="form.id?'编辑供应商':'新增供应商'" :visible.sync="dialogVisible" width="500px">
       <el-form :model="form" :rules="rules" ref="form" label-width="90px">
         <el-form-item label="供应商名称" prop="name"><el-input v-model="form.name" /></el-form-item>
@@ -49,7 +49,7 @@ export default {
   mixins: [crudList],
   data() {
     return { list: [], total: 0, loading: false, dialogVisible: false,
-      query: { current: 1, size: 10, name: '' },
+      query: { current: 1, size: 100, name: '' },
       form: { id: null, name: '', contact: '', phone: '', email: '', address: '', status: 1 },
       rules: { name: [{ required: true, message: '请输入供应商名称' }] } }
   },

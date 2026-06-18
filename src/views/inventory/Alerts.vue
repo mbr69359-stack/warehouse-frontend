@@ -66,7 +66,7 @@
       :total="total"
       :current-page="query.current"
       :page-size="query.size"
-      :page-sizes="[10, 20, 50]"
+      :page-sizes="[10, 20, 50, 100]"
       @current-change="p => { query.current = p; loadData() }"
       @size-change="s => { query.size = s; query.current = 1; loadData() }"
     />
@@ -89,7 +89,7 @@ export default {
       warehouses: [],
       warehouseMap: {},
       productMap: {},
-      query: { current: 1, size: 10, warehouseId: null },
+      query: { current: 1, size: 100, warehouseId: null },
       viewMode: 'list'
     }
   },
@@ -142,7 +142,7 @@ export default {
       this.loadData()
     },
     reset() {
-      this.query = { current: 1, size: 10, warehouseId: null }
+      this.query = { current: 1, size: 100, warehouseId: null }
       this.loadData()
     },
     fmtQty(qty, warehouseId, productId) {

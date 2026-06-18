@@ -218,7 +218,7 @@ export default {
       list: [],
       loading: false,
       total: 0,
-      query: { current: 1, size: 20, status: '', warehouseId: null },
+      query: { current: 1, size: 100, status: '', warehouseId: null },
       warehouses: [],
       allProductsMap: {},
       dialogVisible: false,

@@ -28,17 +28,19 @@
         </el-table-column>
         <el-table-column label="操作" width="320">
           <template slot-scope="{row}">
-            <el-button size="mini" @click="$router.push('/in-orders/'+row.id)">详情</el-button>
-            <el-button size="mini" type="primary"
-              v-if="row.status==='DRAFT' && row.type!=='RETURN_IN'"
-              @click="$router.push('/in-orders/edit/'+row.id)">编辑</el-button>
-            <el-button size="mini" type="success" v-if="row.status==='DRAFT'" @click="openConfirmDialog(row.id)">确认实际数量</el-button>
-            <el-button size="mini" type="danger" v-if="row.status!=='VOIDED'" @click="handleDelete(row.id, row.status)">删除</el-button>
+            <div class="op-cell">
+              <el-button size="mini" @click="$router.push('/in-orders/'+row.id)">详情</el-button>
+              <el-button size="mini" type="primary"
+                v-if="row.status==='DRAFT' && row.type!=='RETURN_IN'"
+                @click="$router.push('/in-orders/edit/'+row.id)">编辑</el-button>
+              <el-button size="mini" type="success" v-if="row.status==='DRAFT'" @click="openConfirmDialog(row.id)">确认实际数量</el-button>
+              <el-button size="mini" type="danger" v-if="row.status!=='VOIDED'" @click="handleDelete(row.id, row.status)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
       <el-pagination style="margin-top:16px;text-align:right;" background layout="total, prev, pager, next"
-        :total="total" :current-page="query.current" @current-change="p=>{query.current=p;loadData()}" />
+        :total="total" :page-size="query.size" :current-page="query.current" @current-change="p=>{query.current=p;loadData()}" />
     </el-card>
 
     <!-- ── 移动端 ── -->
@@ -146,7 +148,7 @@ export default {
       list: [], total: 0, loading: false,
       mobileSearch: '',
       dateRange: null,
-      query: { current: 1, size: 10, status: null, startDate: null, endDate: null },
+      query: { current: 1, size: 100, status: null, startDate: null, endDate: null },
       statusTabs: [
         { label: '全部',   value: null },
         { label: '待收货', value: 'DRAFT' },
@@ -199,3 +201,10 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+/* 操作列：按钮用 flex 自动换行，行间/列间统一留 6px 间距，避免按钮过多时换行重叠 */
+.op-cell { display: flex; flex-wrap: wrap; gap: 6px; }
+/* 覆盖 Element 默认的相邻按钮 margin-left:10px，交给 flex gap 统一管理 */
+.op-cell .el-button + .el-button { margin-left: 0; }
+</style>

@@ -30,7 +30,7 @@
 
     <!-- 分页 -->
     <el-pagination style="margin-top:16px;text-align:right;" background layout="total, prev, pager, next"
-      :total="total" :current-page="query.current"
+      :total="total" :page-size="query.size" :current-page="query.current"
       @current-change="p=>{query.current=p;loadData()}" />
 
     <!-- 新增/编辑弹窗 -->
@@ -70,7 +70,7 @@ export default {
       dialogVisible: false,
       deleteConfirmText: '确认删除该客户？',
       // 分页查询参数
-      query: { current: 1, size: 10, name: '' },
+      query: { current: 1, size: 100, name: '' },
       // 表单数据
       form: { id: null, name: '', contact: '', phone: '', address: '', remark: '', status: 1 },
       rules: {
