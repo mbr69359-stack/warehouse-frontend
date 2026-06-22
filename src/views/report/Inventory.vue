@@ -542,7 +542,7 @@ export default {
   cursor: pointer;
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
-  transition: all .15s;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
 }
 .mi-chip.active {
   background: #00288e;

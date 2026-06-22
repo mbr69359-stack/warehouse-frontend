@@ -503,10 +503,16 @@ export default {
 .dash-card { transition: box-shadow .2s, border-color .2s; }
 .dash-card--active { border: 1px solid #409EFF !important; box-shadow: 0 0 0 2px rgba(64,158,255,.2) !important; }
 
-.chart-slide-enter-active { transition: opacity .6s ease, transform .6s ease; }
-.chart-slide-leave-active { transition: opacity .4s ease; }
+.chart-slide-enter-active { transition: opacity .2s cubic-bezier(0.23, 1, 0.32, 1), transform .2s cubic-bezier(0.23, 1, 0.32, 1); }
+.chart-slide-leave-active { transition: opacity .12s ease; }
 .chart-slide-enter { opacity: 0; transform: translateY(-10px); }
 .chart-slide-leave-to { opacity: 0; }
+
+/* 减少动态效果：保留淡入、去掉位移 */
+@media (prefers-reduced-motion: reduce) {
+  .chart-slide-enter-active { transition: opacity .15s ease !important; }
+  .chart-slide-enter { transform: none !important; }
+}
 
 .m-alert-banner {
   margin-top: 10px;

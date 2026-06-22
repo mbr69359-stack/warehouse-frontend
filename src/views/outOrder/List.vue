@@ -70,7 +70,7 @@
           <span class="mo-progress-label">今日进度: {{ draftCount }} / {{ total }}</span>
         </div>
         <div class="mo-track">
-          <div class="mo-fill" :style="{ width: total ? ((total-draftCount)/total*100)+'%' : '0%' }"></div>
+          <div class="mo-fill" :style="{ transform: 'scaleX(' + (total ? (total-draftCount)/total : 0) + ')' }"></div>
         </div>
         <div class="mo-stats">
           <div class="mo-stat">
@@ -272,8 +272,11 @@ export default {
   border-radius: 3px; overflow: hidden; margin-bottom: 10px;
 }
 .mo-fill {
-  height: 100%; background: #00288e;
-  border-radius: 3px; transition: width .5s;
+  height: 100%; width: 100%; background: #00288e;
+  border-radius: 3px;
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform .5s cubic-bezier(0.23, 1, 0.32, 1);
 }
 .mo-stats { display: flex; gap: 24px; }
 .mo-stat  { display: flex; flex-direction: column; }

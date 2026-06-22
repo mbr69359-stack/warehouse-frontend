@@ -64,7 +64,8 @@ export default {
           label: { show: false },
           emphasis: { label: { show: true, fontSize: 13, fontWeight: 'bold' } },
           animationType: 'scale',
-          animationEasing: 'elasticOut'
+          animationEasing: 'cubicOut',
+          animationDuration: 500
         }]
       }, true)
     }

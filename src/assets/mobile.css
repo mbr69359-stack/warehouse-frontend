@@ -472,3 +472,17 @@ html, body {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.4; }
 }
+
+/* ── 无障碍：尊重系统"减少动态效果"偏好 ──
+   原则(emil-design-eng)：减弱而非清零——去掉位移/缩放/无限旋转等易致眩晕的运动，
+   过渡退化为近乎瞬时；需保留的轻微淡入由组件各自的 reduced-motion 覆盖处理。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

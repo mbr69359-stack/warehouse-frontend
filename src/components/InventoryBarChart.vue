@@ -94,8 +94,8 @@ export default {
           data: values,
           label: { show: true, formatter: labelFmt, fontWeight: 700 },
           animationType: 'scale',
-          animationEasing: 'elasticOut',
-          animationDuration: 800,
+          animationEasing: 'cubicOut',
+          animationDuration: 500,
           animationDelay: idx => idx * 60
         }]
       } : {
@@ -118,8 +118,8 @@ export default {
           data: values,
           label: { show: true, formatter: labelFmt, fontWeight: 700 },
           animationType: 'scale',
-          animationEasing: 'elasticOut',
-          animationDuration: 800,
+          animationEasing: 'cubicOut',
+          animationDuration: 500,
           animationDelay: idx => idx * 60
         }]
       }
